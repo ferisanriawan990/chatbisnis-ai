@@ -22,17 +22,9 @@ export default async function DashboardLayout({ children }: { children: ReactNod
           </h1>
         </div>
         <nav className="flex-1 px-4 space-y-2">
-          <Link href="/dashboard" className="flex items-center gap-3 px-3 py-2 text-slate-600 rounded-lg hover:bg-slate-50 transition-colors">
-            <LayoutDashboard className="w-5 h-5" />
-            <span className="font-medium">Overview</span>
-          </Link>
           <Link href="/dashboard/chatbot" className="flex items-center gap-3 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg transition-colors">
             <BotMessageSquare className="w-5 h-5" />
             <span className="font-medium">AI Chatbot</span>
-          </Link>
-          <Link href="/dashboard/settings" className="flex items-center gap-3 px-3 py-2 text-slate-600 rounded-lg hover:bg-slate-50 transition-colors">
-            <Settings className="w-5 h-5" />
-            <span className="font-medium">Pengaturan</span>
           </Link>
         </nav>
         <div className="p-4 border-t border-slate-200">
