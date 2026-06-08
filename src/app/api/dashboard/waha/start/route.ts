@@ -26,7 +26,15 @@ export async function POST() {
     }
 
     const waha = WAHAService.fromEncrypted(chatbot.wahaBaseUrl, chatbot.wahaApiKeyEncrypted);
-    await waha.startSession(chatbot.wahaSessionName);
+    try {
+      await waha.startSession(chatbot.wahaSessionName);
+    } catch (startError: any) {
+      // If the session is already started, we can ignore the error
+      if (startError?.message?.includes('already started')) {
+        return NextResponse.json({ success: true, sessionName: chatbot.wahaSessionName, alreadyStarted: true });
+      }
+      throw startError;
+    }
 
     return NextResponse.json({ success: true, sessionName: chatbot.wahaSessionName });
   } catch (error) {
