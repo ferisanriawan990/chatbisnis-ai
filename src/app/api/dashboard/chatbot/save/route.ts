@@ -71,7 +71,7 @@ export async function POST(req: Request) {
 
     // Generate unique session name if not provided
     let sessionName = data.wahaSessionName;
-    if (!sessionName || sessionName === 'default' || sessionName.trim() === '') {
+    if (!sessionName || sessionName.trim() === '') {
       sessionName = `session_${userId.slice(0, 8)}_${crypto.randomBytes(4).toString('hex')}`;
     }
 
