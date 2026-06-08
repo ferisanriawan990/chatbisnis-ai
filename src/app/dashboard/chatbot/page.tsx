@@ -357,7 +357,7 @@ export default function ChatbotDashboard() {
                 {wahaStatus === 'qr' && qrCode && (
                   <div className="p-4 border border-slate-200 rounded-lg text-center bg-white mt-2">
                     <p className="text-sm font-bold text-slate-700 mb-2">Scan QR Ini di WhatsApp</p>
-                    <Image src={qrCode} alt="WhatsApp QR" width={200} height={200} className="mx-auto" />
+                    <img src={qrCode} alt="WhatsApp QR" style={{ width: '200px', height: '200px', margin: '0 auto' }} />
                   </div>
                 )}
               </div>
