@@ -42,12 +42,33 @@ export async function POST(req: Request) {
     // Hash password with cost 12
     const passwordHash = await bcrypt.hash(password, 12);
 
+    // Get Free Plan
+    const freePlan = await prisma.plan.findUnique({
+      where: { slug: 'free' }
+    });
+
+    if (!freePlan) {
+      console.error('Free plan not found in database. Did you run the seed?');
+      return NextResponse.json(
+        { error: 'Sistem sedang dikonfigurasi, coba lagi nanti.' },
+        { status: 500 }
+      );
+    }
+
     const user = await prisma.user.create({
       data: {
         name: name.trim(),
         email: normalizedEmail,
         passwordHash,
         role: 'USER',
+        subscriptions: {
+          create: {
+            planId: freePlan.id,
+            status: 'active',
+            startDate: new Date(),
+            endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 10)), // 10 years for free plan
+          }
+        }
       },
     });
 

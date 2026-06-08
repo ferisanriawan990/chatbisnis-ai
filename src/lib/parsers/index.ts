@@ -1,4 +1,4 @@
-import * as xlsx from 'xlsx';
+import * as ExcelJS from 'exceljs';
 import Papa from 'papaparse';
 
 export interface ParsedItem {
@@ -14,23 +14,48 @@ export interface ParsedItem {
 
 export async function parseExcel(buffer: Buffer): Promise<ParsedItem[]> {
   try {
-    const workbook = xlsx.read(buffer, { type: 'buffer' });
-    const sheetName = workbook.SheetNames[0];
-    const sheet = workbook.Sheets[sheetName];
+    const workbook = new ExcelJS.Workbook();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const rawData = xlsx.utils.sheet_to_json<any>(sheet);
+    await workbook.xlsx.load(buffer as any);
+    const worksheet = workbook.worksheets[0];
+    
+    if (!worksheet) {
+      throw new Error('Worksheet is empty');
+    }
 
-    return rawData.map((row) => ({
-      question: row.pertanyaan || row.question || '',
-      answer: row.jawaban || row.answer || '',
-      productName: row.nama_produk || row.product_name || '',
-      productCategory: row.kategori || row.category || '',
-      price: parseFloat(row.harga || row.price || '0') || 0,
-      stockStatus: row.stok || row.stock || '',
-      description: row.deskripsi || row.description || '',
-      searchableText: JSON.stringify(row),
-    }));
-  } catch {
+    const items: ParsedItem[] = [];
+    const headers: string[] = [];
+
+    worksheet.eachRow((row, rowNumber) => {
+      const rowValues = row.values as unknown[];
+      if (rowNumber === 1) {
+        // Assume first row is header
+        for (let i = 1; i < rowValues.length; i++) {
+          headers[i] = String(rowValues[i]).toLowerCase();
+        }
+      } else {
+        const rowData: Record<string, unknown> = {};
+        for (let i = 1; i < rowValues.length; i++) {
+          if (headers[i]) {
+            rowData[headers[i]] = rowValues[i];
+          }
+        }
+        
+        items.push({
+          question: String(rowData['pertanyaan'] || rowData['question'] || ''),
+          answer: String(rowData['jawaban'] || rowData['answer'] || ''),
+          productName: String(rowData['nama_produk'] || rowData['product_name'] || ''),
+          productCategory: String(rowData['kategori'] || rowData['category'] || ''),
+          price: parseFloat(String(rowData['harga'] || rowData['price'] || '0')) || 0,
+          stockStatus: String(rowData['stok'] || rowData['stock'] || ''),
+          description: String(rowData['deskripsi'] || rowData['description'] || ''),
+          searchableText: JSON.stringify(rowData),
+        });
+      }
+    });
+
+    return items;
+  } catch (error) {
     throw new Error('Gagal membaca file Excel. Pastikan formatnya benar.');
   }
 }
@@ -44,15 +69,15 @@ export async function parseCsv(buffer: Buffer): Promise<ParsedItem[]> {
         skipEmptyLines: true,
         complete: (results) => {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const rawData = results.data as any[];
+          const rawData = results.data as Record<string, unknown>[];
           const parsed = rawData.map((row) => ({
-            question: row.pertanyaan || row.question || '',
-            answer: row.jawaban || row.answer || '',
-            productName: row.nama_produk || row.product_name || '',
-            productCategory: row.kategori || row.category || '',
-            price: parseFloat(row.harga || row.price || '0') || 0,
-            stockStatus: row.stok || row.stock || '',
-            description: row.deskripsi || row.description || '',
+            question: String(row.pertanyaan || row.question || ''),
+            answer: String(row.jawaban || row.answer || ''),
+            productName: String(row.nama_produk || row.product_name || ''),
+            productCategory: String(row.kategori || row.category || ''),
+            price: parseFloat(String(row.harga || row.price || '0')) || 0,
+            stockStatus: String(row.stok || row.stock || ''),
+            description: String(row.deskripsi || row.description || ''),
             searchableText: JSON.stringify(row),
           }));
           resolve(parsed);

@@ -5,16 +5,16 @@ Folder ini berisi sekumpulan *workflow* (alur kerja) otomatis untuk n8n Cloud. T
 ## Daftar Template
 
 1. **`basic-ai-cs.json`**
-   Template dasar untuk menjawab pesan WhatsApp secara otomatis menggunakan AI. Sangat direkomendasikan untuk pengguna baru.
+   Template dasar untuk menjawab pesan WhatsApp secara otomatis menggunakan AI. Sangat direkomendasikan untuk pengguna baru. (Path webhook: `waha-ai-cs-basic`)
 
 2. **`ai-cs-product-knowledge.json`**
-   Sama seperti basic, tetapi menyertakan fitur untuk memasukkan *product knowledge* (katalog produk/layanan) langsung ke dalam *prompt* AI.
+   Sama seperti basic, tetapi menyertakan fitur untuk memasukkan *product knowledge* (katalog produk/layanan) langsung ke dalam *prompt* AI. (Path webhook: `waha-ai-cs-product`)
 
 3. **`lead-capture.json`**
-   Template pintar yang akan memerintahkan AI untuk mengekstrak Nama, Nomor, dan Minat customer, lalu mengirim data tersebut ke Webhook/Database Anda.
+   Template pintar yang akan memerintahkan AI untuk mengekstrak Nama, Nomor, dan Minat customer, lalu mengirim data tersebut ke Webhook/Database Anda di `{{WEBSITE_API_BASE_URL}}/api/internal/chatbot/leads`. (Path webhook: `waha-lead-capture`)
 
 4. **`human-handover.json`**
-   Mendeteksi jika customer sedang marah atau ingin berbicara dengan manusia (mengandung kata "admin", "cs", "komplain"). Bot akan berhenti, dan notifikasi akan dikirim ke WhatsApp pribadi Admin.
+   Mendeteksi jika customer sedang marah atau ingin berbicara dengan manusia (mengandung kata "admin", "cs", "komplain"). Bot akan berhenti, dan notifikasi akan dikirim ke WhatsApp pribadi Admin. (Path webhook: `waha-human-handover`)
 
 ---
 
@@ -31,20 +31,21 @@ Folder ini berisi sekumpulan *workflow* (alur kerja) otomatis untuk n8n Cloud. T
 
 ## 🔑 Mengatur Environment (Placeholder)
 
-Template ini dibuat sangat aman. Tidak ada API Key yang tersimpan (*hardcode*). Kami menggunakan sistem *placeholder* ganda kurung kurawal, contoh: `{{FLAZ_API_KEY}}`. 
+Template ini dibuat sangat aman. Tidak ada API Key asli atau IP pribadi yang tersimpan (*hardcode*). Kami menggunakan sistem *placeholder* ganda kurung kurawal, contoh: `{{FLAZ_API_KEY}}`. 
 
 Di n8n, Anda wajib mengisi *placeholder* ini di setiap Node HTTP Request. Berikut daftar *placeholder* yang harus Anda ganti dengan nilai asli:
 
-- `{{WAHA_BASE_URL}}` → Alamat IP VPS Anda (contoh: `http://202.155.157.219:3000`)
-- `{{WAHA_API_KEY}}` → Kunci rahasia WAHA Anda (contoh: `ChatBisnisApi2026!`)
+- `{{WAHA_BASE_URL}}` → Alamat server WAHA Anda (contoh: `https://waha.domainanda.com`)
+- `{{WAHA_API_KEY}}` → Kunci rahasia WAHA Anda
 - `{{FLAZ_API_KEY}}` → Kunci API Flaz Cloud (dimulai dengan `sk-xxx`)
 - `{{BUSINESS_NAME}}` → Nama bisnis UMKM Anda
-- `{{SESSION_NAME}}` → Nama sesi WAHA Anda (biasanya `default`)
+- `{{SESSION_NAME}}` → Nama sesi WAHA spesifik user (contoh: `chatbisnis_user_abcd123`)
 - `{{ADMIN_WHATSAPP_NUMBER}}` → (Khusus Handover) Nomor admin tanpa `+` atau `0`, misal: `628123456789`
-- `{{WEBSITE_API_BASE_URL}}` → (Khusus Lead) URL website backend Anda (contoh: `https://chatbisnis.com`)
-- `{{WEBSITE_INTERNAL_API_KEY}}` → (Khusus Lead) API key internal website Anda
+- `{{WEBSITE_API_BASE_URL}}` → URL website backend Anda (default: `https://chatbisnis-ai.vercel.app`)
+- `{{WEBSITE_INTERNAL_API_KEY}}` → API key internal website Anda untuk keamanan endpoint internal
+- `{{WAHA_WEBHOOK_SECRET}}` → Kunci rahasia untuk memvalidasi webhook WAHA (header `x-webhook-secret`)
 
-*Tips Keamanan: Sebaiknya gunakan fitur "Credentials" di n8n untuk HTTP Request jika memungkinkan.*
+*Tips Keamanan: Jangan pernah menyimpan API key di frontend. Untuk production, kelola API Key melalui Super Admin Panel ChatBisnis AI.*
 
 ---
 
@@ -54,19 +55,20 @@ Setelah Anda menekan **Save** dan menyalakan *toggle* **Active** di n8n, Anda ha
 
 1. Buka kotak Node yang bernama **Webhook WAHA** di n8n (paling kiri).
 2. Klik **Test URL** atau **Production URL**. Salin tautan (URL) tersebut.
-3. Masukkan tautan tersebut ke konfigurasi `WHATSAPP_HOOK_URL` di VPS WAHA Anda (file `.env`).
-4. Restart kontainer Docker WAHA Anda: `docker compose down && docker compose up -d`.
+3. Gunakan fitur Webhook di dashboard/API WAHA untuk mengarahkan notifikasi `message` ke tautan tersebut.
+4. Pastikan untuk mengirimkan header `x-webhook-secret` bernilai sama dengan yang ada di `.env` backend website Anda.
 
 ### Perbedaan Webhook Test vs Production
 - **Test URL:** Digunakan saat menekan tombol "Listen for Event" di n8n untuk simulasi dan pengaturan *mapping* data awal. Jika tidak sedang ditekan, *event* akan ditolak/dibuang.
-- **Production URL:** URL asli yang aktif 24/7 dan akan memicu eksekusi *workflow* otomatis di belakang layar.
+- **Production URL:** URL asli yang aktif 24/7 dan akan memicu eksekusi *workflow* otomatis di belakang layar. Wajib menggunakan HTTPS untuk production.
 
 ---
 
 ## 🐞 Troubleshooting Dasar
 
-- **Pesan masuk tapi AI tidak membalas?** Cek kotak "Filter Message" di n8n. Pastikan pesan bukan dari grup dan bukan dikirim oleh nomor Anda sendiri (`fromMe: true`).
-- **Error saat mengirim balasan ke WAHA?** Pastikan URL di "Send WhatsApp Reply" menggunakan `http://` dan diakhiri `/api/sendText`. Pastikan juga *Session Name* sesuai.
-- **Flaz AI Error?** Pastikan *Authorization Header* tertulis persis `Bearer ` diikuti spasi lalu API key Anda.
+- **Cara debug payload WAHA:** Gunakan webhook test n8n, atau cek log di Waha Server Anda. Jangan mencetak (log) data payload sensitif secara berlebihan di production.
+- **Pesan masuk tapi AI tidak membalas?** Cek kotak "Filter Message" di n8n. Pastikan pesan bukan dari grup dan bukan dikirim oleh nomor Anda sendiri (`fromMe: true`), serta pastikan pesan tidak kosong.
+- **Error saat mengirim balasan ke WAHA?** Pastikan `{{WAHA_BASE_URL}}` menggunakan HTTPS. Jangan me-loop request jika gagal mengirim balasan.
+- **Flaz AI Error?** Pastikan *Authorization Header* tertulis persis `Bearer ` diikuti spasi lalu API key Anda. Jika Flaz gagal, bot diprogram untuk mengirim pesan fallback.
 
 *Selamat Mengotomatisasi Bisnis Anda! 🚀*

@@ -14,10 +14,21 @@ export class ChatbotEngine {
     try {
       const sanitizedMessageIn = AIService.sanitizeInput(messageIn);
 
-      // 1. Ambil setting & profile
+      // 1. Ambil setting, profile, dan user dengan subscription
       const chatbotSetting = await prisma.chatbotSetting.findUnique({
         where: { wahaSessionName },
-        include: { businessProfile: true },
+        include: {
+          businessProfile: true,
+          user: {
+            include: {
+              subscriptions: {
+                include: { plan: true },
+                where: { status: 'active' },
+                take: 1
+              }
+            }
+          }
+        },
       });
 
       if (!chatbotSetting) {
@@ -29,22 +40,53 @@ export class ChatbotEngine {
         return null; // Silent if inactive
       }
 
+      const activePlan = chatbotSetting.user.subscriptions[0]?.plan;
+
       // 3. Cek limit
       const today = new Date();
       today.setHours(0, 0, 0, 0);
+      const monthStr = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}`;
 
-      const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+      // Ambil counter usage
+      let usage = await prisma.usageCounter.findUnique({
+        where: { userId_date: { userId: chatbotSetting.userId, date: today } }
+      });
 
-      const [dailyCount, monthlyCount] = await Promise.all([
-        prisma.chatLog.count({
-          where: { chatbotSettingId: chatbotSetting.id, createdAt: { gte: today } },
-        }),
-        prisma.chatLog.count({
-          where: { chatbotSettingId: chatbotSetting.id, createdAt: { gte: firstDayOfMonth } },
-        }),
-      ]);
+      if (!usage) {
+        usage = await prisma.usageCounter.create({
+          data: {
+            userId: chatbotSetting.userId,
+            businessProfileId: chatbotSetting.businessProfileId,
+            date: today,
+            month: monthStr,
+          }
+        });
+      }
 
-      if (dailyCount >= chatbotSetting.dailyChatLimit || monthlyCount >= chatbotSetting.monthlyChatLimit) {
+      // Hitung bulanan manual dari UsageCounter
+      const monthlyUsageData = await prisma.usageCounter.aggregate({
+        _sum: { aiChats: true },
+        where: { userId: chatbotSetting.userId, month: monthStr }
+      });
+      const monthlyCount = monthlyUsageData._sum.aiChats || 0;
+      const dailyCount = usage.aiChats;
+
+      const maxDaily = activePlan?.dailyChatLimit || chatbotSetting.dailyChatLimit;
+      const maxMonthly = activePlan?.monthlyChatLimit || chatbotSetting.monthlyChatLimit;
+
+      if (dailyCount >= maxDaily || monthlyCount >= maxMonthly) {
+        await this.logChat({
+          chatbotSettingId: chatbotSetting.id,
+          userId: chatbotSetting.userId,
+          businessProfileId: chatbotSetting.businessProfileId,
+          customerPhone,
+          customerName,
+          messageIn: sanitizedMessageIn,
+          messageOut: chatbotSetting.fallbackMessage,
+          status: 'success',
+          needsHuman: true,
+          tokenUsage: 0,
+        });
         return chatbotSetting.fallbackMessage;
       }
 
@@ -62,48 +104,57 @@ export class ChatbotEngine {
 
       if (needsHuman) {
         await this.logChat({
-          chatbotSetting,
+          chatbotSettingId: chatbotSetting.id,
+          userId: chatbotSetting.userId,
+          businessProfileId: chatbotSetting.businessProfileId,
           customerPhone,
           customerName,
           messageIn: sanitizedMessageIn,
           messageOut: chatbotSetting.handoverMessage,
           status: 'success',
           needsHuman: true,
+          tokenUsage: 0,
         });
         return chatbotSetting.handoverMessage;
       }
 
       // 5. Cek Lead Sederhana (Interest)
-      const leadKeywords = ['pesan', 'order', 'beli', 'harga', 'mau', 'tertarik'];
-      let isLead = false;
-      for (const keyword of leadKeywords) {
-        if (lowerMessageIn.includes(keyword)) {
-          isLead = true;
-          break;
+      const allowLeadCapture = activePlan?.allowLeadCapture ?? false;
+      if (allowLeadCapture) {
+        const leadKeywords = ['pesan', 'order', 'beli', 'harga', 'mau', 'tertarik'];
+        let isLead = false;
+        for (const keyword of leadKeywords) {
+          if (lowerMessageIn.includes(keyword)) {
+            isLead = true;
+            break;
+          }
+        }
+
+        if (isLead) {
+          await this.upsertLead(chatbotSetting.userId, chatbotSetting.businessProfileId, customerPhone, customerName, sanitizedMessageIn);
         }
       }
 
-      if (isLead) {
-        await this.upsertLead(chatbotSetting, customerPhone, customerName, sanitizedMessageIn);
-      }
-
-      // 6. Ambil Knowledge Base (Sederhana - Keyword matching)
+      // 6. Ambil Knowledge Base
       const knowledgeItems = await prisma.knowledgeItem.findMany({
         where: { businessProfileId: chatbotSetting.businessProfileId, isActive: true },
+        take: activePlan?.maxKnowledgeItems || 50,
       });
 
       let relevantKnowledge = '';
       const words = lowerMessageIn.split(/\s+/);
       
-      // Sangat sederhana: cari item yang mengandung salah satu kata dari user
+      let matchedCount = 0;
       for (const item of knowledgeItems) {
         const searchable = item.searchableText.toLowerCase();
         for (const word of words) {
           if (word.length > 3 && searchable.includes(word)) {
             relevantKnowledge += `- ${item.searchableText}\n`;
+            matchedCount++;
             break;
           }
         }
+        if (matchedCount >= 5) break; // Batasi max 5 item agar tidak kepanjangan
       }
 
       // 7. Buat System Prompt
@@ -131,8 +182,17 @@ Aturan tambahan:
 - Jawab secara ringkas sesuai panjang jawaban yang diminta.
       `.trim();
 
-      // 8. Panggil AI
-      const aiApiKey = chatbotSetting.aiApiKeyEncrypted ? decrypt(chatbotSetting.aiApiKeyEncrypted) : null;
+      // 8. Panggil AI - Cek hak custom API Key
+      let aiApiKey = '';
+      if (activePlan?.allowCustomApiKey && chatbotSetting.aiApiKeyEncrypted) {
+        aiApiKey = decrypt(chatbotSetting.aiApiKeyEncrypted);
+      } else {
+        const globalKey = await prisma.secretCredential.findUnique({ where: { key: 'FLAZ_API_KEY_GLOBAL' } });
+        if (globalKey) {
+          aiApiKey = decrypt(globalKey.encryptedValue);
+        }
+      }
+
       if (!aiApiKey) {
         throw new Error('AI API Key belum diatur');
       }
@@ -145,9 +205,21 @@ Aturan tambahan:
         apiKey: aiApiKey,
       });
 
-      // 9. Simpan Log
+      // 9. Update Usage
+      await prisma.usageCounter.update({
+        where: { id: usage.id },
+        data: {
+          aiChats: { increment: 1 },
+          aiTokens: { increment: tokenUsage },
+          whatsappMessages: { increment: 1 },
+        }
+      });
+
+      // 10. Simpan Log
       await this.logChat({
-        chatbotSetting,
+        chatbotSettingId: chatbotSetting.id,
+        userId: chatbotSetting.userId,
+        businessProfileId: chatbotSetting.businessProfileId,
         customerPhone,
         customerName,
         messageIn: sanitizedMessageIn,
@@ -160,19 +232,31 @@ Aturan tambahan:
 
       return reply;
     } catch (error) {
+      // Log Failed
       console.error('ChatbotEngine Error:', error);
       return 'Mohon maaf, layanan sedang mengalami gangguan. Silakan coba beberapa saat lagi.';
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private static async logChat(params: any) {
+  private static async logChat(params: {
+    chatbotSettingId: string;
+    userId: string;
+    businessProfileId: string;
+    customerPhone: string;
+    customerName?: string;
+    messageIn: string;
+    messageOut?: string;
+    status: 'success' | 'failed';
+    aiUsed?: string;
+    tokenUsage: number;
+    needsHuman: boolean;
+  }) {
     try {
       await prisma.chatLog.create({
         data: {
-          userId: params.chatbotSetting.userId,
-          businessProfileId: params.chatbotSetting.businessProfileId,
-          chatbotSettingId: params.chatbotSetting.id,
+          userId: params.userId,
+          businessProfileId: params.businessProfileId,
+          chatbotSettingId: params.chatbotSettingId,
           customerPhone: params.customerPhone,
           customerName: params.customerName || null,
           messageIn: params.messageIn,
@@ -188,25 +272,28 @@ Aturan tambahan:
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private static async upsertLead(chatbotSetting: any, phone: string, name: string | undefined, messageIn: string) {
+  private static async upsertLead(userId: string, businessProfileId: string, phone: string, name: string | undefined, messageIn: string) {
     try {
-      const lead = await prisma.lead.findFirst({
-        where: { businessProfileId: chatbotSetting.businessProfileId, customerPhone: phone },
+      await prisma.lead.upsert({
+        where: {
+          businessProfileId_customerPhone: {
+            businessProfileId,
+            customerPhone: phone
+          }
+        },
+        update: {
+          interest: 'Berpotensi dari chat: ' + messageIn.substring(0, 50),
+          status: 'warm',
+        },
+        create: {
+          userId,
+          businessProfileId,
+          customerPhone: phone,
+          customerName: name || null,
+          interest: 'Berpotensi dari chat: ' + messageIn.substring(0, 50),
+          status: 'warm',
+        }
       });
-
-      if (!lead) {
-        await prisma.lead.create({
-          data: {
-            userId: chatbotSetting.userId,
-            businessProfileId: chatbotSetting.businessProfileId,
-            customerPhone: phone,
-            customerName: name || null,
-            interest: 'Berpotensi dari chat: ' + messageIn.substring(0, 50),
-            status: 'warm',
-          },
-        });
-      }
     } catch (e) {
       console.error('Failed to upsert lead', e);
     }

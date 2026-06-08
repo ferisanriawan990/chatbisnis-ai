@@ -19,7 +19,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const body = $json.body || $json;\nconst headers = $node['Webhook WAHA']?.json?.headers || {};\nconst payload = body.payload || body;\nreturn [{ json: {\n  session: body.session || 'default',\n  chatId: payload.from,\n  senderNumber: payload.from?.split('@')[0],\n  messageText: payload.body || '',\n  fromMe: payload.fromMe || false,\n  isGroup: payload.isGroup || false,\n  webhookSecret: headers['x-webhook-secret'] || ''\n}}];"
+        "jsCode": "const body = $json.body || $json;\nconst headers = $node['Webhook WAHA']?.json?.headers || {};\nconst payload = body.payload || body;\nreturn [{ json: {\n  session: body.session || '{{SESSION_NAME}}',\n  chatId: payload.from,\n  senderNumber: payload.from?.split('@')[0],\n  messageText: payload.body || '',\n  fromMe: payload.fromMe || false,\n  isGroup: payload.isGroup || false,\n  webhookSecret: headers['x-webhook-secret'] || ''\n}}];"
       },
       "id": "normalize",
       "name": "Normalize Payload",

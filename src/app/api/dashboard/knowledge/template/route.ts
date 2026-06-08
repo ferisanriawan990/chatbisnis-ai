@@ -1,34 +1,42 @@
 import { NextResponse } from 'next/server';
-import * as xlsx from 'xlsx';
+import * as ExcelJS from 'exceljs';
 
 export async function GET() {
   try {
-    const data = [
-      {
-        pertanyaan: 'Berapa harga produk X?',
-        jawaban: 'Harga produk X adalah Rp 100.000.',
-        nama_produk: 'Produk X',
-        kategori: 'Pakaian',
-        harga: 100000,
-        stok: 'Tersedia',
-        deskripsi: 'Pakaian berkualitas tinggi.',
-      },
-      {
-        pertanyaan: 'Apakah toko buka di hari Minggu?',
-        jawaban: 'Ya, kami buka setiap hari dari jam 08:00 sampai 17:00.',
-        nama_produk: '',
-        kategori: '',
-        harga: '',
-        stok: '',
-        deskripsi: '',
-      },
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Knowledge Base');
+
+    worksheet.columns = [
+      { header: 'pertanyaan', key: 'pertanyaan', width: 30 },
+      { header: 'jawaban', key: 'jawaban', width: 40 },
+      { header: 'nama_produk', key: 'nama_produk', width: 20 },
+      { header: 'kategori', key: 'kategori', width: 15 },
+      { header: 'harga', key: 'harga', width: 15 },
+      { header: 'stok', key: 'stok', width: 15 },
+      { header: 'deskripsi', key: 'deskripsi', width: 30 },
     ];
 
-    const worksheet = xlsx.utils.json_to_sheet(data);
-    const workbook = xlsx.utils.book_new();
-    xlsx.utils.book_append_sheet(workbook, worksheet, 'Knowledge Base');
+    worksheet.addRow({
+      pertanyaan: 'Berapa harga produk X?',
+      jawaban: 'Harga produk X adalah Rp 100.000.',
+      nama_produk: 'Produk X',
+      kategori: 'Pakaian',
+      harga: 100000,
+      stok: 'Tersedia',
+      deskripsi: 'Pakaian berkualitas tinggi.',
+    });
 
-    const buffer = xlsx.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+    worksheet.addRow({
+      pertanyaan: 'Apakah toko buka di hari Minggu?',
+      jawaban: 'Ya, kami buka setiap hari dari jam 08:00 sampai 17:00.',
+      nama_produk: '',
+      kategori: '',
+      harga: '',
+      stok: '',
+      deskripsi: '',
+    });
+
+    const buffer = await workbook.xlsx.writeBuffer();
 
     return new NextResponse(buffer, {
       headers: {

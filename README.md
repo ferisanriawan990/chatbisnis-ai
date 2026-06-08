@@ -45,9 +45,8 @@ Menggunakan teknologi LLM (Claude/OpenAI compatible) dan WAHA (WhatsApp HTTP API
 4. **Migrasi Database:**
    ```bash
    npx prisma generate
-   npx prisma db push
+   npx prisma migrate deploy
    ```
-   *(Atau gunakan `npx prisma migrate dev` jika menggunakan workflow migrasi)*
 
 5. **Jalankan Server:**
    ```bash

@@ -34,7 +34,7 @@ export async function POST(req: Request) {
       const payload = (b?.payload || b) as Record<string, any>;
       const headers = b?.headers as Record<string, string> || {};
       return {
-        sessionName: (b?.session as string) || 'default',
+        sessionName: (b?.session as string) || '',
         event: (b?.event as string) || 'message',
         fromMe: Boolean(payload.fromMe),
         isGroup: Boolean(payload.isGroup),
@@ -56,8 +56,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: true, message: 'Ignored fromMe, broadcast, group, or empty' });
     }
 
-    if (!norm.sessionName || !norm.customerPhone) {
-      return NextResponse.json({ error: 'Invalid payload structure' }, { status: 400 });
+    if (!norm.sessionName || norm.sessionName === 'default' || !norm.customerPhone) {
+      return NextResponse.json({ error: 'Invalid payload structure or session name' }, { status: 400 });
     }
 
     // Process using Chatbot Engine

@@ -28,7 +28,6 @@ export default function ChatbotDashboard() {
     fallbackMessage: '', handoverMessage: '', handoverKeywords: '', outOfHoursMessage: '',
     aiProvider: 'Flaz Cloud', aiModel: 'claude-haiku-4-5', aiApiKey: '',
     dailyChatLimit: 1000, monthlyChatLimit: 30000,
-    wahaBaseUrl: '', wahaApiKey: '', wahaSessionName: '',
     isActive: false,
   });
 
@@ -57,8 +56,6 @@ export default function ChatbotDashboard() {
           setForm({
             ...json.businessProfile,
             ...json.chatbotSetting,
-            aiApiKey: json.chatbotSetting.aiApiKeyEncrypted ? '••••••••' : '',
-            wahaApiKey: json.chatbotSetting.wahaApiKeyEncrypted ? '••••••••' : '',
           });
         }
       }
@@ -126,26 +123,6 @@ export default function ChatbotDashboard() {
     }
   };
 
-  const handleWahaStart = async () => {
-    toast.loading('Memulai sesi WAHA...', { id: 'waha' });
-    try {
-      const res = await fetch('/api/dashboard/waha/start', { method: 'POST' });
-      if (res.ok) {
-        toast.success('Perintah mulai dikirim!', { id: 'waha' });
-        setTimeout(() => {
-          fetch('/api/dashboard/waha/status').then(r => r.json()).then(d => {
-            setWahaStatus(d.status);
-            if (d.status === 'qr') fetchQrCode();
-          });
-        }, 3000);
-      } else {
-        const err = await res.json();
-        toast.error(err.error || 'Gagal memulai WAHA', { id: 'waha' });
-      }
-    } catch {
-      toast.error('Jaringan bermasalah', { id: 'waha' });
-    }
-  };
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
@@ -350,27 +327,12 @@ export default function ChatbotDashboard() {
           </section>
 
           <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-            <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><Key className="w-5 h-5 text-emerald-500" /> Koneksi API</h2>
+            <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><Key className="w-5 h-5 text-emerald-500" /> Koneksi WhatsApp (WAHA)</h2>
             <div className="space-y-4">
-              <div><label className="block text-sm font-medium text-slate-700 mb-1">WAHA Base URL</label><input name="wahaBaseUrl" value={form.wahaBaseUrl} onChange={handleChange} placeholder="https://waha.example.com" className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none" /></div>
-              <div><label className="block text-sm font-medium text-slate-700 mb-1">WAHA API Key</label><input type="password" name="wahaApiKey" value={form.wahaApiKey} onChange={handleChange} placeholder="Rahasia..." className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none" /></div>
-              <div><label className="block text-sm font-medium text-slate-700 mb-1">WAHA Session Name</label><input name="wahaSessionName" value={form.wahaSessionName} onChange={handleChange} placeholder="default" className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none" /></div>
-              
-              <div className="pt-2 flex flex-col gap-2">
-                <button onClick={handleWahaStart} disabled={wahaStatus === 'connected'} className="w-full px-4 py-2 bg-emerald-100 text-emerald-700 font-medium rounded-lg hover:bg-emerald-200 disabled:opacity-50">Mulai Sesi WAHA</button>
-                {wahaStatus === 'qr' && qrCode && (
-                  <div className="p-4 border border-slate-200 rounded-lg text-center bg-white mt-2">
-                    <p className="text-sm font-bold text-slate-700 mb-2">Scan QR Ini di WhatsApp</p>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={qrCode} alt="WhatsApp QR Code" className="w-64 h-64 object-contain" />
-                  </div>
-                )}
-              </div>
-
-              <div className="pt-4 border-t border-slate-100">
-                <label className="block text-sm font-medium text-slate-700 mb-1">Flaz Cloud AI Key</label>
-                <input type="password" name="aiApiKey" value={form.aiApiKey} onChange={handleChange} placeholder="sk-..." className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none" />
-              </div>
+              <p className="text-sm text-slate-600">Status koneksi WAHA Anda saat ini: <span className={`font-bold ${wahaStatus === 'connected' ? 'text-emerald-600' : 'text-amber-600 capitalize'}`}>{wahaStatus}</span></p>
+              <Link href="/dashboard/waha" className="inline-block w-full text-center px-4 py-2 bg-emerald-100 text-emerald-700 font-medium rounded-lg hover:bg-emerald-200 transition-colors">
+                Kelola Koneksi WhatsApp
+              </Link>
             </div>
           </section>
         </div>

@@ -12,28 +12,64 @@ export class WAHAService {
   private apiKey: string;
 
   constructor(config: WAHAConfig) {
-    this.baseUrl = config.baseUrl.replace(/\/$/, '');
+    let url = config.baseUrl.replace(/\/$/, '');
+    if (process.env.NODE_ENV === 'production' && !url.includes('localhost') && !url.startsWith('https://')) {
+      url = url.replace('http://', 'https://');
+    }
+    this.baseUrl = url;
     this.apiKey = config.apiKey;
   }
 
   private async request(path: string, options: RequestInit = {}) {
     const url = `${this.baseUrl}${path}`;
-    const res = await fetch(url, {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'X-Api-Key': this.apiKey,
-        ...options.headers,
-      },
-    });
+    
+    // 30 second timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-    if (!res.ok) {
-      const text = await res.text().catch(() => 'Unknown error');
-      throw new Error(`WAHA API error ${res.status}: ${text}`);
+    try {
+      const res = await fetch(url, {
+        ...options,
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-Api-Key': this.apiKey,
+          ...options.headers,
+        },
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!res.ok) {
+        // Safe error message to avoid leaking secrets from API response
+        let errorDetail = 'Unknown error';
+        try {
+          const errData = await res.json();
+          errorDetail = errData.message || errData.error || res.statusText;
+        } catch {
+          errorDetail = res.statusText;
+        }
+        throw new Error(`WAHA API error ${res.status}: ${errorDetail}`);
+      }
+
+      return res.json();
+    } catch (error: unknown) {
+      clearTimeout(timeoutId);
+      if ((error as { name?: string }).name === 'AbortError') {
+        throw new Error('WAHA API timeout after 30 seconds');
+      }
+      throw error;
     }
+  }
 
-    return res.json();
+  async testConnection() {
+    try {
+      await this.request('/api/sessions?all=true');
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   async startSession(sessionName: string) {

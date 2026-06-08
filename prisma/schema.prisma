@@ -60,6 +60,9 @@ model User {
   chatLogs         ChatLog[]
   leads            Lead[]
   whatsappSessions WhatsAppSession[]
+  subscriptions    Subscription[]
+  usageCounters    UsageCounter[]
+  auditLogs        AuditLog[]
 }
 
 model BusinessProfile {
@@ -84,6 +87,7 @@ model BusinessProfile {
   chatLogs            ChatLog[]
   leads               Lead[]
   whatsappSessions    WhatsAppSession[]
+  usageCounters       UsageCounter[]
 }
 
 model ChatbotSetting {
@@ -231,4 +235,114 @@ model WhatsAppSession {
   user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   businessProfile   BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
   chatbotSetting    ChatbotSetting  @relation(fields: [chatbotSettingId], references: [id], onDelete: Cascade)
+}
+
+// ─── Admin & System Models ───────────────────────────────
+
+model SystemSetting {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       String   @db.Text
+  type        String   @default("string")
+  description String?  @db.Text
+  isPublic    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model SecretCredential {
+  id             String    @id @default(uuid())
+  name           String
+  key            String    @unique
+  encryptedValue String    @db.Text
+  provider       String
+  description    String?   @db.Text
+  isActive       Boolean   @default(true)
+  lastRotatedAt  DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model WahaServer {
+  id              String   @id @default(uuid())
+  name            String
+  baseUrl         String
+  apiKeyEncrypted String?  @db.Text
+  status          String   @default("active")
+  maxSessions     Int      @default(50)
+  currentSessions Int      @default(0)
+  isActive        Boolean  @default(true)
+  notes           String?  @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Plan {
+  id                  String   @id @default(uuid())
+  name                String
+  slug                String   @unique
+  priceMonthly        Float    @default(0)
+  maxWhatsappSessions Int      @default(1)
+  maxKnowledgeItems   Int      @default(50)
+  dailyChatLimit      Int      @default(100)
+  monthlyChatLimit    Int      @default(3000)
+  allowN8nTemplates   Boolean  @default(false)
+  allowLeadCapture    Boolean  @default(false)
+  allowHumanHandover  Boolean  @default(false)
+  allowCustomApiKey   Boolean  @default(false)
+  isActive            Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  subscriptions       Subscription[]
+}
+
+model Subscription {
+  id        String    @id @default(uuid())
+  userId    String    @unique
+  planId    String
+  status    String    @default("active")
+  startedAt DateTime  @default(now())
+  expiredAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan Plan @relation(fields: [planId], references: [id], onDelete: Cascade)
+}
+
+model UsageCounter {
+  id                String   @id @default(uuid())
+  userId            String
+  businessProfileId String?
+  date              DateTime @db.Date
+  month             String   
+  aiChats           Int      @default(0)
+  aiTokens          Int      @default(0)
+  whatsappMessages  Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessProfile BusinessProfile? @relation(fields: [businessProfileId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, date])
+  @@index([userId, month])
+}
+
+model AuditLog {
+  id           String   @id @default(uuid())
+  actorUserId  String?
+  action       String
+  entityType   String
+  entityId     String?
+  metadataJson String?  @db.Text
+  ipAddress    String?
+  userAgent    String?  @db.Text
+  createdAt    DateTime @default(now())
+
+  actorUser User? @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([actorUserId, createdAt])
+  @@index([entityType, entityId])
 }
