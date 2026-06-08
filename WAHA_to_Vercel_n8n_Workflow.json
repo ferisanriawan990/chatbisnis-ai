@@ -1,0 +1,85 @@
+{
+  "name": "WAHA to Vercel Backend Routing",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "waha-ai-cs-flaz",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "9404693a-1d30-4d4c-895a-a73775a16a3e",
+      "name": "Webhook WAHA",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [ 200, 300 ],
+      "webhookId": "waha-ai-cs-flaz"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://chatbisnis-ai.vercel.app/api/webhooks/waha",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify($json.body) }}",
+        "options": {}
+      },
+      "id": "c0f66fa9-0c18-4c39-bf6b-3eb79c5cc7be",
+      "name": "Forward to Vercel SaaS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [ 400, 300 ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: true, message: 'Forwarded to Vercel SaaS Backend' } }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "ba111491-6540-4a43-8270-84c361e91f8f",
+      "name": "Respond OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [ 600, 300 ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook WAHA": {
+      "main": [
+        [
+          {
+            "node": "Forward to Vercel SaaS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Forward to Vercel SaaS": {
+      "main": [
+        [
+          {
+            "node": "Respond OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {}
+}
