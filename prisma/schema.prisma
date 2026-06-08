@@ -1,0 +1,165 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String            @id @default(uuid())
+  name             String
+  email            String            @unique
+  passwordHash     String
+  role             String            @default("USER")
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  businessProfiles BusinessProfile[]
+  chatbotSettings  ChatbotSetting[]
+  knowledgeSources KnowledgeSource[]
+  knowledgeItems   KnowledgeItem[]
+  chatLogs         ChatLog[]
+  leads            Lead[]
+}
+
+model BusinessProfile {
+  id                  String            @id @default(uuid())
+  userId              String
+  businessName        String
+  businessIndustry    String
+  businessDescription String            @db.Text
+  address             String            @db.Text
+  openingHours        String
+  adminPhone          String
+  websiteUrl          String?
+  instagramUrl        String?
+  marketplaceUrl      String?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  user                User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chatbotSettings     ChatbotSetting[]
+  knowledgeSources    KnowledgeSource[]
+  knowledgeItems      KnowledgeItem[]
+  chatLogs            ChatLog[]
+  leads               Lead[]
+}
+
+model ChatbotSetting {
+  id                    String          @id @default(uuid())
+  userId                String
+  businessProfileId     String
+  botName               String
+  isActive              Boolean         @default(false)
+  toneStyle             String          @default("Profesional")
+  language              String          @default("id")
+  useEmoji              Boolean         @default(true)
+  maxReplyLength        String          @default("sedang")
+  allowSelling          Boolean         @default(true)
+  allowPromoOffer       Boolean         @default(true)
+  fallbackMessage       String          @db.Text
+  handoverMessage       String          @db.Text
+  handoverKeywords      String          @db.Text
+  outOfHoursMessage     String          @db.Text
+  aiProvider            String          @default("Flaz Cloud")
+  aiModel               String          @default("claude-haiku-4-5")
+  aiApiKeyEncrypted     String?
+  dailyChatLimit        Int             @default(1000)
+  monthlyChatLimit      Int             @default(30000)
+  wahaBaseUrl           String?
+  wahaApiKeyEncrypted   String?
+  wahaSessionName       String          @default("default") @unique
+  n8nWebhookUrl         String?
+  internalWebhookSecret String?
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+
+  user                  User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessProfile       BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+  chatLogs              ChatLog[]
+}
+
+model KnowledgeSource {
+  id                String          @id @default(uuid())
+  userId            String
+  businessProfileId String
+  type              String          // manual, excel, csv, pdf, docx, google_sheet, website_url
+  title             String
+  originalFileName  String?
+  fileUrl           String?
+  googleSheetUrl    String?
+  websiteUrl        String?
+  status            String          // pending, processing, active, failed
+  errorMessage      String?         @db.Text
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessProfile   BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+  knowledgeItems    KnowledgeItem[]
+}
+
+model KnowledgeItem {
+  id                String          @id @default(uuid())
+  userId            String
+  businessProfileId String
+  sourceId          String?
+  category          String?
+  question          String?         @db.Text
+  answer            String?         @db.Text
+  productName       String?
+  productCategory   String?
+  price             Float?
+  stockStatus       String?
+  description       String?         @db.Text
+  metadataJson      String?         @db.Text
+  searchableText    String          @db.Text
+  isActive          Boolean         @default(true)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessProfile   BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+  source            KnowledgeSource? @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+}
+
+model ChatLog {
+  id                String          @id @default(uuid())
+  userId            String
+  businessProfileId String
+  chatbotSettingId  String
+  customerPhone     String
+  customerName      String?
+  messageIn         String          @db.Text
+  messageOut        String?         @db.Text
+  intent            String?
+  aiUsed            String?
+  status            String          // success, failed
+  errorMessage      String?         @db.Text
+  needsHuman        Boolean         @default(false)
+  tokenUsage        Int             @default(0)
+  createdAt         DateTime        @default(now())
+
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessProfile   BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+  chatbotSetting    ChatbotSetting  @relation(fields: [chatbotSettingId], references: [id], onDelete: Cascade)
+}
+
+model Lead {
+  id                String          @id @default(uuid())
+  userId            String
+  businessProfileId String
+  customerPhone     String
+  customerName      String?
+  interest          String?
+  budget            Float?
+  address           String?         @db.Text
+  status            String          // cold, warm, hot, converted, lost
+  notes             String?         @db.Text
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessProfile   BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+}
