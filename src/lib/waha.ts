@@ -22,6 +22,7 @@ export class WAHAService {
       ...options,
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
         'X-Api-Key': this.apiKey,
         ...options.headers,
       },
