@@ -350,6 +350,7 @@ export default function ChatbotDashboard() {
             <div className="space-y-4">
               <div><label className="block text-sm font-medium text-slate-700 mb-1">WAHA Base URL</label><input name="wahaBaseUrl" value={form.wahaBaseUrl} onChange={handleChange} placeholder="https://waha.example.com" className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none" /></div>
               <div><label className="block text-sm font-medium text-slate-700 mb-1">WAHA API Key</label><input type="password" name="wahaApiKey" value={form.wahaApiKey} onChange={handleChange} placeholder="Rahasia..." className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none" /></div>
+              <div><label className="block text-sm font-medium text-slate-700 mb-1">WAHA Session Name</label><input name="wahaSessionName" value={form.wahaSessionName} onChange={handleChange} placeholder="default" className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none" /></div>
               
               <div className="pt-2 flex flex-col gap-2">
                 <button onClick={handleWahaStart} disabled={wahaStatus === 'connected'} className="w-full px-4 py-2 bg-emerald-100 text-emerald-700 font-medium rounded-lg hover:bg-emerald-200 disabled:opacity-50">Mulai Sesi WAHA</button>
