@@ -38,6 +38,9 @@ export async function GET() {
     });
 
     if (!chatbotSetting) {
+      const crypto = require('crypto');
+      const uniqueSessionName = `session_${userId.slice(0, 8)}_${crypto.randomBytes(4).toString('hex')}`;
+      
       chatbotSetting = await prisma.chatbotSetting.create({
         data: {
           userId,
@@ -47,6 +50,7 @@ export async function GET() {
           handoverMessage: 'Baik, saya akan menyambungkan Anda dengan admin kami.',
           handoverKeywords: 'admin, cs, manusia',
           outOfHoursMessage: 'Mohon maaf, saat ini kami sedang di luar jam operasional.',
+          wahaSessionName: uniqueSessionName,
         },
       });
     } else {

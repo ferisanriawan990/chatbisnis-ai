@@ -7,12 +7,50 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ─── Enums ───────────────────────────────────────────────
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum KnowledgeSourceType {
+  manual
+  excel
+  csv
+  pdf
+  docx
+  google_sheet
+}
+
+enum KnowledgeSourceStatus {
+  pending
+  processing
+  active
+  failed
+}
+
+enum LeadStatus {
+  cold
+  warm
+  hot
+  converted
+  lost
+}
+
+enum ChatLogStatus {
+  success
+  failed
+}
+
+// ─── Models ──────────────────────────────────────────────
+
 model User {
   id               String            @id @default(uuid())
   name             String
   email            String            @unique
   passwordHash     String
-  role             String            @default("USER")
+  role             UserRole          @default(USER)
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
   businessProfiles BusinessProfile[]
@@ -21,6 +59,7 @@ model User {
   knowledgeItems   KnowledgeItem[]
   chatLogs         ChatLog[]
   leads            Lead[]
+  whatsappSessions WhatsAppSession[]
 }
 
 model BusinessProfile {
@@ -44,6 +83,7 @@ model BusinessProfile {
   knowledgeItems      KnowledgeItem[]
   chatLogs            ChatLog[]
   leads               Lead[]
+  whatsappSessions    WhatsAppSession[]
 }
 
 model ChatbotSetting {
@@ -69,7 +109,7 @@ model ChatbotSetting {
   monthlyChatLimit      Int             @default(30000)
   wahaBaseUrl           String?
   wahaApiKeyEncrypted   String?
-  wahaSessionName       String          @default("default") @unique
+  wahaSessionName       String          @unique
   n8nWebhookUrl         String?
   internalWebhookSecret String?
   createdAt             DateTime        @default(now())
@@ -78,26 +118,30 @@ model ChatbotSetting {
   user                  User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   businessProfile       BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
   chatLogs              ChatLog[]
+  whatsappSessions      WhatsAppSession[]
 }
 
 model KnowledgeSource {
-  id                String          @id @default(uuid())
+  id                String                @id @default(uuid())
   userId            String
   businessProfileId String
-  type              String          // manual, excel, csv, pdf, docx, google_sheet, website_url
+  type              KnowledgeSourceType
   title             String
   originalFileName  String?
   fileUrl           String?
   googleSheetUrl    String?
   websiteUrl        String?
-  status            String          // pending, processing, active, failed
-  errorMessage      String?         @db.Text
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
+  status            KnowledgeSourceStatus @default(pending)
+  errorMessage      String?               @db.Text
+  itemCount         Int                   @default(0)
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
 
   user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   businessProfile   BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
   knowledgeItems    KnowledgeItem[]
+
+  @@index([userId, businessProfileId, status])
 }
 
 model KnowledgeItem {
@@ -122,6 +166,8 @@ model KnowledgeItem {
   user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   businessProfile   BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
   source            KnowledgeSource? @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+
+  @@index([userId, businessProfileId, sourceId, isActive])
 }
 
 model ChatLog {
@@ -135,7 +181,7 @@ model ChatLog {
   messageOut        String?         @db.Text
   intent            String?
   aiUsed            String?
-  status            String          // success, failed
+  status            ChatLogStatus   @default(success)
   errorMessage      String?         @db.Text
   needsHuman        Boolean         @default(false)
   tokenUsage        Int             @default(0)
@@ -144,6 +190,9 @@ model ChatLog {
   user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   businessProfile   BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
   chatbotSetting    ChatbotSetting  @relation(fields: [chatbotSettingId], references: [id], onDelete: Cascade)
+
+  @@index([userId, businessProfileId, chatbotSettingId, createdAt])
+  @@index([customerPhone, createdAt])
 }
 
 model Lead {
@@ -155,11 +204,31 @@ model Lead {
   interest          String?
   budget            Float?
   address           String?         @db.Text
-  status            String          // cold, warm, hot, converted, lost
+  status            LeadStatus      @default(cold)
   notes             String?         @db.Text
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
 
   user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   businessProfile   BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([businessProfileId, customerPhone])
+  @@index([userId, businessProfileId, status, createdAt])
+}
+
+model WhatsAppSession {
+  id                String          @id @default(uuid())
+  userId            String
+  businessProfileId String
+  chatbotSettingId  String
+  sessionName       String          @unique
+  status            String          @default("disconnected") // disconnected, starting, qr, connected, failed
+  lastConnectedAt   DateTime?
+  lastError         String?         @db.Text
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessProfile   BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+  chatbotSetting    ChatbotSetting  @relation(fields: [chatbotSettingId], references: [id], onDelete: Cascade)
 }

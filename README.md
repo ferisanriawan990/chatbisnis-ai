@@ -1,36 +1,72 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ChatBisnis AI
 
-## Getting Started
+Platform Chatbot WhatsApp otomatis berbasis AI yang dirancang khusus untuk UMKM di Indonesia. 
+Menggunakan teknologi LLM (Claude/OpenAI compatible) dan WAHA (WhatsApp HTTP API) untuk melayani pelanggan, menjawab pertanyaan sesuai knowledge base (Excel/CSV/PDF/DOCX), dan menangkap leads secara otomatis.
 
-First, run the development server:
+## Fitur Utama
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- **Real-time WhatsApp Integration**: Terhubung dengan WAHA via webhook.
+- **Knowledge Base Dinamis**: Upload Excel, CSV, PDF, atau input manual. AI akan menjawab berdasarkan data ini.
+- **Otomatisasi Leads**: Mendeteksi intent pembelian dan mencatat pelanggan potensial (Leads).
+- **Handover ke Manusia**: Jika AI tidak mengerti atau user meminta admin, bot akan berhenti dan memberi notifikasi ke dashboard.
+- **Limit & Kontrol**: Pengaturan limit harian/bulanan untuk menghemat token AI.
+- **Keamanan Tinggi**: API Keys dienkripsi di database menggunakan AES-256-GCM.
+- **Dashboard Analytics**: Memantau statistik chat, leads baru, dan status WhatsApp.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Stack Teknologi
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Frontend**: Next.js 15 (App Router), React, Tailwind CSS, Lucide Icons.
+- **Backend**: Next.js API Routes.
+- **Database**: PostgreSQL (Vercel Postgres) + Prisma ORM.
+- **Autentikasi**: NextAuth.js (Credentials).
+- **Keamanan**: bcryptjs, crypto (AES-256-GCM).
+- **Integrasi**: WAHA (WhatsApp HTTP API), Flaz Cloud / OpenAI API.
+- **File Parsing**: xlsx, papaparse, pdf-parse, mammoth.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Instalasi & Menjalankan Lokal
 
-## Learn More
+1. **Clone repository:**
+   ```bash
+   git clone https://github.com/ferisanriawan990/chatbisnis-ai.git
+   cd chatbisnis-ai
+   ```
 
-To learn more about Next.js, take a look at the following resources:
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+3. **Konfigurasi Environment:**
+   Salin `.env.example` ke `.env` dan isi nilai yang diperlukan (Database, Secrets).
+   ```bash
+   cp .env.example .env
+   ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+4. **Migrasi Database:**
+   ```bash
+   npx prisma generate
+   npx prisma db push
+   ```
+   *(Atau gunakan `npx prisma migrate dev` jika menggunakan workflow migrasi)*
 
-## Deploy on Vercel
+5. **Jalankan Server:**
+   ```bash
+   npm run dev
+   ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Deploy ke Vercel
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Aplikasi ini sudah dioptimasi untuk deployment di Vercel:
+1. Hubungkan repo ke Vercel.
+2. Tambahkan Vercel Postgres ke project.
+3. Tambahkan environment variables: `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, `ENCRYPTION_SECRET`.
+4. Build command di Vercel otomatis menjalankan `prisma generate` via `postinstall` di `package.json`.
+
+## Keamanan (PENTING!)
+
+- **`ENCRYPTION_SECRET`**: Harus **TEPAT 32 KARAKTER**. Jangan pernah mengubah secret ini setelah aplikasi berjalan, atau semua API keys (WAHA & AI) yang tersimpan di database tidak akan bisa didekripsi (rusak).
+- **Tidak ada fitur "Forgot Password" by default** untuk MVP ini guna menjaga agar tidak ada eksploitasi pembuatan user sembarangan. Gunakan pendaftaran langsung atau buat user manual via DB.
+
+## Lisensi
+
+Proprietary Software - Hak cipta dilindungi.

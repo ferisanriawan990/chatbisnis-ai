@@ -1,50 +1,28 @@
-import { NextResponse as Response } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { encrypt } from '@/lib/crypto';
+import { saveChatbotSchema } from '@/lib/validations';
+import crypto from 'crypto';
 
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const userId = (session.user as any).id;
+    const userId = (session.user as { id: string }).id;
     const body = await req.json();
+    const parsed = saveChatbotSchema.safeParse(body);
 
-    const {
-      businessName,
-      businessIndustry,
-      businessDescription,
-      address,
-      openingHours,
-      adminPhone,
-      websiteUrl,
-      instagramUrl,
-      marketplaceUrl,
-      botName,
-      toneStyle,
-      language,
-      useEmoji,
-      maxReplyLength,
-      allowSelling,
-      allowPromoOffer,
-      fallbackMessage,
-      handoverMessage,
-      handoverKeywords,
-      outOfHoursMessage,
-      aiProvider,
-      aiModel,
-      aiApiKey,
-      dailyChatLimit,
-      monthlyChatLimit,
-      wahaBaseUrl,
-      wahaApiKey,
-      wahaSessionName,
-      n8nWebhookUrl,
-    } = body;
+    if (!parsed.success) {
+      const errors = parsed.error.issues.map((i) => i.message);
+      return NextResponse.json({ error: errors[0] }, { status: 400 });
+    }
+
+    const data = parsed.data;
 
     // Save Business Profile
     let profile = await prisma.businessProfile.findFirst({ where: { userId } });
@@ -52,105 +30,105 @@ export async function POST(req: Request) {
       profile = await prisma.businessProfile.update({
         where: { id: profile.id },
         data: {
-          businessName,
-          businessIndustry,
-          businessDescription,
-          address,
-          openingHours,
-          adminPhone,
-          websiteUrl,
-          instagramUrl,
-          marketplaceUrl,
+          businessName: data.businessName,
+          businessIndustry: data.businessIndustry,
+          businessDescription: data.businessDescription || '',
+          address: data.address || '',
+          openingHours: data.openingHours || '08:00 - 17:00',
+          adminPhone: data.adminPhone || '',
+          websiteUrl: data.websiteUrl || null,
+          instagramUrl: data.instagramUrl || null,
+          marketplaceUrl: data.marketplaceUrl || null,
         },
       });
     } else {
       profile = await prisma.businessProfile.create({
         data: {
           userId,
-          businessName,
-          businessIndustry,
-          businessDescription,
-          address,
-          openingHours,
-          adminPhone,
-          websiteUrl,
-          instagramUrl,
-          marketplaceUrl,
+          businessName: data.businessName,
+          businessIndustry: data.businessIndustry,
+          businessDescription: data.businessDescription || '',
+          address: data.address || '',
+          openingHours: data.openingHours || '08:00 - 17:00',
+          adminPhone: data.adminPhone || '',
+          websiteUrl: data.websiteUrl || null,
+          instagramUrl: data.instagramUrl || null,
+          marketplaceUrl: data.marketplaceUrl || null,
         },
       });
     }
 
-    // Encrypt keys if they are provided (and not just masked)
-    let encryptedAiApiKey = undefined;
-    if (aiApiKey && aiApiKey !== '******') {
-      encryptedAiApiKey = encrypt(aiApiKey);
+    // Encrypt keys if provided (and not masked)
+    let encryptedAiApiKey: string | undefined = undefined;
+    if (data.aiApiKey && data.aiApiKey !== '••••••••' && data.aiApiKey.length > 0) {
+      encryptedAiApiKey = encrypt(data.aiApiKey);
     }
 
-    let encryptedWahaApiKey = undefined;
-    if (wahaApiKey && wahaApiKey !== '******') {
-      encryptedWahaApiKey = encrypt(wahaApiKey);
+    let encryptedWahaApiKey: string | undefined = undefined;
+    if (data.wahaApiKey && data.wahaApiKey !== '••••••••' && data.wahaApiKey.length > 0) {
+      encryptedWahaApiKey = encrypt(data.wahaApiKey);
     }
 
-    // Save Chatbot Setting
+    // Generate unique session name if not provided
+    let sessionName = data.wahaSessionName;
+    if (!sessionName || sessionName === 'default' || sessionName.trim() === '') {
+      sessionName = `session_${userId.slice(0, 8)}_${crypto.randomBytes(4).toString('hex')}`;
+    }
+
+    // Check unique wahaSessionName
     let chatbot = await prisma.chatbotSetting.findFirst({ where: { userId, businessProfileId: profile.id } });
+    if (sessionName !== chatbot?.wahaSessionName) {
+      const existing = await prisma.chatbotSetting.findUnique({ where: { wahaSessionName: sessionName } });
+      if (existing && existing.id !== chatbot?.id) {
+        return NextResponse.json(
+          { error: 'Nama session WAHA sudah digunakan. Pilih nama lain.' },
+          { status: 409 }
+        );
+      }
+    }
+
+    const chatbotData = {
+      botName: data.botName,
+      isActive: data.isActive ?? chatbot?.isActive ?? false,
+      toneStyle: data.toneStyle,
+      language: data.language,
+      useEmoji: data.useEmoji,
+      maxReplyLength: data.maxReplyLength,
+      allowSelling: data.allowSelling,
+      allowPromoOffer: data.allowPromoOffer,
+      fallbackMessage: data.fallbackMessage,
+      handoverMessage: data.handoverMessage,
+      handoverKeywords: data.handoverKeywords,
+      outOfHoursMessage: data.outOfHoursMessage,
+      aiProvider: data.aiProvider,
+      aiModel: data.aiModel,
+      ...(encryptedAiApiKey !== undefined && { aiApiKeyEncrypted: encryptedAiApiKey }),
+      dailyChatLimit: data.dailyChatLimit,
+      monthlyChatLimit: data.monthlyChatLimit,
+      wahaBaseUrl: data.wahaBaseUrl || null,
+      ...(encryptedWahaApiKey !== undefined && { wahaApiKeyEncrypted: encryptedWahaApiKey }),
+      wahaSessionName: sessionName,
+      n8nWebhookUrl: data.n8nWebhookUrl || null,
+    };
+
     if (chatbot) {
-      chatbot = await prisma.chatbotSetting.update({
+      await prisma.chatbotSetting.update({
         where: { id: chatbot.id },
-        data: {
-          botName,
-          toneStyle,
-          language,
-          useEmoji,
-          maxReplyLength,
-          allowSelling,
-          allowPromoOffer,
-          fallbackMessage,
-          handoverMessage,
-          handoverKeywords,
-          outOfHoursMessage,
-          aiProvider,
-          aiModel,
-          ...(encryptedAiApiKey !== undefined && { aiApiKeyEncrypted: encryptedAiApiKey }),
-          dailyChatLimit: Number(dailyChatLimit),
-          monthlyChatLimit: Number(monthlyChatLimit),
-          wahaBaseUrl,
-          ...(encryptedWahaApiKey !== undefined && { wahaApiKeyEncrypted: encryptedWahaApiKey }),
-          wahaSessionName,
-          n8nWebhookUrl,
-        },
+        data: chatbotData,
       });
     } else {
-      chatbot = await prisma.chatbotSetting.create({
+      await prisma.chatbotSetting.create({
         data: {
           userId,
           businessProfileId: profile.id,
-          botName,
-          toneStyle,
-          language,
-          useEmoji,
-          maxReplyLength,
-          allowSelling,
-          allowPromoOffer,
-          fallbackMessage,
-          handoverMessage,
-          handoverKeywords,
-          outOfHoursMessage,
-          aiProvider,
-          aiModel,
-          aiApiKeyEncrypted: encryptedAiApiKey,
-          dailyChatLimit: Number(dailyChatLimit) || 1000,
-          monthlyChatLimit: Number(monthlyChatLimit) || 30000,
-          wahaBaseUrl,
-          wahaApiKeyEncrypted: encryptedWahaApiKey,
-          wahaSessionName,
-          n8nWebhookUrl,
+          ...chatbotData,
         },
       });
     }
 
-    return Response.json({ success: true, profile, chatbot });
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error('POST /api/dashboard/chatbot/save Error:', error);
-    return Response.json({ error: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

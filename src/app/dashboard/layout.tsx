@@ -1,48 +1,90 @@
-import { ReactNode } from 'react';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+'use client';
+
+import { ReactNode, useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
-import { BotMessageSquare, LayoutDashboard, Settings, LogOut } from 'lucide-react';
+import { BotMessageSquare, Menu, X } from 'lucide-react';
 import Link from 'next/link';
+import LogoutButton from '@/components/LogoutButton';
 
-export default async function DashboardLayout({ children }: { children: ReactNode }) {
-  const session = await getServerSession(authOptions);
+export default function DashboardLayout({ children }: { children: ReactNode }) {
+  const { data: session, status } = useSession({
+    required: true,
+    onUnauthenticated() {
+      redirect('/login');
+    },
+  });
 
-  if (!session?.user) {
-    redirect('/api/auth/signin');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Prevent scrolling when mobile menu is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+  }, [mobileMenuOpen]);
+
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <span className="animate-pulse text-blue-600 font-medium">Memuat dashboard...</span>
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen bg-slate-50 flex">
-      {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col">
-        <div className="p-6">
+      {/* Mobile Sidebar Overlay */}
+      {mobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/50 z-40 md:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Sidebar (Desktop & Mobile) */}
+      <aside className={`fixed md:sticky top-0 left-0 z-50 w-64 h-screen bg-white border-r border-slate-200 flex flex-col transition-transform duration-300 md:translate-x-0 ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className="p-6 flex items-center justify-between">
           <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
             ChatBisnis AI
           </h1>
+          <button className="md:hidden text-slate-500" onClick={() => setMobileMenuOpen(false)}>
+            <X className="w-6 h-6" />
+          </button>
         </div>
         <nav className="flex-1 px-4 space-y-2">
-          <Link href="/dashboard/chatbot" className="flex items-center gap-3 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg transition-colors">
+          <Link 
+            href="/dashboard/chatbot" 
+            onClick={() => setMobileMenuOpen(false)}
+            className="flex items-center gap-3 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg transition-colors"
+          >
             <BotMessageSquare className="w-5 h-5" />
             <span className="font-medium">AI Chatbot</span>
           </Link>
         </nav>
         <div className="p-4 border-t border-slate-200">
-          <div className="flex items-center gap-3 px-3 py-2 text-slate-600 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer">
-            <LogOut className="w-5 h-5" />
-            <span className="font-medium">Logout</span>
+          <div className="mb-4 px-3 text-sm text-slate-500 truncate">
+            {session?.user?.email}
           </div>
+          <LogoutButton />
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col h-screen overflow-hidden">
+      <main className="flex-1 flex flex-col min-h-screen w-full md:w-[calc(100%-16rem)]">
         {/* Mobile Header */}
-        <header className="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-4 md:hidden">
-          <h1 className="text-xl font-bold text-blue-600">ChatBisnis AI</h1>
+        <header className="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-4 sticky top-0 z-30 md:hidden">
+          <div className="flex items-center gap-3">
+            <button className="text-slate-500 hover:text-slate-700" onClick={() => setMobileMenuOpen(true)}>
+              <Menu className="w-6 h-6" />
+            </button>
+            <h1 className="text-xl font-bold text-blue-600">ChatBisnis AI</h1>
+          </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-4 md:p-8">
+        <div className="flex-1 p-4 md:p-8 overflow-x-hidden">
           {children}
         </div>
       </main>
