@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getRequiredAdminOrResponse } from '@/lib/admin-helper';
+import { getRequiredAdminOrResponse, validateAdminMutationOrigin } from '@/lib/admin-helper';
 import { prisma } from '@/lib/prisma';
 import { encrypt } from '@/lib/crypto';
 import { z } from 'zod';
@@ -29,6 +29,8 @@ export async function GET() {
       isActive: s.isActive,
       notes: s.notes,
       hasApiKey: !!s.apiKeyEncrypted,
+      lastHealthCheckAt: s.lastHealthCheckAt,
+      lastError: s.lastError,
       createdAt: s.createdAt,
       updatedAt: s.updatedAt,
     }));
@@ -41,6 +43,9 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
+    const originError = validateAdminMutationOrigin(req);
+    if (originError) return originError;
+
     const admin = await getRequiredAdminOrResponse();    if (admin instanceof NextResponse) return admin;
 
     const body = await req.json();

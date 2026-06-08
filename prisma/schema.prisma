@@ -46,88 +46,89 @@ enum ChatLogStatus {
 // ─── Models ──────────────────────────────────────────────
 
 model User {
-  id               String            @id @default(uuid())
-  name             String
-  email            String            @unique
-  passwordHash     String
-  role             UserRole          @default(USER)
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  businessProfiles BusinessProfile[]
-  chatbotSettings  ChatbotSetting[]
-  knowledgeSources KnowledgeSource[]
-  knowledgeItems   KnowledgeItem[]
-  chatLogs         ChatLog[]
-  leads            Lead[]
-  whatsappSessions WhatsAppSession[]
-  subscriptions    Subscription[]
-  usageCounters    UsageCounter[]
-  auditLogs        AuditLog[]
+  id                 String              @id @default(uuid())
+  name               String
+  email              String              @unique
+  passwordHash       String
+  role               UserRole            @default(USER)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  businessProfiles   BusinessProfile[]
+  chatbotSettings    ChatbotSetting[]
+  knowledgeSources   KnowledgeSource[]
+  knowledgeItems     KnowledgeItem[]
+  chatLogs           ChatLog[]
+  leads              Lead[]
+  whatsappSessions   WhatsAppSession[]
+  subscriptions      Subscription[]
+  usageCounters      UsageCounter[]
+  auditLogs          AuditLog[]
   conversationStates ConversationState[]
+  Transaction        Transaction[]
 }
 
 model BusinessProfile {
-  id                  String            @id @default(uuid())
+  id                  String   @id @default(uuid())
   userId              String
   businessName        String
   businessIndustry    String
-  businessDescription String            @db.Text
-  address             String            @db.Text
+  businessDescription String   @db.Text
+  address             String   @db.Text
   openingHours        String
   adminPhone          String
   websiteUrl          String?
   instagramUrl        String?
   marketplaceUrl      String?
-  createdAt           DateTime          @default(now())
-  updatedAt           DateTime          @updatedAt
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
-  user                User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  chatbotSettings     ChatbotSetting[]
-  knowledgeSources    KnowledgeSource[]
-  knowledgeItems      KnowledgeItem[]
-  chatLogs            ChatLog[]
-  leads               Lead[]
-  whatsappSessions    WhatsAppSession[]
-  usageCounters       UsageCounter[]
-  conversationStates  ConversationState[]
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chatbotSettings    ChatbotSetting[]
+  knowledgeSources   KnowledgeSource[]
+  knowledgeItems     KnowledgeItem[]
+  chatLogs           ChatLog[]
+  leads              Lead[]
+  whatsappSessions   WhatsAppSession[]
+  usageCounters      UsageCounter[]
+  conversationStates ConversationState[]
 }
 
 model ChatbotSetting {
-  id                    String          @id @default(uuid())
+  id                    String   @id @default(uuid())
   userId                String
   businessProfileId     String
   botName               String
-  isActive              Boolean         @default(false)
-  toneStyle             String          @default("Profesional")
-  language              String          @default("id")
-  useEmoji              Boolean         @default(true)
-  maxReplyLength        String          @default("sedang")
-  allowSelling          Boolean         @default(true)
-  allowPromoOffer       Boolean         @default(true)
-  fallbackMessage       String          @db.Text
-  handoverMessage       String          @db.Text
-  handoverKeywords      String          @db.Text
-  outOfHoursMessage     String          @db.Text
-  aiProvider            String          @default("Flaz Cloud")
-  aiModel               String          @default("claude-haiku-4-5")
+  isActive              Boolean  @default(false)
+  toneStyle             String   @default("Profesional")
+  language              String   @default("id")
+  useEmoji              Boolean  @default(true)
+  maxReplyLength        String   @default("sedang")
+  allowSelling          Boolean  @default(true)
+  allowPromoOffer       Boolean  @default(true)
+  fallbackMessage       String   @db.Text
+  handoverMessage       String   @db.Text
+  handoverKeywords      String   @db.Text
+  outOfHoursMessage     String   @db.Text
+  aiProvider            String   @default("Flaz Cloud")
+  aiModel               String   @default("claude-haiku-4-5")
   aiApiKeyEncrypted     String?
-  dailyChatLimit        Int             @default(1000)
-  monthlyChatLimit      Int             @default(30000)
+  dailyChatLimit        Int      @default(1000)
+  monthlyChatLimit      Int      @default(30000)
   wahaBaseUrl           String?
   wahaApiKeyEncrypted   String?
   wahaServerId          String?
-  wahaSessionName       String          @unique
+  wahaSessionName       String   @unique
   n8nWebhookUrl         String?
   internalWebhookSecret String?
-  createdAt             DateTime        @default(now())
-  updatedAt             DateTime        @updatedAt
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 
-  user                  User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  businessProfile       BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
-  wahaServer            WahaServer?     @relation(fields: [wahaServerId], references: [id], onDelete: SetNull)
-  chatLogs              ChatLog[]
-  whatsappSessions      WhatsAppSession[]
-  conversationStates    ConversationState[]
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessProfile    BusinessProfile     @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+  wahaServer         WahaServer?         @relation(fields: [wahaServerId], references: [id], onDelete: SetNull)
+  chatLogs           ChatLog[]
+  whatsappSessions   WhatsAppSession[]
+  conversationStates ConversationState[]
 }
 
 model KnowledgeSource {
@@ -146,102 +147,102 @@ model KnowledgeSource {
   createdAt         DateTime              @default(now())
   updatedAt         DateTime              @updatedAt
 
-  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  businessProfile   BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
-  knowledgeItems    KnowledgeItem[]
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessProfile BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+  knowledgeItems  KnowledgeItem[]
 
   @@index([userId, businessProfileId, status])
 }
 
 model KnowledgeItem {
-  id                String          @id @default(uuid())
+  id                String   @id @default(uuid())
   userId            String
   businessProfileId String
   sourceId          String?
   category          String?
-  question          String?         @db.Text
-  answer            String?         @db.Text
+  question          String?  @db.Text
+  answer            String?  @db.Text
   productName       String?
   productCategory   String?
   price             Float?
   stockStatus       String?
-  description       String?         @db.Text
-  metadataJson      String?         @db.Text
-  searchableText    String          @db.Text
-  isActive          Boolean         @default(true)
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
+  description       String?  @db.Text
+  metadataJson      String?  @db.Text
+  searchableText    String   @db.Text
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
-  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  businessProfile   BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
-  source            KnowledgeSource? @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessProfile BusinessProfile  @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+  source          KnowledgeSource? @relation(fields: [sourceId], references: [id], onDelete: SetNull)
 
   @@index([userId, businessProfileId, sourceId, isActive])
 }
 
 model ChatLog {
-  id                String          @id @default(uuid())
+  id                String        @id @default(uuid())
   userId            String
   businessProfileId String
   chatbotSettingId  String
   customerPhone     String
   customerName      String?
-  messageIn         String          @db.Text
-  messageOut        String?         @db.Text
+  messageIn         String        @db.Text
+  messageOut        String?       @db.Text
   intent            String?
   aiUsed            String?
-  status            ChatLogStatus   @default(success)
-  errorMessage      String?         @db.Text
-  needsHuman        Boolean         @default(false)
-  tokenUsage        Int             @default(0)
-  createdAt         DateTime        @default(now())
+  status            ChatLogStatus @default(success)
+  errorMessage      String?       @db.Text
+  needsHuman        Boolean       @default(false)
+  tokenUsage        Int           @default(0)
+  createdAt         DateTime      @default(now())
 
-  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  businessProfile   BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
-  chatbotSetting    ChatbotSetting  @relation(fields: [chatbotSettingId], references: [id], onDelete: Cascade)
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessProfile BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+  chatbotSetting  ChatbotSetting  @relation(fields: [chatbotSettingId], references: [id], onDelete: Cascade)
 
   @@index([userId, businessProfileId, chatbotSettingId, createdAt])
   @@index([customerPhone, createdAt])
 }
 
 model Lead {
-  id                String          @id @default(uuid())
+  id                String     @id @default(uuid())
   userId            String
   businessProfileId String
   customerPhone     String
   customerName      String?
   interest          String?
   budget            Float?
-  address           String?         @db.Text
-  status            LeadStatus      @default(cold)
-  notes             String?         @db.Text
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
+  address           String?    @db.Text
+  status            LeadStatus @default(cold)
+  notes             String?    @db.Text
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
 
-  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  businessProfile   BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessProfile BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
 
   @@unique([businessProfileId, customerPhone])
   @@index([userId, businessProfileId, status, createdAt])
 }
 
 model WhatsAppSession {
-  id                String          @id @default(uuid())
+  id                String    @id @default(uuid())
   userId            String
   businessProfileId String
   chatbotSettingId  String
   wahaServerId      String?
-  sessionName       String          @unique
-  status            String          @default("disconnected") // disconnected, starting, qr, connected, failed
+  sessionName       String    @unique
+  status            String    @default("disconnected") // disconnected, starting, qr, connected, failed
   lastConnectedAt   DateTime?
-  lastError         String?         @db.Text
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
+  lastError         String?   @db.Text
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
-  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  businessProfile   BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
-  chatbotSetting    ChatbotSetting  @relation(fields: [chatbotSettingId], references: [id], onDelete: Cascade)
-  wahaServer        WahaServer?     @relation(fields: [wahaServerId], references: [id], onDelete: SetNull)
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessProfile BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+  chatbotSetting  ChatbotSetting  @relation(fields: [chatbotSettingId], references: [id], onDelete: Cascade)
+  wahaServer      WahaServer?     @relation(fields: [wahaServerId], references: [id], onDelete: SetNull)
 }
 
 // ─── Admin & System Models ───────────────────────────────
@@ -271,19 +272,21 @@ model SecretCredential {
 }
 
 model WahaServer {
-  id              String   @id @default(uuid())
-  name            String
-  baseUrl         String
-  apiKeyEncrypted String?  @db.Text
-  status          String   @default("active")
-  maxSessions     Int      @default(50)
-  currentSessions Int      @default(0)
-  isActive        Boolean  @default(true)
-  notes           String?  @db.Text
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id                String    @id @default(uuid())
+  name              String
+  baseUrl           String
+  apiKeyEncrypted   String?   @db.Text
+  status            String    @default("active")
+  maxSessions       Int       @default(50)
+  currentSessions   Int       @default(0)
+  isActive          Boolean   @default(true)
+  notes             String?   @db.Text
+  lastHealthCheckAt DateTime?
+  lastError         String?   @db.Text
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
-  chatbotSettings ChatbotSetting[]
+  chatbotSettings  ChatbotSetting[]
   whatsappSessions WhatsAppSession[]
 }
 
@@ -304,7 +307,8 @@ model Plan {
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
-  subscriptions       Subscription[]
+  subscriptions Subscription[]
+  Transaction   Transaction[]
 }
 
 model Subscription {
@@ -326,7 +330,7 @@ model UsageCounter {
   userId            String
   businessProfileId String?
   date              DateTime @db.Date
-  month             String   
+  month             String
   aiChats           Int      @default(0)
   aiTokens          Int      @default(0)
   whatsappMessages  Int      @default(0)
@@ -358,20 +362,38 @@ model AuditLog {
 }
 
 model ConversationState {
-  id                String          @id @default(uuid())
+  id                String    @id @default(uuid())
   userId            String
   businessProfileId String
   chatbotSettingId  String
   customerPhone     String
-  status            String          @default("ai_active") // ai_active or human_handover
+  status            String    @default("ai_active") // ai_active or human_handover
   handoverUntil     DateTime?
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
-  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  businessProfile   BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
-  chatbotSetting    ChatbotSetting  @relation(fields: [chatbotSettingId], references: [id], onDelete: Cascade)
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessProfile BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+  chatbotSetting  ChatbotSetting  @relation(fields: [chatbotSettingId], references: [id], onDelete: Cascade)
 
   @@unique([chatbotSettingId, customerPhone])
   @@index([userId, businessProfileId, status])
+}
+
+model Transaction {
+  id              String    @id @default(uuid())
+  userId          String
+  planId          String
+  amount          Float
+  status          String    @default("pending") // pending, paid, failed, expired
+  paymentProvider String?
+  externalId      String?   @unique
+  paidAt          DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan Plan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
 }

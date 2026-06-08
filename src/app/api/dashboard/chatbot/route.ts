@@ -1,4 +1,4 @@
-import { NextResponse as Response } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
@@ -7,15 +7,13 @@ export async function GET() {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const userId = (session.user as { id: string }).id;
 
     // Get Business Profile
-    let businessProfile = await prisma.businessProfile.findFirst({
-      where: { userId },
-    });
+    let businessProfile = await prisma.businessProfile.findFirst({ where: { userId } });
 
     if (!businessProfile) {
       businessProfile = await prisma.businessProfile.create({
@@ -39,7 +37,7 @@ export async function GET() {
     if (!chatbotSetting) {
       const crypto = await import('crypto');
       const uniqueSessionName = `session_${userId.slice(0, 8)}_${crypto.randomBytes(4).toString('hex')}`;
-      
+
       chatbotSetting = await prisma.chatbotSetting.create({
         data: {
           userId,
@@ -52,15 +50,40 @@ export async function GET() {
           wahaSessionName: uniqueSessionName,
         },
       });
-    } else {
-      // Don't expose decrypted keys to frontend
-      chatbotSetting.aiApiKeyEncrypted = chatbotSetting.aiApiKeyEncrypted ? '******' : null;
-      chatbotSetting.wahaApiKeyEncrypted = chatbotSetting.wahaApiKeyEncrypted ? '******' : null;
     }
 
-    return Response.json({ businessProfile, chatbotSetting });
+    // Don't expose decrypted keys to frontend
+    const safeChatbotSetting = {
+      ...chatbotSetting,
+      aiApiKeyEncrypted: chatbotSetting.aiApiKeyEncrypted ? '••••••••' : null,
+      wahaApiKeyEncrypted: null, // Never expose
+    };
+
+    // Count active knowledge items
+    const knowledgeCount = await prisma.knowledgeItem.count({
+      where: { userId, isActive: true },
+    });
+
+    // Get active subscription with plan
+    const subscription = await prisma.subscription.findFirst({
+      where: { userId, status: 'active' },
+      include: { plan: true },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const hasCustomAiKey = Boolean(chatbotSetting.aiApiKeyEncrypted);
+
+    return NextResponse.json({
+      businessProfile,
+      chatbotSetting: safeChatbotSetting,
+      knowledgeCount,
+      subscription,
+      activePlan: subscription?.plan || null,
+      hasCustomAiKey,
+    });
   } catch (error) {
-    console.error('GET /api/dashboard/chatbot Error:', error);
-    return Response.json({ error: 'Internal Server Error' }, { status: 500 });
+    const msg = error instanceof Error ? error.message : 'unknown';
+    console.error('GET /api/dashboard/chatbot Error:', msg);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

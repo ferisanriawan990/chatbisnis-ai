@@ -1,45 +1,28 @@
 import { NextResponse } from 'next/server';
-import { getRequiredAdminOrResponse } from '@/lib/admin-helper';
+import { getRequiredAdminOrResponse, validateAdminMutationOrigin } from '@/lib/admin-helper';
 import { prisma } from '@/lib/prisma';
 import { encrypt } from '@/lib/crypto';
-import { z } from 'zod';
 
-const updateApiKeySchema = z.object({
-  name: z.string().optional(),
-  value: z.string().optional(),
-  isActive: z.boolean().optional(),
-  description: z.string().optional(),
-});
-
-export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const admin = await getRequiredAdminOrResponse();    if (admin instanceof NextResponse) return admin;
+    const originError = validateAdminMutationOrigin(req);
+    if (originError) return originError;
 
-    const body = await req.json();
-    const parsed = updateApiKeySchema.safeParse(body);
+    const admin = await getRequiredAdminOrResponse();
+    if (admin instanceof NextResponse) return admin;
 
-    if (!parsed.success) {
-      return NextResponse.json({ error: 'Invalid data' }, { status: 400 });
-    }
+    const { id } = await params;
 
-    const updateData: Record<string, unknown> = { ...parsed.data };
-    if (parsed.data.value) {
-      updateData.encryptedValue = encrypt(parsed.data.value);
-      updateData.lastRotatedAt = new Date();
-      delete updateData.value;
-    }
-
-    const credential = await prisma.secretCredential.update({
-      where: { id: (await params).id },
-      data: updateData,
+    await prisma.secretCredential.delete({
+      where: { id }
     });
 
     await prisma.auditLog.create({
       data: {
         actorUserId: admin.id,
-        action: 'UPDATE_API_KEY',
+        action: 'DELETE_API_KEY',
         entityType: 'SecretCredential',
-        entityId: credential.id,
+        entityId: id,
       }
     });
 
@@ -49,20 +32,38 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   }
 }
 
-export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const admin = await getRequiredAdminOrResponse();    if (admin instanceof NextResponse) return admin;
+    const originError = validateAdminMutationOrigin(req);
+    if (originError) return originError;
 
-    await prisma.secretCredential.delete({
-      where: { id: (await params).id },
+    const admin = await getRequiredAdminOrResponse();
+    if (admin instanceof NextResponse) return admin;
+
+    const body = await req.json();
+    const { id } = await params;
+
+    const updateData: Record<string, unknown> = {};
+    if (typeof body.isActive === 'boolean') {
+      updateData.isActive = body.isActive;
+    }
+    
+    if (body.value) {
+      updateData.encryptedValue = encrypt(body.value);
+      updateData.lastRotatedAt = new Date();
+    }
+
+    const credential = await prisma.secretCredential.update({
+      where: { id },
+      data: updateData
     });
 
     await prisma.auditLog.create({
       data: {
         actorUserId: admin.id,
-        action: 'DELETE_API_KEY',
+        action: body.value ? 'ROTATE_API_KEY' : 'UPDATE_API_KEY_STATUS',
         entityType: 'SecretCredential',
-        entityId: (await params).id,
+        entityId: credential.id,
       }
     });
 

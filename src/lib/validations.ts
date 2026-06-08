@@ -35,7 +35,7 @@ export const businessProfileSchema = z.object({
 
 export const chatbotSettingSchema = z.object({
   botName: z.string().min(1, 'Nama bot wajib diisi').max(100),
-  isActive: z.boolean().optional(),
+  // NOTE: isActive intentionally excluded — use /api/dashboard/chatbot/toggle instead
   toneStyle: z.enum(['Profesional', 'Ramah', 'Santai', 'Sales / Soft Selling']).default('Profesional'),
   language: z.enum(['id', 'en']).default('id'),
   useEmoji: z.boolean().default(true),
@@ -51,10 +51,9 @@ export const chatbotSettingSchema = z.object({
   aiApiKey: z.string().max(500).optional().or(z.literal('')).or(z.literal('••••••••')),
   dailyChatLimit: z.coerce.number().int().min(1).max(100000).default(1000),
   monthlyChatLimit: z.coerce.number().int().min(1).max(10000000).default(30000),
-  wahaBaseUrl: z.string().url().optional().or(z.literal('')).nullable(),
-  wahaApiKey: z.string().max(500).optional().or(z.literal('')).or(z.literal('••••••••')),
-  wahaSessionName: z.string().max(100).optional(),
   n8nWebhookUrl: z.string().url().optional().or(z.literal('')).nullable(),
+  // WAHA fields (wahaBaseUrl, wahaApiKey, wahaSessionName, wahaServerId) are platform-managed.
+  // Users CANNOT set these via this schema. They are controlled by admin/platform.
 });
 
 // ─── Combined Save Schema ───────────────────────────────

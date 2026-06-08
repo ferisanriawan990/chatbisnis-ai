@@ -54,7 +54,7 @@ export default function AdminWahaServersPage() {
       const url = editingServer ? `/api/admin/waha-servers/${editingServer.id}` : '/api/admin/waha-servers';
       const method = editingServer ? 'PATCH' : 'POST';
       
-      const payload: any = { ...formData, maxSessions: Number(formData.maxSessions) };
+      const payload: Record<string, unknown> = { ...formData, maxSessions: Number(formData.maxSessions) };
       if (editingServer && !payload.apiKey) {
         delete payload.apiKey;
       }
@@ -150,6 +150,10 @@ export default function AdminWahaServersPage() {
             
             <div className="text-sm text-slate-600 space-y-2 flex-1">
               <div className="flex items-center gap-2">
+                <span className="font-medium min-w-[80px]">Status:</span> 
+                <span className={`text-xs font-semibold uppercase ${s.status === 'online' ? 'text-emerald-600' : 'text-amber-600'}`}>{s.status}</span>
+              </div>
+              <div className="flex items-center gap-2">
                 <span className="font-medium min-w-[80px]">Base URL:</span> 
                 <span className="truncate font-mono text-xs">{s.baseUrl}</span>
               </div>
@@ -157,6 +161,17 @@ export default function AdminWahaServersPage() {
                 <span className="font-medium min-w-[80px]">API Key:</span> 
                 <span className="font-mono text-xs text-slate-400">{s.hasApiKey ? '•••••••• (Configured)' : 'Not Configured'}</span>
               </div>
+              {s.lastHealthCheckAt && (
+                <div className="flex items-center gap-2">
+                  <span className="font-medium min-w-[80px]">Last Check:</span> 
+                  <span className="text-xs text-slate-500">{new Date(s.lastHealthCheckAt).toLocaleString()}</span>
+                </div>
+              )}
+              {s.lastError && (
+                <div className="mt-2 p-2 bg-red-50 text-red-700 rounded text-xs">
+                  <strong>Error:</strong> {s.lastError}
+                </div>
+              )}
               {s.notes && (
                 <div className="mt-4 p-3 bg-slate-50 rounded-lg text-xs italic text-slate-500">
                   {s.notes}

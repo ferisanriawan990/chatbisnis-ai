@@ -59,10 +59,44 @@ export default function AdminApiKeysPage() {
       const res = await fetch(`/api/admin/api-keys/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Gagal menghapus API Key');
       toast.success('API Key dihapus', { id: 'del' });
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchKeys();
+      fetchKeys();
     } catch (e: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
       toast.error(e.message, { id: 'del' });
+    }
+  };
+
+  const handleToggleStatus = async (id: string, currentStatus: boolean) => {
+    toast.loading('Memperbarui status...', { id: 'status' });
+    try {
+      const res = await fetch(`/api/admin/api-keys/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isActive: !currentStatus })
+      });
+      if (!res.ok) throw new Error('Gagal memperbarui status');
+      toast.success('Status diperbarui', { id: 'status' });
+      fetchKeys();
+    } catch (e: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
+      toast.error(e.message, { id: 'status' });
+    }
+  };
+
+  const handleRotateKey = async (id: string) => {
+    const newValue = prompt('Masukkan Secret Value baru untuk API Key ini:');
+    if (!newValue) return;
+    
+    toast.loading('Merotasi Key...', { id: 'rotate' });
+    try {
+      const res = await fetch(`/api/admin/api-keys/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ value: newValue })
+      });
+      if (!res.ok) throw new Error('Gagal merotasi Key');
+      toast.success('Key berhasil dirotasi', { id: 'rotate' });
+      fetchKeys();
+    } catch (e: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
+      toast.error(e.message, { id: 'rotate' });
     }
   };
 
@@ -134,8 +168,14 @@ export default function AdminApiKeysPage() {
                           {k.isActive ? 'Active' : 'Disabled'}
                         </span>
                       </td>
-                      <td className="py-4 text-right">
-                        <button onClick={() => handleDelete(k.id)} className="text-red-500 p-2 hover:bg-red-50 rounded-lg">
+                      <td className="py-4 text-right flex items-center justify-end gap-2">
+                        <button onClick={() => handleToggleStatus(k.id, k.isActive)} className="text-xs px-2 py-1 bg-slate-100 hover:bg-slate-200 rounded font-medium">
+                          {k.isActive ? 'Disable' : 'Enable'}
+                        </button>
+                        <button onClick={() => handleRotateKey(k.id)} className="text-xs px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-700 rounded font-medium">
+                          Rotate
+                        </button>
+                        <button onClick={() => handleDelete(k.id)} className="text-red-500 p-1 hover:bg-red-50 rounded">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </td>

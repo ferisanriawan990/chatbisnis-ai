@@ -155,10 +155,10 @@ export class ChatbotEngine {
           return { allowed: false, usage };
         }
 
-        // Increment pre-emptively
+        // Increment WhatsApp message only pre-emptively
         const updatedUsage = await tx.usageCounter.update({
           where: { id: usage.id },
-          data: { aiChats: { increment: 1 }, whatsappMessages: { increment: 1 } }
+          data: { whatsappMessages: { increment: 1 } }
         });
 
         return { allowed: true, usage: updatedUsage };
@@ -202,8 +202,9 @@ export class ChatbotEngine {
             businessProfileId: chatbotSetting.businessProfileId,
           });
           return null; // Asynchronous reply
-        } catch (e) {
-          console.error('N8N Webhook failed, falling back to AI.', e);
+        } catch (e: unknown) {
+          const msg = e instanceof Error ? e.message : 'unknown';
+          console.error('N8N Webhook failed, falling back to AI.', msg);
         }
       }
 
@@ -235,7 +236,7 @@ export class ChatbotEngine {
       let relevantKnowledge = '';
       let charCount = 0;
       for (const s of topItems) {
-        if (charCount > 2000) break; // Batas wajar
+        if (charCount > 1500) break; // Restrict context window length tightly
         relevantKnowledge += `- ${s.item.searchableText}\n`;
         charCount += s.item.searchableText.length;
       }
@@ -274,12 +275,33 @@ ${isOutOfHours ? `- SAAT INI ADALAH DI LUAR JAM OPERASIONAL. Pastikan untuk meny
       if (activePlan?.allowCustomApiKey && chatbotSetting.aiApiKeyEncrypted) {
         aiApiKey = decrypt(chatbotSetting.aiApiKeyEncrypted);
       } else {
-        const globalKey = await prisma.secretCredential.findUnique({ where: { key: 'FLAZ_API_KEY_GLOBAL' } });
-        if (globalKey) aiApiKey = decrypt(globalKey.encryptedValue);
+        // Only use global key if it exists AND isActive = true
+        const globalKey = await prisma.secretCredential.findUnique({
+          where: { key: 'FLAZ_API_KEY_GLOBAL' },
+        });
+        if (globalKey && globalKey.isActive === true) {
+          aiApiKey = decrypt(globalKey.encryptedValue);
+        }
       }
 
       if (!aiApiKey) {
-        return 'Sistem sedang tidak dikonfigurasi dengan benar (API Key belum diatur). Hubungi admin.';
+        await prisma.conversationState.update({
+          where: { chatbotSettingId_customerPhone: { chatbotSettingId: chatbotSetting.id, customerPhone } },
+          data: { status: 'human_handover' }
+        });
+        await this.logChat({
+          chatbotSettingId: chatbotSetting.id,
+          userId: chatbotSetting.userId,
+          businessProfileId: chatbotSetting.businessProfileId,
+          customerPhone,
+          customerName,
+          messageIn: sanitizedMessageIn,
+          messageOut: chatbotSetting.handoverMessage,
+          status: 'failed',
+          tokenUsage: 0,
+          needsHuman: true,
+        });
+        return chatbotSetting.handoverMessage;
       }
 
       const { reply, tokenUsage } = await AIService.generateReply({
@@ -290,10 +312,13 @@ ${isOutOfHours ? `- SAAT INI ADALAH DI LUAR JAM OPERASIONAL. Pastikan untuk meny
         apiKey: aiApiKey,
       });
 
-      // Update token usage
+      // Update token usage and AI chats on success
       await prisma.usageCounter.update({
         where: { id: usageResult.usage.id },
-        data: { aiTokens: { increment: tokenUsage } }
+        data: { 
+          aiTokens: { increment: tokenUsage },
+          aiChats: { increment: 1 }
+        }
       });
 
       await this.logChat({
@@ -311,8 +336,9 @@ ${isOutOfHours ? `- SAAT INI ADALAH DI LUAR JAM OPERASIONAL. Pastikan untuk meny
       });
 
       return reply;
-    } catch (error: any) {
-      console.error('ChatbotEngine Error:', error);
+    } catch (error: unknown) {
+      const errMsg = error instanceof Error ? error.message : 'Unknown error';
+      console.error('ChatbotEngine Error:', errMsg);
       
       // Jika bisa mendapatkan chatbotSetting untuk fallback
       const chatbotSetting = await prisma.chatbotSetting.findUnique({

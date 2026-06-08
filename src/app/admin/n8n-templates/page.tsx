@@ -5,7 +5,7 @@ import { FileJson, Download, Plus, Star, Tag } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function AdminN8nTemplatesPage() {
-  const [templates, setTemplates] = useState([
+  const templates = [
     {
       id: 'default-waha',
       name: 'WAHA to ChatBisnis Webhook',
@@ -14,7 +14,7 @@ export default function AdminN8nTemplatesPage() {
       audience: 'Semua User',
       fileUrl: '/WAHA_to_Vercel_n8n_Workflow.json'
     }
-  ]);
+  ];
 
   const handleDownload = (url: string, name: string) => {
     const link = document.createElement('a');

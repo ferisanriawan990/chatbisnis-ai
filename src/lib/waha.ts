@@ -12,11 +12,7 @@ export class WAHAService {
   private apiKey: string;
 
   constructor(config: WAHAConfig) {
-    let url = config.baseUrl.replace(/\/$/, '');
-    if (process.env.NODE_ENV === 'production' && !url.includes('localhost') && !url.startsWith('https://')) {
-      url = url.replace('http://', 'https://');
-    }
-    this.baseUrl = url;
+    this.baseUrl = config.baseUrl.replace(/\/$/, '');
     this.apiKey = config.apiKey;
   }
 

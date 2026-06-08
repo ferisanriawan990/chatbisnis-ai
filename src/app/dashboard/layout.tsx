@@ -4,7 +4,7 @@ import { ReactNode, useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
 import { usePathname } from 'next/navigation';
-import { BotMessageSquare, Menu, X, Settings, FileJson, Users, MessageSquare, CreditCard } from 'lucide-react';
+import { BotMessageSquare, Menu, X, Settings, FileJson, Users, MessageSquare, CreditCard, LayoutDashboard } from 'lucide-react';
 import Link from 'next/link';
 import LogoutButton from '@/components/LogoutButton';
 
@@ -58,6 +58,16 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           </button>
         </div>
         <nav className="flex-1 px-4 space-y-2">
+          <Link 
+            href="/dashboard" 
+            onClick={() => setMobileMenuOpen(false)}
+            className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+              pathname === '/dashboard' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+            }`}
+          >
+            <LayoutDashboard className="w-5 h-5" />
+            <span className="font-medium">Overview</span>
+          </Link>
           <Link 
             href="/dashboard/chatbot" 
             onClick={() => setMobileMenuOpen(false)}

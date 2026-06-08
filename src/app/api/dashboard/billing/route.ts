@@ -61,8 +61,9 @@ export async function GET() {
       availablePlans
     });
 
-  } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
-    console.error('Error fetching billing info:', error);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : 'unknown';
+    console.error('Error fetching billing info:', msg);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

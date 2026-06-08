@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getRequiredAdminOrResponse } from '@/lib/admin-helper';
+import { getRequiredAdminOrResponse, validateAdminMutationOrigin } from '@/lib/admin-helper';
 import { prisma } from '@/lib/prisma';
 import { encrypt } from '@/lib/crypto';
 import { z } from 'zod';
@@ -40,8 +40,11 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const admin = await getRequiredAdminOrResponse();    if (admin instanceof NextResponse) return admin;
-    if (admin instanceof NextResponse) return admin; // Return 403 if not admin
+    const originError = validateAdminMutationOrigin(req);
+    if (originError) return originError;
+
+    const admin = await getRequiredAdminOrResponse();
+    if (admin instanceof NextResponse) return admin;
 
     const body = await req.json();
     const parsed = apiKeySchema.safeParse(body);

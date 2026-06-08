@@ -55,7 +55,7 @@ export async function parseExcel(buffer: Buffer): Promise<ParsedItem[]> {
     });
 
     return items;
-  } catch { // eslint-disable-line @typescript-eslint/no-unused-vars
+  } catch {
     throw new Error('Gagal membaca file Excel. Pastikan formatnya benar.');
   }
 }
@@ -68,7 +68,6 @@ export async function parseCsv(buffer: Buffer): Promise<ParsedItem[]> {
         header: true,
         skipEmptyLines: true,
         complete: (results) => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const rawData = results.data as Record<string, unknown>[];
           const parsed = rawData.map((row) => ({
             question: String(row.pertanyaan || row.question || ''),

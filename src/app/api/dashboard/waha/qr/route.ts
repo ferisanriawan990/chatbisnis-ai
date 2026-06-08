@@ -12,22 +12,28 @@ export async function GET() {
     }
 
     const userId = (session.user as { id: string }).id;
-    const chatbot = await prisma.chatbotSetting.findFirst({ where: { userId } });
+    const chatbot = await prisma.chatbotSetting.findFirst({
+      where: { userId },
+      include: { wahaServer: true },
+    });
 
     if (!chatbot) {
       return NextResponse.json({ error: 'Chatbot setting tidak ditemukan' }, { status: 404 });
     }
 
-    if (!chatbot.wahaBaseUrl || !chatbot.wahaApiKeyEncrypted) {
+    // Read config from WahaServer relation
+    const wahaServer = chatbot.wahaServer;
+    if (!wahaServer || !wahaServer.apiKeyEncrypted || !chatbot.wahaSessionName) {
       return NextResponse.json({ error: 'WAHA tidak dikonfigurasi' }, { status: 400 });
     }
 
-    const waha = WAHAService.fromEncrypted(chatbot.wahaBaseUrl, chatbot.wahaApiKeyEncrypted);
+    const waha = WAHAService.fromEncrypted(wahaServer.baseUrl, wahaServer.apiKeyEncrypted);
     const qrData = await waha.getQR(chatbot.wahaSessionName);
 
     return NextResponse.json({ qr: qrData });
   } catch (error) {
-    console.error('GET /api/dashboard/waha/qr Error:', error);
+    const msg = error instanceof Error ? error.message : 'unknown';
+    console.error('GET /api/dashboard/waha/qr Error:', msg);
     return NextResponse.json({ error: 'Gagal mengambil QR' }, { status: 500 });
   }
 }

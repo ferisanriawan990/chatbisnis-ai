@@ -76,7 +76,8 @@ export async function POST(req: Request) {
 
     const chatbotData = {
       botName: data.botName,
-      isActive: data.isActive ?? chatbot?.isActive ?? false,
+      // isActive is preserved from existing value — only changeable via /toggle
+      isActive: chatbot?.isActive ?? false,
       toneStyle: data.toneStyle,
       language: data.language,
       useEmoji: data.useEmoji,
@@ -92,8 +93,10 @@ export async function POST(req: Request) {
       ...(encryptedAiApiKey !== undefined && { aiApiKeyEncrypted: encryptedAiApiKey }),
       dailyChatLimit: data.dailyChatLimit,
       monthlyChatLimit: data.monthlyChatLimit,
+      // wahaSessionName is preserved — never overwritten from user input
       wahaSessionName: sessionName,
       n8nWebhookUrl: data.n8nWebhookUrl || null,
+      // wahaBaseUrl, wahaApiKeyEncrypted, wahaServerId are NEVER set from user save
     };
 
     if (chatbot) {

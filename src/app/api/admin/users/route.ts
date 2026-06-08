@@ -14,7 +14,14 @@ export async function GET() {
         role: true,
         createdAt: true,
         subscriptions: {
-          include: { plan: true }
+          include: { plan: true },
+          where: { status: 'active' }
+        },
+        chatbotSettings: {
+          select: { isActive: true, botName: true }
+        },
+        whatsappSessions: {
+          select: { status: true, sessionName: true }
         }
       },
       orderBy: { createdAt: 'desc' }

@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { WAHAService } from '@/lib/waha';
+import { syncWahaServerSessionCount } from '@/lib/waha-session-sync';
 
 export async function GET() {
   try {
@@ -12,49 +13,61 @@ export async function GET() {
     }
 
     const userId = (session.user as { id: string }).id;
-    const chatbot = await prisma.chatbotSetting.findFirst({ where: { userId } });
+    const chatbot = await prisma.chatbotSetting.findFirst({
+      where: { userId },
+      include: { wahaServer: true },
+    });
 
     if (!chatbot) {
       return NextResponse.json({ error: 'Chatbot setting tidak ditemukan' }, { status: 404 });
     }
 
-    if (!chatbot.wahaBaseUrl || !chatbot.wahaApiKeyEncrypted) {
+    // Read config from WahaServer relation
+    const wahaServer = chatbot.wahaServer;
+    if (!wahaServer || !wahaServer.apiKeyEncrypted || !chatbot.wahaSessionName) {
       return NextResponse.json({ status: 'disconnected' });
     }
 
-    const waha = WAHAService.fromEncrypted(chatbot.wahaBaseUrl, chatbot.wahaApiKeyEncrypted);
-    const status = await waha.getStatus(chatbot.wahaSessionName);
-
-    // Get server name if exists
-    let serverName = null;
-    if (chatbot.wahaServerId) {
-      const server = await prisma.wahaServer.findUnique({ where: { id: chatbot.wahaServerId } });
-      serverName = server?.name;
+    let statusValue = 'disconnected';
+    try {
+      const waha = WAHAService.fromEncrypted(wahaServer.baseUrl, wahaServer.apiKeyEncrypted);
+      statusValue = await waha.getStatus(chatbot.wahaSessionName);
+    } catch {
+      statusValue = 'disconnected';
     }
 
     // Get last connection data
-    const wpSession = await prisma.whatsAppSession.findUnique({ where: { sessionName: chatbot.wahaSessionName } });
+    const wpSession = await prisma.whatsAppSession.findUnique({
+      where: { sessionName: chatbot.wahaSessionName },
+    });
 
-    // Update session status in DB to match
-    if (wpSession && wpSession.status !== status) {
+    // Update session status in DB if changed
+    if (wpSession && wpSession.status !== statusValue) {
       await prisma.whatsAppSession.update({
         where: { id: wpSession.id },
         data: {
-          status,
-          lastConnectedAt: status === 'connected' ? new Date() : wpSession.lastConnectedAt
-        }
+          status: statusValue,
+          lastConnectedAt:
+            statusValue === 'connected' ? new Date() : wpSession.lastConnectedAt,
+        },
       });
+
+      // Sync counter when status changes
+      if (chatbot.wahaServerId) {
+        await syncWahaServerSessionCount(chatbot.wahaServerId);
+      }
     }
 
     return NextResponse.json({
-      status,
+      status: statusValue,
       sessionName: chatbot.wahaSessionName,
-      serverName,
+      serverName: wahaServer.name,
       lastConnectedAt: wpSession?.lastConnectedAt,
-      lastError: wpSession?.lastError
+      lastError: wpSession?.lastError,
     });
   } catch (error) {
-    console.error('GET /api/dashboard/waha/status Error:', error);
+    const msg = error instanceof Error ? error.message : 'unknown';
+    console.error('GET /api/dashboard/waha/status Error:', msg);
     return NextResponse.json({ status: 'disconnected' });
   }
 }

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Bot, Zap, MessageCircle, TrendingUp, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { Bot, Zap, MessageCircle, TrendingUp, ShieldCheck } from 'lucide-react';
 
 export default function Home() {
   return (
@@ -111,7 +111,7 @@ export default function Home() {
                 </div>
                 <div className="bg-white p-4 rounded-2xl shadow-sm self-start max-w-[80%] rounded-tl-sm text-sm">Ada jual sepatu lari ukuran 42?</div>
                 <div className="bg-blue-600 text-white p-4 rounded-2xl shadow-sm self-end max-w-[80%] rounded-br-sm ml-auto text-sm">
-                  Tentu! Kami memiliki sepatu lari "SpeedRunner" ukuran 42 yang sedang ready stock. Harganya Rp 450.000. Ingin kami bantu proses pesanannya? 👟
+                  Tentu! Kami memiliki sepatu lari &ldquo;SpeedRunner&rdquo; ukuran 42 yang sedang ready stock. Harganya Rp 450.000. Ingin kami bantu proses pesanannya? 👟
                 </div>
               </div>
             </div>
@@ -135,7 +135,7 @@ export default function Home() {
               <div className="text-6xl font-black text-slate-800 absolute -top-8 left-1/2 -translate-x-1/2 z-0">2</div>
               <div className="relative z-10 pt-4">
                 <h3 className="text-xl font-bold mb-2">Scan QR WA</h3>
-                <p className="text-slate-400">Klik "Mulai Sesi" dan scan QR Code menggunakan WhatsApp Business Anda.</p>
+                <p className="text-slate-400">Klik &ldquo;Mulai Sesi&rdquo; dan scan QR Code menggunakan WhatsApp Business Anda.</p>
               </div>
             </div>
             <div className="relative">

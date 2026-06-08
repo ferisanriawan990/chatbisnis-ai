@@ -30,6 +30,17 @@ export async function getRequiredAdminOrResponse() {
   return user;
 }
 
+export function validateAdminMutationOrigin(req: Request) {
+  const referer = req.headers.get('referer');
+  const origin = req.headers.get('origin');
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || '';
+  
+  if (appUrl && (!referer?.startsWith(appUrl) && !origin?.startsWith(appUrl))) {
+    return NextResponse.json({ error: 'Invalid Origin/Referer' }, { status: 403 });
+  }
+  return null;
+}
+
 export async function logAdminAction(
   actorUserId: string,
   action: string,

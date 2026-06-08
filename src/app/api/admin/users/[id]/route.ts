@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getRequiredAdminOrResponse } from '@/lib/admin-helper';
+import { getRequiredAdminOrResponse, validateAdminMutationOrigin } from '@/lib/admin-helper';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
@@ -9,6 +9,9 @@ const updateUserSchema = z.object({
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const originError = validateAdminMutationOrigin(req);
+    if (originError) return originError;
+
     const admin = await getRequiredAdminOrResponse();    if (admin instanceof NextResponse) return admin;
 
     const body = await req.json();
@@ -29,7 +32,6 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       data: { role: parsed.data.role },
     });
 
-    // @ts-ignore - Phantom IDE error due to cached Prisma Client types
     await prisma.auditLog.create({
       data: {
         actorUserId: admin.id,

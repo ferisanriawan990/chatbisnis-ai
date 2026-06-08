@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Bot, Save, Power, PowerOff, UploadCloud, Database, ShieldAlert, Key, MessageSquare, Users, Download, Trash2 } from 'lucide-react';
+import { Bot, Save, Power, PowerOff, UploadCloud, Database, ShieldAlert, Key, MessageSquare, Download, Trash2, CheckCircle2 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import Link from 'next/link';
 
@@ -12,16 +12,10 @@ export default function ChatbotDashboard() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [analytics, setAnalytics] = useState({ todayChats: 0, monthlyChats: 0, newLeads: 0, needsHuman: 0 });
-  const [knowledgeSources, setKnowledgeSources] = useState<any[]>([]) // eslint-disable-line @typescript-eslint/no-explicit-any
-  const [chatLogs, setChatLogs] = useState<any[]>([]) // eslint-disable-line @typescript-eslint/no-explicit-any
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [leads, setLeads] = useState<any[]>([]) // eslint-disable-line @typescript-eslint/no-explicit-any
+  const [knowledgeSources, setKnowledgeSources] = useState<any[]>([]); // eslint-disable-line @typescript-eslint/no-explicit-any
+  const [chatLogs, setChatLogs] = useState<any[]>([]); // eslint-disable-line @typescript-eslint/no-explicit-any
   const [wahaStatus, setWahaStatus] = useState('disconnected');
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [qrCode, setQrCode] = useState<string | null>(null);
   const [manualForm, setManualForm] = useState({ type: 'qa', question: '', answer: '', productName: '', productCategory: '', price: 0, stockStatus: 'Tersedia', description: '' });
-  
 
   const [form, setForm] = useState({
     businessName: '', businessIndustry: '', businessDescription: '', address: '', openingHours: '', adminPhone: '', websiteUrl: '', instagramUrl: '', marketplaceUrl: '',
@@ -32,22 +26,12 @@ export default function ChatbotDashboard() {
     isActive: false,
   });
 
-  const fetchQrCode = useCallback(async () => {
-    const res = await fetch('/api/dashboard/waha/qr');
-    if (res.ok) {
-      const { qr } = await res.json();
-      setQrCode(qr);
-    }
-  }, []);
-
   const fetchInitialData = useCallback(async () => {
     try {
-      const [chatbotRes, analyticsRes, knowledgeRes, logsRes, leadsRes, wahaStatusRes] = await Promise.all([
+      const [chatbotRes, knowledgeRes, logsRes, wahaStatusRes] = await Promise.all([
         fetch('/api/dashboard/chatbot'),
-        fetch('/api/dashboard/analytics'),
         fetch('/api/dashboard/knowledge'),
         fetch('/api/dashboard/chat-logs?limit=5'),
-        fetch('/api/dashboard/leads?limit=5'),
         fetch('/api/dashboard/waha/status'),
       ]);
 
@@ -61,29 +45,22 @@ export default function ChatbotDashboard() {
         }
       }
 
-      if (analyticsRes.ok) setAnalytics(await analyticsRes.json());
       if (knowledgeRes.ok) setKnowledgeSources((await knowledgeRes.json()).sources || []);
       if (logsRes.ok) setChatLogs((await logsRes.json()).logs || []);
-      if (leadsRes.ok) setLeads((await leadsRes.json()).leads || []);
       
       if (wahaStatusRes.ok) {
         const { status } = await wahaStatusRes.json();
         setWahaStatus(status);
-        if (status === 'qr') {
-          fetchQrCode();
-        }
       }
     } catch {
-      toast.error('Gagal mengambil sebagian data');
+      toast.error('Gagal mengambil data chatbot');
     } finally {
       setLoading(false);
     }
-  }, [fetchQrCode]);
+  }, []);
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchInitialData();
-  }, [fetchInitialData]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { void fetchInitialData(); }, []);
 
   const handleSave = async () => {
     setSaving(true);
@@ -118,6 +95,15 @@ export default function ChatbotDashboard() {
         const { isActive } = await res.json();
         setForm(prev => ({ ...prev, isActive }));
         toast.success(isActive ? 'Bot diaktifkan' : 'Bot dimatikan');
+      } else {
+        const err = await res.json();
+        // Show detailed error checklist if provided
+        if (err.missing) {
+          const missingItems = err.missing.map((m: string) => `• ${m}`).join('\\n');
+          toast.error(`Lengkapi setup:\\n${missingItems}`, { duration: 5000 });
+        } else {
+          toast.error(err.error || 'Gagal mengubah status bot');
+        }
       }
     } catch {
       toast.error('Gagal mengubah status bot');
@@ -204,7 +190,13 @@ export default function ChatbotDashboard() {
     }
   };
 
-  if (loading) return <div className="flex items-center justify-center h-full"><span className="animate-pulse text-blue-600 font-medium">Memuat data dashboard...</span></div>;
+  if (loading) return <div className="flex items-center justify-center h-full"><span className="animate-pulse text-blue-600 font-medium">Memuat pengaturan...</span></div>;
+
+  const stepsComplete = {
+    profile: !!form.businessName,
+    knowledge: knowledgeSources.length > 0,
+    waha: wahaStatus === 'connected'
+  };
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-20">
@@ -217,7 +209,7 @@ export default function ChatbotDashboard() {
             <Bot className="w-8 h-8 text-blue-600" />
             Pengaturan Chatbot AI
           </h1>
-          <p className="text-slate-500 mt-1">Kelola asisten virtual WhatsApp untuk bisnis Anda.</p>
+          <p className="text-slate-500 mt-1">Lengkapi langkah-langkah di bawah untuk mengaktifkan asisten virtual Anda.</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <button onClick={handleToggle} className={`px-4 py-2 rounded-xl font-medium flex items-center gap-2 transition-all ${form.isActive ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'}`}>
@@ -231,50 +223,34 @@ export default function ChatbotDashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex items-center gap-4">
-           <div className="bg-blue-50 p-3 rounded-lg"><MessageSquare className="w-6 h-6 text-blue-600" /></div>
-           <div><p className="text-sm text-slate-500">Chat Hari Ini</p><p className="text-xl font-bold">{analytics.todayChats}</p></div>
-        </div>
-        <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex items-center gap-4">
-           <div className="bg-emerald-50 p-3 rounded-lg"><Users className="w-6 h-6 text-emerald-600" /></div>
-           <div><p className="text-sm text-slate-500">Lead Baru (7H)</p><p className="text-xl font-bold">{analytics.newLeads}</p></div>
-        </div>
-        <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex items-center gap-4">
-           <div className="bg-amber-50 p-3 rounded-lg"><ShieldAlert className="w-6 h-6 text-amber-600" /></div>
-           <div><p className="text-sm text-slate-500">Butuh Admin</p><p className="text-xl font-bold text-amber-600">{analytics.needsHuman}</p></div>
-        </div>
-        <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex items-center gap-4">
-           <div className="bg-purple-50 p-3 rounded-lg"><Bot className="w-6 h-6 text-purple-600" /></div>
-           <div>
-            <p className="text-sm text-slate-500">Status WAHA</p>
-            <p className={`text-xl font-bold ${wahaStatus === 'connected' ? 'text-emerald-600' : 'text-amber-600 capitalize'}`}>{wahaStatus}</p>
-          </div>
-        </div>
-      </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
           
-          <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-            <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-              <Database className="w-5 h-5 text-indigo-500" /> Profil Bisnis
+          <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-4">
+              {stepsComplete.profile ? <CheckCircle2 className="w-8 h-8 text-emerald-400 opacity-20" /> : <span className="text-4xl font-black text-slate-100">1</span>}
+            </div>
+            <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2 relative z-10">
+              <Database className="w-5 h-5 text-indigo-500" /> Step 1: Profil Bisnis
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div><label className="block text-sm font-medium text-slate-700 mb-1">Nama Bisnis</label><input name="businessName" value={form.businessName} onChange={handleChange} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" /></div>
-              <div><label className="block text-sm font-medium text-slate-700 mb-1">Bidang Usaha</label><input name="businessIndustry" value={form.businessIndustry} onChange={handleChange} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" /></div>
-              <div className="md:col-span-2"><label className="block text-sm font-medium text-slate-700 mb-1">Deskripsi Singkat (Diberitahukan ke AI)</label><textarea name="businessDescription" value={form.businessDescription} onChange={handleChange} rows={3} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"></textarea></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10">
+              <div><label className="block text-sm font-medium text-slate-700 mb-1">Nama Bisnis *</label><input name="businessName" value={form.businessName} onChange={handleChange} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Cth: Warung Kopi Mantap" /></div>
+              <div><label className="block text-sm font-medium text-slate-700 mb-1">Bidang Usaha *</label><input name="businessIndustry" value={form.businessIndustry} onChange={handleChange} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Cth: F&B / Restoran" /></div>
+              <div className="md:col-span-2"><label className="block text-sm font-medium text-slate-700 mb-1">Deskripsi Singkat (Diberitahukan ke AI) *</label><textarea name="businessDescription" value={form.businessDescription} onChange={handleChange} rows={3} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Cth: Kami menjual kopi susu kekinian dengan harga terjangkau..."></textarea></div>
               <div><label className="block text-sm font-medium text-slate-700 mb-1">Jam Operasional</label><input name="openingHours" value={form.openingHours} onChange={handleChange} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none" /></div>
               <div><label className="block text-sm font-medium text-slate-700 mb-1">Nomor Admin (Opsional)</label><input name="adminPhone" value={form.adminPhone} onChange={handleChange} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none" /></div>
-              <div className="md:col-span-2"><label className="block text-sm font-medium text-slate-700 mb-1">Alamat</label><input name="address" value={form.address} onChange={handleChange} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none" /></div>
+              <div className="md:col-span-2"><label className="block text-sm font-medium text-slate-700 mb-1">Alamat Lengkap</label><input name="address" value={form.address} onChange={handleChange} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none" /></div>
             </div>
           </section>
 
-          <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-            <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-              <Bot className="w-5 h-5 text-purple-500" /> Pengaturan Gaya AI
+          <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-4">
+               <span className="text-4xl font-black text-slate-100">2</span>
+            </div>
+            <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2 relative z-10">
+              <Bot className="w-5 h-5 text-purple-500" /> Step 2: Pengaturan Gaya AI
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10">
               <div><label className="block text-sm font-medium text-slate-700 mb-1">Nama Bot</label><input name="botName" value={form.botName} onChange={handleChange} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none" /></div>
               <div><label className="block text-sm font-medium text-slate-700 mb-1">Gaya Bahasa</label>
                 <select name="toneStyle" value={form.toneStyle} onChange={handleChange} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none">
@@ -282,29 +258,31 @@ export default function ChatbotDashboard() {
                 </select>
               </div>
               <div className="flex flex-col gap-2">
-                <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" name="useEmoji" checked={form.useEmoji} onChange={handleChange} className="w-4 h-4 text-purple-600 rounded" /><span className="text-sm font-medium text-slate-700">Gunakan Emoji</span></label>
-                <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" name="allowSelling" checked={form.allowSelling} onChange={handleChange} className="w-4 h-4 text-purple-600 rounded" /><span className="text-sm font-medium text-slate-700">Izinkan Promo</span></label>
+                <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" name="useEmoji" checked={form.useEmoji} onChange={handleChange} className="w-4 h-4 text-purple-600 rounded" /><span className="text-sm font-medium text-slate-700">Gunakan Emoji dalam membalas pesan</span></label>
+                <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" name="allowSelling" checked={form.allowSelling} onChange={handleChange} className="w-4 h-4 text-purple-600 rounded" /><span className="text-sm font-medium text-slate-700">Izinkan AI menawarkan Promo</span></label>
               </div>
             </div>
           </section>
 
-          <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2"><Database className="w-5 h-5 text-blue-500" /> Knowledge Base</h2>
+          <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-4">
+              {stepsComplete.knowledge ? <CheckCircle2 className="w-8 h-8 text-emerald-400 opacity-20" /> : <span className="text-4xl font-black text-slate-100">3</span>}
+            </div>
+            <div className="flex justify-between items-center mb-4 relative z-10">
+              <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2"><Database className="w-5 h-5 text-blue-500" /> Step 3: Knowledge Base *</h2>
               <Link href="/api/dashboard/knowledge/template" className="text-blue-600 font-medium hover:underline flex items-center gap-1">
-                <Download className="w-4 h-4" /> Download Template Excel
+                <Download className="w-4 h-4" /> Template Excel
               </Link>
             </div>
             
             <input type="file" ref={fileInputRef} className="hidden" accept=".xlsx,.xls,.csv,.pdf,.docx" onChange={handleUpload} disabled={uploading} />
-            <div onClick={() => fileInputRef.current?.click()} className="border border-dashed border-slate-300 rounded-xl p-8 text-center bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer mb-6">
+            <div onClick={() => fileInputRef.current?.click()} className="border border-dashed border-slate-300 rounded-xl p-8 text-center bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer mb-6 relative z-10">
               <UploadCloud className={`w-10 h-10 text-blue-500 mx-auto mb-2 ${uploading ? 'animate-bounce' : ''}`} />
-              <p className="font-medium text-slate-700">{uploading ? 'Memproses...' : 'Upload Data Knowledge'}</p>
+              <p className="font-medium text-slate-700">{uploading ? 'Memproses...' : 'Upload Data Knowledge (Wajib minimal 1)'}</p>
               <p className="text-sm text-slate-500 mt-1">Excel, CSV, PDF, atau DOCX (Max 10MB)</p>
             </div>
             
-            
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-6">
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-6 relative z-10">
               <h3 className="font-semibold text-sm mb-3">Input Data Manual</h3>
               <select 
                 value={manualForm.type} 
@@ -332,7 +310,7 @@ export default function ChatbotDashboard() {
               <button onClick={handleManualSubmit} className="mt-3 w-full bg-blue-100 text-blue-700 py-2 rounded text-sm font-semibold hover:bg-blue-200">Tambah Data</button>
             </div>
 
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto relative z-10">
               <table className="w-full text-sm text-left text-slate-600">
                 <thead className="text-xs text-slate-500 uppercase bg-slate-50">
                   <tr>
@@ -362,11 +340,11 @@ export default function ChatbotDashboard() {
             </div>
           </section>
 
-          <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-            <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><MessageSquare className="w-5 h-5 text-indigo-500" /> Chat Logs (5 Terakhir)</h2>
-            <div className="space-y-3">
+          <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 relative overflow-hidden">
+            <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2 relative z-10"><MessageSquare className="w-5 h-5 text-indigo-500" /> Chat Logs (5 Terakhir)</h2>
+            <div className="space-y-3 relative z-10">
               {chatLogs.length === 0 ? (
-                <div className="text-center py-8 text-slate-500 border border-slate-100 rounded-xl bg-slate-50">Belum ada percakapan.</div>
+                <div className="text-center py-8 text-slate-500 border border-slate-100 rounded-xl bg-slate-50">Belum ada percakapan terbaru.</div>
               ) : chatLogs.map(log => (
                 <div key={log.id} className="p-3 border border-slate-100 rounded-lg bg-slate-50">
                   <div className="flex justify-between items-center mb-2">
@@ -378,29 +356,37 @@ export default function ChatbotDashboard() {
                 </div>
               ))}
             </div>
+            <div className="mt-4 text-center relative z-10">
+              <Link href="/dashboard/chat-logs" className="text-sm text-blue-600 hover:underline">Lihat Semua Logs</Link>
+            </div>
           </section>
 
         </div>
 
         <div className="space-y-8">
-          <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-            <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><ShieldAlert className="w-5 h-5 text-amber-500" /> Aturan & Fallback</h2>
-            <div className="space-y-4">
-              <div><label className="block text-sm font-medium text-slate-700 mb-1">Fallback Message</label><textarea name="fallbackMessage" value={form.fallbackMessage} onChange={handleChange} rows={2} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none"></textarea></div>
-              <div><label className="block text-sm font-medium text-slate-700 mb-1">Handover Message</label><textarea name="handoverMessage" value={form.handoverMessage} onChange={handleChange} rows={2} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none"></textarea></div>
-              <div><label className="block text-sm font-medium text-slate-700 mb-1">Handover Keywords (koma)</label><input name="handoverKeywords" value={form.handoverKeywords} onChange={handleChange} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none" /></div>
-            </div>
-          </section>
 
-          <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-            <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><Key className="w-5 h-5 text-emerald-500" /> Koneksi WhatsApp (WAHA)</h2>
-            <div className="space-y-4">
-              <p className="text-sm text-slate-600">Status koneksi WAHA Anda saat ini: <span className={`font-bold ${wahaStatus === 'connected' ? 'text-emerald-600' : 'text-amber-600 capitalize'}`}>{wahaStatus}</span></p>
+          <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-4">
+              {stepsComplete.waha ? <CheckCircle2 className="w-8 h-8 text-emerald-400 opacity-20" /> : <span className="text-4xl font-black text-slate-100">4</span>}
+            </div>
+            <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2 relative z-10"><Key className="w-5 h-5 text-emerald-500" /> Step 4: Hubungkan WhatsApp</h2>
+            <div className="space-y-4 relative z-10">
+              <p className="text-sm text-slate-600">Status WhatsApp Anda saat ini: <span className={`font-bold ${wahaStatus === 'connected' ? 'text-emerald-600' : 'text-amber-600 capitalize'}`}>{wahaStatus}</span></p>
               <Link href="/dashboard/waha" className="inline-block w-full text-center px-4 py-2 bg-emerald-100 text-emerald-700 font-medium rounded-lg hover:bg-emerald-200 transition-colors">
                 Kelola Koneksi WhatsApp
               </Link>
             </div>
           </section>
+
+          <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+            <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><ShieldAlert className="w-5 h-5 text-amber-500" /> Aturan Lanjutan & Fallback</h2>
+            <div className="space-y-4">
+              <div><label className="block text-sm font-medium text-slate-700 mb-1">Fallback Message (Bila bot tidak tahu)</label><textarea name="fallbackMessage" value={form.fallbackMessage} onChange={handleChange} rows={2} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none"></textarea></div>
+              <div><label className="block text-sm font-medium text-slate-700 mb-1">Pesan Handover (Saat diteruskan ke Admin)</label><textarea name="handoverMessage" value={form.handoverMessage} onChange={handleChange} rows={2} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none"></textarea></div>
+              <div><label className="block text-sm font-medium text-slate-700 mb-1">Keyword Handover (Dipisah koma)</label><input name="handoverKeywords" value={form.handoverKeywords} onChange={handleChange} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none" placeholder="cth: admin, manusia, cs" /></div>
+            </div>
+          </section>
+
         </div>
       </div>
     </div>

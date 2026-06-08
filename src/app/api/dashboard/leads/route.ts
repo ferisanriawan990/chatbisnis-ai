@@ -2,6 +2,17 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
+import { z } from 'zod/v4';
+
+const VALID_LEAD_STATUSES = ['cold', 'warm', 'hot', 'converted', 'lost'] as const;
+
+const leadsQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  status: z.enum(VALID_LEAD_STATUSES).optional(),
+  search: z.string().max(200).optional(),
+});
 
 export async function GET(req: Request) {
   try {
@@ -10,33 +21,55 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const userId = (session.user as { id: string }).id;
     const { searchParams } = new URL(req.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '10');
-    const skip = (page - 1) * limit;
+    const parsed = leadsQuerySchema.safeParse({
+      page: searchParams.get('page') || '1',
+      limit: searchParams.get('limit') || '20',
+      status: searchParams.get('status') || undefined,
+      search: searchParams.get('search') || undefined,
+    });
 
-    const [leads, total] = await Promise.all([
-      prisma.lead.findMany({
-        where: { userId },
-        orderBy: { updatedAt: 'desc' },
-        skip,
-        take: limit,
-      }),
-      prisma.lead.count({ where: { userId } }),
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Invalid query parameters' }, { status: 400 });
+    }
+
+    const { page, limit, status, search } = parsed.data;
+    const skip = (page - 1) * limit;
+    const userId = (session.user as { id: string }).id;
+
+    const where: Prisma.LeadWhereInput = { userId };
+
+    if (status) {
+      where.status = status;
+    }
+
+    if (search) {
+      where.OR = [
+        { customerPhone: { contains: search } },
+        { customerName: { contains: search, mode: 'insensitive' } },
+        { interest: { contains: search, mode: 'insensitive' } },
+        { address: { contains: search, mode: 'insensitive' } },
+        { notes: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    const [leads, totalCount] = await Promise.all([
+      prisma.lead.findMany({ where, orderBy: { createdAt: 'desc' }, take: limit, skip }),
+      prisma.lead.count({ where }),
     ]);
 
     return NextResponse.json({
       leads,
       pagination: {
-        total,
+        total: totalCount,
         page,
         limit,
-        totalPages: Math.ceil(total / limit),
+        totalPages: Math.ceil(totalCount / limit),
       },
     });
   } catch (error) {
-    console.error('GET /api/dashboard/leads Error:', error);
+    const msg = error instanceof Error ? error.message : 'unknown';
+    console.error('GET /api/dashboard/leads Error:', msg);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
-import { getRequiredAdminOrResponse } from '@/lib/admin-helper';
+import { getRequiredAdminOrResponse, validateAdminMutationOrigin } from '@/lib/admin-helper';
 import { prisma } from '@/lib/prisma';
 import { encrypt } from '@/lib/crypto';
+import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 
 const updateWahaServerSchema = z.object({
@@ -15,6 +16,9 @@ const updateWahaServerSchema = z.object({
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const originError = validateAdminMutationOrigin(req);
+    if (originError) return originError;
+
     const admin = await getRequiredAdminOrResponse();    if (admin instanceof NextResponse) return admin;
 
     const body = await req.json();
@@ -24,22 +28,21 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       return NextResponse.json({ error: 'Invalid data' }, { status: 400 });
     }
 
-    const updateData: Record<string, unknown> = { ...parsed.data };
+    const updateData: Prisma.WahaServerUpdateInput = { ...parsed.data };
     if (parsed.data.baseUrl) {
       updateData.baseUrl = parsed.data.baseUrl.replace(/\/$/, '');
     }
     if (parsed.data.apiKey) {
       updateData.apiKeyEncrypted = encrypt(parsed.data.apiKey);
-      delete updateData.apiKey;
     }
+    // Delete apiKey as it's not in the model
+    delete (updateData as any).apiKey;
 
-    // @ts-ignore
     const server = await prisma.wahaServer.update({
       where: { id: (await params).id },
       data: updateData,
     });
 
-    // @ts-ignore
     await prisma.auditLog.create({
       data: {
         actorUserId: admin.id,
@@ -57,12 +60,15 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const admin = await getRequiredAdminOrResponse();    if (admin instanceof NextResponse) return admin;
+    const originError = validateAdminMutationOrigin(req);
+    if (originError) return originError;
+
+    const admin = await getRequiredAdminOrResponse();
+    if (admin instanceof NextResponse) return admin;
 
     const serverId = (await params).id;
     
     // Check if server is in use
-    // @ts-ignore
     const server = await prisma.wahaServer.findUnique({
       where: { id: serverId },
       include: {
@@ -85,12 +91,10 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
       }, { status: 409 });
     }
 
-    // @ts-ignore
     await prisma.wahaServer.delete({
       where: { id: serverId },
     });
 
-    // @ts-ignore
     await prisma.auditLog.create({
       data: {
         actorUserId: admin.id,

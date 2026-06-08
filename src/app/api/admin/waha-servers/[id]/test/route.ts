@@ -9,7 +9,6 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     if (admin instanceof NextResponse) return admin;
 
     const serverId = (await params).id;
-    // @ts-ignore
     const server = await prisma.wahaServer.findUnique({
       where: { id: serverId },
     });
@@ -28,6 +27,15 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       
       if (!isOk) throw new Error('Cannot connect to server');
       
+      await prisma.wahaServer.update({
+        where: { id: serverId },
+        data: {
+          status: 'online',
+          lastHealthCheckAt: new Date(),
+          lastError: null
+        }
+      });
+      
       return NextResponse.json({ 
         success: true, 
         message: 'Koneksi berhasil!', 
@@ -35,12 +43,21 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       });
     } catch (error) {
       const msg = error instanceof Error ? error.message : 'Unknown error';
+      await prisma.wahaServer.update({
+        where: { id: serverId },
+        data: {
+          status: 'offline',
+          lastHealthCheckAt: new Date(),
+          lastError: msg
+        }
+      });
       return NextResponse.json({ 
         success: false, 
         error: `Gagal terhubung ke WAHA Server: ${msg}` 
       }, { status: 500 });
     }
-  } catch {
+  } catch (error) {
+    console.error(error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
