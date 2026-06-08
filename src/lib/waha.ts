@@ -67,6 +67,9 @@ export class WAHAService {
   async getQR(sessionName: string): Promise<string | null> {
     try {
       const data = await this.request(`/api/${sessionName}/auth/qr`);
+      if (data?.mimetype && data?.data) {
+        return `data:${data.mimetype};base64,${data.data}`;
+      }
       return data?.value || data?.qr || null;
     } catch {
       return null;
