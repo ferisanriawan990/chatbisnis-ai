@@ -7,6 +7,7 @@ import toast, { Toaster } from 'react-hot-toast';
 export default function WahaDashboard() {
   const [wahaStatus, setWahaStatus] = useState('disconnected');
   const [qrCode, setQrCode] = useState<string | null>(null);
+  
   const [sessionName, setSessionName] = useState('');
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);

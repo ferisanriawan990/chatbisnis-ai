@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getRequiredAdminOrResponse, logAdminAction } from '@/lib/admin-helper';
+import { getRequiredAdminOrResponse } from '@/lib/admin-helper';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
@@ -20,9 +20,7 @@ const planSchema = z.object({
 
 export async function GET() {
   try {
-    const admin = await getRequiredAdminOrResponse();
-    if (admin instanceof NextResponse) return admin;
-    if (admin instanceof NextResponse) return admin;
+    const admin = await getRequiredAdminOrResponse();    if (admin instanceof NextResponse) return admin;
     const plans = await prisma.plan.findMany({
       orderBy: { priceMonthly: 'asc' }
     });
@@ -35,10 +33,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const admin = await getRequiredAdminOrResponse();
-    if (admin instanceof NextResponse) return admin;
-    if (admin instanceof NextResponse) return admin;
-    if (admin instanceof NextResponse) return admin;
+    const admin = await getRequiredAdminOrResponse();    if (admin instanceof NextResponse) return admin;
 
     const body = await req.json();
     const parsed = planSchema.safeParse(body);

@@ -13,6 +13,7 @@ import {
   History,
   ArrowLeft
 } from 'lucide-react';
+import { Toaster } from 'react-hot-toast';
 
 const navItems = [
   { name: 'Overview', href: '/admin', icon: LayoutDashboard },
@@ -71,6 +72,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           {children}
         </div>
       </main>
+      <Toaster position="top-right" />
     </div>
   );
 }

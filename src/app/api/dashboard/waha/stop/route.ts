@@ -18,15 +18,47 @@ export async function POST() {
       return NextResponse.json({ error: 'Chatbot setting tidak ditemukan' }, { status: 404 });
     }
 
-    if (!chatbot.wahaBaseUrl || !chatbot.wahaApiKeyEncrypted) {
+    if (!chatbot.wahaBaseUrl || !chatbot.wahaApiKeyEncrypted || !chatbot.wahaSessionName) {
       return NextResponse.json(
-        { error: 'WAHA Base URL dan API Key harus diisi terlebih dahulu.' },
+        { error: 'WAHA Base URL, API Key, dan Session Name harus disiapkan terlebih dahulu.' },
         { status: 400 }
       );
     }
 
     const waha = WAHAService.fromEncrypted(chatbot.wahaBaseUrl, chatbot.wahaApiKeyEncrypted);
-    await waha.stopSession(chatbot.wahaSessionName);
+    
+    try {
+      await waha.stopSession(chatbot.wahaSessionName);
+      
+      // Update DB safely
+      await prisma.$transaction(async (tx) => {
+        // 1. Update session status
+        await tx.whatsAppSession.updateMany({
+          where: { sessionName: chatbot.wahaSessionName },
+          data: { status: 'disconnected', lastError: null }
+        });
+
+        // 2. Decrement server usage if wahaServerId is valid
+        if (chatbot.wahaServerId) {
+          const server = await tx.wahaServer.findUnique({ where: { id: chatbot.wahaServerId } });
+          if (server && server.currentSessions > 0) {
+            await tx.wahaServer.update({
+              where: { id: server.id },
+              data: { currentSessions: { decrement: 1 } }
+            });
+          }
+        }
+      });
+
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      // Record the failure
+      await prisma.whatsAppSession.updateMany({
+        where: { sessionName: chatbot.wahaSessionName },
+        data: { status: 'failed', lastError: message }
+      });
+      throw error;
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

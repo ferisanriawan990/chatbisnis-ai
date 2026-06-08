@@ -29,19 +29,29 @@ export async function POST(req: Request) {
 
     // Helper to safely extract WAHA payload
     const getNormalizedPayload = (rawBody: unknown) => {
-      const b = rawBody as Record<string, unknown>;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const payload = (b?.payload || b) as Record<string, any>;
+      const b = rawBody as any;
+      const sessionName = b?.session || b?.payload?.session || '';
+      const event = b?.event || b?.payload?.event || 'message';
+      const messagePayload = b?.payload?.payload || b?.payload || b;
+      
+      const customerPhone = messagePayload?.from || messagePayload?.chatId || '';
+      const customerName = messagePayload?._data?.notifyName || messagePayload?.notifyName || '';
+      const messageIn = messagePayload?.body || messagePayload?.text || messagePayload?.message || '';
+      const fromMe = Boolean(messagePayload?.fromMe);
+      const isGroup = Boolean(messagePayload?.isGroup) || customerPhone.endsWith('@g.us');
+      const remote = messagePayload?.id?.remote || '';
+      
       const headers = b?.headers as Record<string, string> || {};
+      
       return {
-        sessionName: (b?.session as string) || '',
-        event: (b?.event as string) || 'message',
-        fromMe: Boolean(payload.fromMe),
-        isGroup: Boolean(payload.isGroup),
-        customerPhone: (payload.from as string) || '',
-        customerName: (payload._data?.notifyName as string) || (payload.notifyName as string) || '',
-        messageIn: (payload.body as string) || '',
-        remote: (payload.id?.remote as string) || '',
+        sessionName,
+        event,
+        fromMe,
+        isGroup,
+        customerPhone,
+        customerName,
+        messageIn,
+        remote,
         webhookSecret: headers['x-webhook-secret'] || ''
       };
     };

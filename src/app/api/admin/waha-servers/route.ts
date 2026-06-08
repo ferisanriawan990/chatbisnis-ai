@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getRequiredAdminOrResponse, logAdminAction } from '@/lib/admin-helper';
+import { getRequiredAdminOrResponse } from '@/lib/admin-helper';
 import { prisma } from '@/lib/prisma';
 import { encrypt } from '@/lib/crypto';
 import { z } from 'zod';
@@ -14,16 +14,23 @@ const wahaServerSchema = z.object({
 
 export async function GET() {
   try {
-    const admin = await getRequiredAdminOrResponse();
-    if (admin instanceof NextResponse) return admin;
-    if (admin instanceof NextResponse) return admin;
+    const admin = await getRequiredAdminOrResponse();    if (admin instanceof NextResponse) return admin;
     const servers = await prisma.wahaServer.findMany({
       orderBy: { createdAt: 'desc' }
     });
 
     const maskedServers = servers.map(s => ({
-      ...s,
-      apiKeyEncrypted: s.apiKeyEncrypted ? '••••••••' : null,
+      id: s.id,
+      name: s.name,
+      baseUrl: s.baseUrl,
+      status: s.status,
+      maxSessions: s.maxSessions,
+      currentSessions: s.currentSessions,
+      isActive: s.isActive,
+      notes: s.notes,
+      hasApiKey: !!s.apiKeyEncrypted,
+      createdAt: s.createdAt,
+      updatedAt: s.updatedAt,
     }));
 
     return NextResponse.json(maskedServers);
@@ -34,10 +41,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const admin = await getRequiredAdminOrResponse();
-    if (admin instanceof NextResponse) return admin;
-    if (admin instanceof NextResponse) return admin;
-    if (admin instanceof NextResponse) return admin;
+    const admin = await getRequiredAdminOrResponse();    if (admin instanceof NextResponse) return admin;
 
     const body = await req.json();
     const parsed = wahaServerSchema.safeParse(body);

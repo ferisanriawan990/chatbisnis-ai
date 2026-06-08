@@ -63,6 +63,7 @@ model User {
   subscriptions    Subscription[]
   usageCounters    UsageCounter[]
   auditLogs        AuditLog[]
+  conversationStates ConversationState[]
 }
 
 model BusinessProfile {
@@ -88,6 +89,7 @@ model BusinessProfile {
   leads               Lead[]
   whatsappSessions    WhatsAppSession[]
   usageCounters       UsageCounter[]
+  conversationStates  ConversationState[]
 }
 
 model ChatbotSetting {
@@ -113,6 +115,7 @@ model ChatbotSetting {
   monthlyChatLimit      Int             @default(30000)
   wahaBaseUrl           String?
   wahaApiKeyEncrypted   String?
+  wahaServerId          String?
   wahaSessionName       String          @unique
   n8nWebhookUrl         String?
   internalWebhookSecret String?
@@ -121,8 +124,10 @@ model ChatbotSetting {
 
   user                  User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   businessProfile       BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+  wahaServer            WahaServer?     @relation(fields: [wahaServerId], references: [id], onDelete: SetNull)
   chatLogs              ChatLog[]
   whatsappSessions      WhatsAppSession[]
+  conversationStates    ConversationState[]
 }
 
 model KnowledgeSource {
@@ -225,6 +230,7 @@ model WhatsAppSession {
   userId            String
   businessProfileId String
   chatbotSettingId  String
+  wahaServerId      String?
   sessionName       String          @unique
   status            String          @default("disconnected") // disconnected, starting, qr, connected, failed
   lastConnectedAt   DateTime?
@@ -235,6 +241,7 @@ model WhatsAppSession {
   user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   businessProfile   BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
   chatbotSetting    ChatbotSetting  @relation(fields: [chatbotSettingId], references: [id], onDelete: Cascade)
+  wahaServer        WahaServer?     @relation(fields: [wahaServerId], references: [id], onDelete: SetNull)
 }
 
 // ─── Admin & System Models ───────────────────────────────
@@ -275,6 +282,9 @@ model WahaServer {
   notes           String?  @db.Text
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+
+  chatbotSettings ChatbotSetting[]
+  whatsappSessions WhatsAppSession[]
 }
 
 model Plan {
@@ -345,4 +355,23 @@ model AuditLog {
 
   @@index([actorUserId, createdAt])
   @@index([entityType, entityId])
+}
+
+model ConversationState {
+  id                String          @id @default(uuid())
+  userId            String
+  businessProfileId String
+  chatbotSettingId  String
+  customerPhone     String
+  status            String          @default("ai_active") // ai_active or human_handover
+  handoverUntil     DateTime?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessProfile   BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+  chatbotSetting    ChatbotSetting  @relation(fields: [chatbotSettingId], references: [id], onDelete: Cascade)
+
+  @@unique([chatbotSettingId, customerPhone])
+  @@index([userId, businessProfileId, status])
 }

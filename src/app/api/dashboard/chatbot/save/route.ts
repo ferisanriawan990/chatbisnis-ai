@@ -64,27 +64,14 @@ export async function POST(req: Request) {
       encryptedAiApiKey = encrypt(data.aiApiKey);
     }
 
-    let encryptedWahaApiKey: string | undefined = undefined;
-    if (data.wahaApiKey && data.wahaApiKey !== '••••••••' && data.wahaApiKey.length > 0) {
-      encryptedWahaApiKey = encrypt(data.wahaApiKey);
-    }
+    
 
-    // Generate unique session name if not provided
-    let sessionName = data.wahaSessionName;
-    if (!sessionName || sessionName.trim() === '') {
-      sessionName = `session_${userId.slice(0, 8)}_${crypto.randomBytes(4).toString('hex')}`;
-    }
-
-    // Check unique wahaSessionName
     const chatbot = await prisma.chatbotSetting.findFirst({ where: { userId, businessProfileId: profile.id } });
-    if (sessionName !== chatbot?.wahaSessionName) {
-      const existing = await prisma.chatbotSetting.findUnique({ where: { wahaSessionName: sessionName } });
-      if (existing && existing.id !== chatbot?.id) {
-        return NextResponse.json(
-          { error: 'Nama session WAHA sudah digunakan. Pilih nama lain.' },
-          { status: 409 }
-        );
-      }
+
+    // Always preserve existing wahaSessionName or generate a new one
+    let sessionName = chatbot?.wahaSessionName;
+    if (!sessionName) {
+      sessionName = `session_${userId.slice(0, 8)}_${crypto.randomBytes(4).toString('hex')}`;
     }
 
     const chatbotData = {
@@ -105,8 +92,6 @@ export async function POST(req: Request) {
       ...(encryptedAiApiKey !== undefined && { aiApiKeyEncrypted: encryptedAiApiKey }),
       dailyChatLimit: data.dailyChatLimit,
       monthlyChatLimit: data.monthlyChatLimit,
-      wahaBaseUrl: data.wahaBaseUrl || null,
-      ...(encryptedWahaApiKey !== undefined && { wahaApiKeyEncrypted: encryptedWahaApiKey }),
       wahaSessionName: sessionName,
       n8nWebhookUrl: data.n8nWebhookUrl || null,
     };

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getRequiredAdminOrResponse, logAdminAction } from '@/lib/admin-helper';
+import { getRequiredAdminOrResponse } from '@/lib/admin-helper';
 import { prisma } from '@/lib/prisma';
 import { encrypt } from '@/lib/crypto';
 import { z } from 'zod';
@@ -14,16 +14,22 @@ const apiKeySchema = z.object({
 
 export async function GET() {
   try {
-    const admin = await getRequiredAdminOrResponse();
-    if (admin instanceof NextResponse) return admin;
-    if (admin instanceof NextResponse) return admin;
+    const admin = await getRequiredAdminOrResponse();    if (admin instanceof NextResponse) return admin;
     const keys = await prisma.secretCredential.findMany({
       orderBy: { createdAt: 'desc' }
     });
 
     const maskedKeys = keys.map(k => ({
-      ...k,
-      encryptedValue: '••••••••' + k.encryptedValue.slice(-4), // Mask the encrypted value for display purposes only
+      id: k.id,
+      name: k.name,
+      key: k.key,
+      provider: k.provider,
+      description: k.description,
+      isActive: k.isActive,
+      isConfigured: true,
+      maskedValue: '••••••••',
+      createdAt: k.createdAt,
+      updatedAt: k.updatedAt
     }));
 
     return NextResponse.json(maskedKeys);
@@ -34,9 +40,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const admin = await getRequiredAdminOrResponse();
-    if (admin instanceof NextResponse) return admin;
-    if (admin instanceof NextResponse) return admin;
+    const admin = await getRequiredAdminOrResponse();    if (admin instanceof NextResponse) return admin;
     if (admin instanceof NextResponse) return admin; // Return 403 if not admin
 
     const body = await req.json();

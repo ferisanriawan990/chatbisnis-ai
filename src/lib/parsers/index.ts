@@ -55,7 +55,7 @@ export async function parseExcel(buffer: Buffer): Promise<ParsedItem[]> {
     });
 
     return items;
-  } catch (error) {
+  } catch { // eslint-disable-line @typescript-eslint/no-unused-vars
     throw new Error('Gagal membaca file Excel. Pastikan formatnya benar.');
   }
 }

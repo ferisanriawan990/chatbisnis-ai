@@ -65,8 +65,8 @@ export async function POST(req: Request) {
           create: {
             planId: freePlan.id,
             status: 'active',
-            startDate: new Date(),
-            endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 10)), // 10 years for free plan
+            startedAt: new Date(),
+            expiredAt: new Date(new Date().setFullYear(new Date().getFullYear() + 10)), // 10 years for free plan
           }
         }
       },

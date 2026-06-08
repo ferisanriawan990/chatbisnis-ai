@@ -13,14 +13,15 @@ export default function ChatbotDashboard() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [analytics, setAnalytics] = useState({ todayChats: 0, monthlyChats: 0, newLeads: 0, needsHuman: 0 });
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [knowledgeSources, setKnowledgeSources] = useState<any[]>([]);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [chatLogs, setChatLogs] = useState<any[]>([]);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
-  const [leads, setLeads] = useState<any[]>([]);
+  const [knowledgeSources, setKnowledgeSources] = useState<any[]>([]) // eslint-disable-line @typescript-eslint/no-explicit-any
+  const [chatLogs, setChatLogs] = useState<any[]>([]) // eslint-disable-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [leads, setLeads] = useState<any[]>([]) // eslint-disable-line @typescript-eslint/no-explicit-any
   const [wahaStatus, setWahaStatus] = useState('disconnected');
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [qrCode, setQrCode] = useState<string | null>(null);
+  const [manualForm, setManualForm] = useState({ type: 'qa', question: '', answer: '', productName: '', productCategory: '', price: 0, stockStatus: 'Tersedia', description: '' });
+  
 
   const [form, setForm] = useState({
     businessName: '', businessIndustry: '', businessDescription: '', address: '', openingHours: '', adminPhone: '', websiteUrl: '', instagramUrl: '', marketplaceUrl: '',
@@ -154,6 +155,42 @@ export default function ChatbotDashboard() {
     }
   };
 
+  
+  const handleManualSubmit = async () => {
+    toast.loading('Menyimpan...', { id: 'manual' });
+    try {
+      const payload: any = { type: manualForm.type }; // eslint-disable-line @typescript-eslint/no-explicit-any
+      if (manualForm.type === 'qa') {
+        if (!manualForm.question || !manualForm.answer) return toast.error('Q&A harus diisi', { id: 'manual' });
+        payload.question = manualForm.question;
+        payload.answer = manualForm.answer;
+      } else {
+        if (!manualForm.productName) return toast.error('Nama produk harus diisi', { id: 'manual' });
+        payload.productName = manualForm.productName;
+        payload.productCategory = manualForm.productCategory;
+        payload.price = Number(manualForm.price);
+        payload.stockStatus = manualForm.stockStatus;
+        payload.description = manualForm.description;
+      }
+      const res = await fetch('/api/dashboard/knowledge/manual', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        toast.success('Disimpan!', { id: 'manual' });
+        const { source } = await res.json();
+        setKnowledgeSources(prev => [source, ...prev]);
+        setManualForm({ type: 'qa', question: '', answer: '', productName: '', productCategory: '', price: 0, stockStatus: 'Tersedia', description: '' });
+      } else {
+        const err = await res.json();
+        toast.error(err.error || 'Gagal menyimpan', { id: 'manual' });
+      }
+    } catch {
+      toast.error('Jaringan bermasalah', { id: 'manual' });
+    }
+  };
+
   const handleDeleteKnowledge = async (id: string) => {
     if (!confirm('Yakin ingin menghapus sumber data ini beserta isinya?')) return;
     try {
@@ -254,8 +291,8 @@ export default function ChatbotDashboard() {
           <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2"><Database className="w-5 h-5 text-blue-500" /> Knowledge Base</h2>
-              <Link href="/dashboard/knowledge/template/" className="text-blue-600 font-medium hover:underline flex items-center gap-1">
-                <Download className="w-4 h-4" /> Template CSV
+              <Link href="/api/dashboard/knowledge/template" className="text-blue-600 font-medium hover:underline flex items-center gap-1">
+                <Download className="w-4 h-4" /> Download Template Excel
               </Link>
             </div>
             
@@ -266,6 +303,35 @@ export default function ChatbotDashboard() {
               <p className="text-sm text-slate-500 mt-1">Excel, CSV, PDF, atau DOCX (Max 10MB)</p>
             </div>
             
+            
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-6">
+              <h3 className="font-semibold text-sm mb-3">Input Data Manual</h3>
+              <select 
+                value={manualForm.type} 
+                onChange={(e) => setManualForm(p => ({ ...p, type: e.target.value }))}
+                className="w-full mb-3 p-2 text-sm border rounded"
+              >
+                <option value="qa">Tanya Jawab (Q&A)</option>
+                <option value="product">Data Produk</option>
+              </select>
+              
+              {manualForm.type === 'qa' ? (
+                <div className="space-y-2">
+                  <input placeholder="Pertanyaan..." className="w-full p-2 text-sm border rounded" value={manualForm.question} onChange={e => setManualForm(p => ({ ...p, question: e.target.value }))} />
+                  <textarea placeholder="Jawaban..." className="w-full p-2 text-sm border rounded" value={manualForm.answer} onChange={e => setManualForm(p => ({ ...p, answer: e.target.value }))}></textarea>
+                </div>
+              ) : (
+                <div className="space-y-2 grid grid-cols-2 gap-2">
+                  <input placeholder="Nama Produk" className="col-span-2 p-2 text-sm border rounded" value={manualForm.productName} onChange={e => setManualForm(p => ({ ...p, productName: e.target.value }))} />
+                  <input placeholder="Kategori" className="p-2 text-sm border rounded" value={manualForm.productCategory} onChange={e => setManualForm(p => ({ ...p, productCategory: e.target.value }))} />
+                  <input type="number" placeholder="Harga" className="p-2 text-sm border rounded" value={manualForm.price || ''} onChange={e => setManualForm(p => ({ ...p, price: Number(e.target.value) }))} />
+                  <input placeholder="Stok (Tersedia/Habis)" className="col-span-2 p-2 text-sm border rounded" value={manualForm.stockStatus} onChange={e => setManualForm(p => ({ ...p, stockStatus: e.target.value }))} />
+                  <textarea placeholder="Deskripsi..." className="col-span-2 p-2 text-sm border rounded" value={manualForm.description} onChange={e => setManualForm(p => ({ ...p, description: e.target.value }))}></textarea>
+                </div>
+              )}
+              <button onClick={handleManualSubmit} className="mt-3 w-full bg-blue-100 text-blue-700 py-2 rounded text-sm font-semibold hover:bg-blue-200">Tambah Data</button>
+            </div>
+
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left text-slate-600">
                 <thead className="text-xs text-slate-500 uppercase bg-slate-50">

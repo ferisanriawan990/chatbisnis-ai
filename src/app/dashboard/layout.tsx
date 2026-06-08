@@ -4,7 +4,7 @@ import { ReactNode, useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
 import { usePathname } from 'next/navigation';
-import { BotMessageSquare, Menu, X, Settings, FileJson } from 'lucide-react';
+import { BotMessageSquare, Menu, X, Settings, FileJson, Users, MessageSquare, CreditCard } from 'lucide-react';
 import Link from 'next/link';
 import LogoutButton from '@/components/LogoutButton';
 
@@ -77,6 +77,36 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           >
             <Settings className="w-5 h-5" />
             <span className="font-medium">Status WAHA</span>
+          </Link>
+          <Link 
+            href="/dashboard/leads" 
+            onClick={() => setMobileMenuOpen(false)}
+            className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+              pathname === '/dashboard/leads' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+            }`}
+          >
+            <Users className="w-5 h-5" />
+            <span className="font-medium">Leads</span>
+          </Link>
+          <Link 
+            href="/dashboard/chat-logs" 
+            onClick={() => setMobileMenuOpen(false)}
+            className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+              pathname === '/dashboard/chat-logs' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+            }`}
+          >
+            <MessageSquare className="w-5 h-5" />
+            <span className="font-medium">Chat Logs</span>
+          </Link>
+          <Link 
+            href="/dashboard/billing" 
+            onClick={() => setMobileMenuOpen(false)}
+            className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+              pathname === '/dashboard/billing' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+            }`}
+          >
+            <CreditCard className="w-5 h-5" />
+            <span className="font-medium">Billing</span>
           </Link>
           <Link 
             href="/dashboard/n8n-templates" 

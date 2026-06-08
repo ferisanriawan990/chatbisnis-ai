@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getRequiredAdminOrResponse, logAdminAction } from '@/lib/admin-helper';
+import { getRequiredAdminOrResponse } from '@/lib/admin-helper';
 import { prisma } from '@/lib/prisma';
 import { encrypt } from '@/lib/crypto';
 import { z } from 'zod';
@@ -13,10 +13,7 @@ const updateApiKeySchema = z.object({
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const admin = await getRequiredAdminOrResponse();
-    if (admin instanceof NextResponse) return admin;
-    if (admin instanceof NextResponse) return admin;
-    if (admin instanceof NextResponse) return admin;
+    const admin = await getRequiredAdminOrResponse();    if (admin instanceof NextResponse) return admin;
 
     const body = await req.json();
     const parsed = updateApiKeySchema.safeParse(body);
@@ -54,10 +51,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const admin = await getRequiredAdminOrResponse();
-    if (admin instanceof NextResponse) return admin;
-    if (admin instanceof NextResponse) return admin;
-    if (admin instanceof NextResponse) return admin;
+    const admin = await getRequiredAdminOrResponse();    if (admin instanceof NextResponse) return admin;
 
     await prisma.secretCredential.delete({
       where: { id: (await params).id },
