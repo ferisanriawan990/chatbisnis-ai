@@ -1,0 +1,86 @@
+
+> chatbisnis-ai@0.1.0 lint
+> eslint
+
+
+/Applications/XAMPP/xamppfiles/htdocs/ChatBisnis AI/src/app/api/dashboard/chatbot/route.ts
+   5:10  warning  'decrypt' is defined but never used       @typescript-eslint/no-unused-vars
+  14:37  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  41:22  error    A `require()` style import is forbidden   @typescript-eslint/no-require-imports
+
+/Applications/XAMPP/xamppfiles/htdocs/ChatBisnis AI/src/app/api/dashboard/chatbot/save/route.ts
+  79:9  error  'chatbot' is never reassigned. Use 'const' instead  prefer-const
+
+/Applications/XAMPP/xamppfiles/htdocs/ChatBisnis AI/src/app/api/dashboard/knowledge/upload/route.ts
+  48:22  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  49:15  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  65:26  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  90:33  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Applications/XAMPP/xamppfiles/htdocs/ChatBisnis AI/src/app/api/internal/chatbot/settings/route.ts
+   3:10  warning  'decrypt' is defined but never used                       @typescript-eslint/no-unused-vars
+  47:13  warning  'aiApiKeyEncrypted' is assigned a value but never used    @typescript-eslint/no-unused-vars
+  47:32  warning  'wahaApiKeyEncrypted' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Applications/XAMPP/xamppfiles/htdocs/ChatBisnis AI/src/app/api/webhooks/waha/route.ts
+  31:41  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  80:83  warning  'err' is defined but never used           @typescript-eslint/no-unused-vars
+
+/Applications/XAMPP/xamppfiles/htdocs/ChatBisnis AI/src/app/dashboard/chatbot/page.tsx
+    4:119  warning  'CheckCircle2' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         @typescript-eslint/no-unused-vars
+    4:133  warning  'XCircle' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              @typescript-eslint/no-unused-vars
+    6:8    warning  'Image' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                @typescript-eslint/no-unused-vars
+   16:60   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         @typescript-eslint/no-explicit-any
+   17:44   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         @typescript-eslint/no-explicit-any
+   18:10   warning  'leads' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       @typescript-eslint/no-unused-vars
+   18:38   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         @typescript-eslint/no-explicit-any
+   33:5    error    Error: Cannot access variable before it is declared
+
+`fetchInitialData` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+/Applications/XAMPP/xamppfiles/htdocs/ChatBisnis AI/src/app/dashboard/chatbot/page.tsx:33:5
+  31 |
+  32 |   useEffect(() => {
+> 33 |     fetchInitialData();
+     |     ^^^^^^^^^^^^^^^^ `fetchInitialData` accessed before it is declared
+  34 |   }, []);
+  35 |
+  36 |   const fetchInitialData = async () => {
+
+/Applications/XAMPP/xamppfiles/htdocs/ChatBisnis AI/src/app/dashboard/chatbot/page.tsx:36:3
+  34 |   }, []);
+  35 |
+> 36 |   const fetchInitialData = async () => {
+     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 37 |     try {
+     | ^^^^^^^^^
+> 38 |       const [chatbotRes, analyticsRes, knowledgeRes, logsRes, leadsRes, wahaStatusRes] = await Promise.all([
+     …
+     | ^^^^^^^^^
+> 75 |     }
+     | ^^^^^^^^^
+> 76 |   };
+     | ^^^^^ `fetchInitialData` is declared here
+  77 |
+  78 |   const fetchQrCode = async () => {
+  79 |     const res = await fetch('/api/dashboard/waha/qr');  react-hooks/immutability
+   34:6    warning  React Hook useEffect has a missing dependency: 'fetchInitialData'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              react-hooks/exhaustive-deps
+   71:14   warning  'error' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                @typescript-eslint/no-unused-vars
+  276:15   error    Do not use an `<a>` element to navigate to `/api/dashboard/knowledge/template/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           @next/next/no-html-link-for-pages
+  360:21   warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          @next/next/no-img-element
+
+/Applications/XAMPP/xamppfiles/htdocs/ChatBisnis AI/src/lib/chatbot-engine.ts
+  168:40  error  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  190:51  error  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  192:11  error  'lead' is never reassigned. Use 'const' instead  prefer-const
+
+/Applications/XAMPP/xamppfiles/htdocs/ChatBisnis AI/src/lib/parsers/index.ts
+  20:46  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  32:12  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+  45:43  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  76:12  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+  91:12  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+
+✖ 33 problems (18 errors, 15 warnings)
+  2 errors and 0 warnings potentially fixable with the `--fix` option.
+

@@ -14,8 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ChatBisnis AI - Chatbot WhatsApp Otomatis untuk UMKM",
-  description: "Platform chatbot WhatsApp AI untuk UMKM Indonesia dengan upload data produk, knowledge base, dan otomatisasi layanan pelanggan.",
+  title: "ChatBisnis AI - Chatbot WhatsApp AI untuk UMKM",
+  description: "Platform chatbot WhatsApp AI untuk UMKM Indonesia dengan WAHA, n8n, knowledge base, dan otomatisasi customer service.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://chatbisnis-ai.vercel.app'),
 };
 
 export default function RootLayout({

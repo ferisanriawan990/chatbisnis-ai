@@ -17,6 +17,7 @@ export async function parseExcel(buffer: Buffer): Promise<ParsedItem[]> {
     const workbook = xlsx.read(buffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const rawData = xlsx.utils.sheet_to_json<any>(sheet);
 
     return rawData.map((row) => ({
@@ -29,7 +30,7 @@ export async function parseExcel(buffer: Buffer): Promise<ParsedItem[]> {
       description: row.deskripsi || row.description || '',
       searchableText: JSON.stringify(row),
     }));
-  } catch (error) {
+  } catch {
     throw new Error('Gagal membaca file Excel. Pastikan formatnya benar.');
   }
 }
@@ -42,6 +43,7 @@ export async function parseCsv(buffer: Buffer): Promise<ParsedItem[]> {
         header: true,
         skipEmptyLines: true,
         complete: (results) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const rawData = results.data as any[];
           const parsed = rawData.map((row) => ({
             question: row.pertanyaan || row.question || '',
@@ -73,7 +75,7 @@ export async function parsePdf(buffer: Buffer): Promise<ParsedItem[]> {
         searchableText: data.text,
       },
     ];
-  } catch (error) {
+  } catch {
     throw new Error('Gagal membaca file PDF.');
   }
 }
@@ -88,7 +90,7 @@ export async function parseDocx(buffer: Buffer): Promise<ParsedItem[]> {
         searchableText: result.value,
       },
     ];
-  } catch (error) {
+  } catch {
     throw new Error('Gagal membaca file DOCX.');
   }
 }

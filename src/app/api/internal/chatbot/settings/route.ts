@@ -1,6 +1,5 @@
 import { NextResponse as Response } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { decrypt } from '@/lib/crypto';
 
 export async function GET(req: Request) {
   try {
@@ -38,19 +37,21 @@ export async function GET(req: Request) {
       },
     });
 
-    // Decrypt keys
-    const aiApiKey = chatbotSetting.aiApiKeyEncrypted ? decrypt(chatbotSetting.aiApiKeyEncrypted) : null;
-    const wahaApiKey = chatbotSetting.wahaApiKeyEncrypted ? decrypt(chatbotSetting.wahaApiKeyEncrypted) : null;
+    // DO NOT return decrypted API keys
+    // Just return boolean flags
+    const aiApiKeyConfigured = !!chatbotSetting.aiApiKeyEncrypted;
+    const wahaApiKeyConfigured = !!chatbotSetting.wahaApiKeyEncrypted;
 
     // Remove encrypted keys from response
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { aiApiKeyEncrypted, wahaApiKeyEncrypted, ...safeSettings } = chatbotSetting;
 
     return Response.json({
       chatbotSetting: safeSettings,
       businessProfile: chatbotSetting.businessProfile,
       knowledgeItems,
-      aiApiKey,
-      wahaApiKey,
+      aiApiKeyConfigured,
+      wahaApiKeyConfigured,
     });
   } catch (error) {
     console.error('GET /api/internal/chatbot/settings Error:', error);

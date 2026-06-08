@@ -22,10 +22,15 @@ export class AIService {
       }
 
       // Default to standard OpenAI API format (Flaz Cloud is compatible)
-      const url = 'https://api.flaz.cloud/v1/chat/completions'; 
+      const baseUrl = process.env.AI_BASE_URL || 'https://ai.flaz.id/v1';
+      const url = `${baseUrl.replace(/\/$/, '')}/chat/completions`;
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
 
       const res = await fetch(url, {
         method: 'POST',
+        signal: controller.signal,
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${config.apiKey}`,
@@ -42,9 +47,10 @@ export class AIService {
         // Add timeout via AbortController if supported in edge/node, or just rely on platform defaults
       });
 
+      clearTimeout(timeoutId);
+
       if (!res.ok) {
-        const errorText = await res.text().catch(() => 'Unknown error');
-        console.error('AI API Error:', res.status, errorText);
+        console.error('AI API Error Status:', res.status);
         throw new Error('Gagal menghubungi AI provider.');
       }
 
@@ -54,8 +60,12 @@ export class AIService {
 
       return { reply, tokenUsage };
     } catch (error) {
-      console.error('AI Generation Error:', error);
-      throw error;
+      if ((error as Error).name === 'AbortError') {
+        console.error('AI Generation Timeout (30s limit)');
+        throw new Error('Waktu respon AI habis (timeout).');
+      }
+      console.error('AI Generation Error:', (error as Error).message);
+      throw new Error('Kesalahan internal sistem AI.');
     }
   }
 

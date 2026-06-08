@@ -4,7 +4,7 @@
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "waha-webhook",
+        "path": "waha-ai-cs-product",
         "responseMode": "lastNode",
         "options": {}
       },
@@ -19,7 +19,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const body = $json.body || $json;\nconst payload = body.payload || body;\nreturn [{ json: {\n  session: body.session || 'default',\n  chatId: payload.from,\n  senderNumber: payload.from?.split('@')[0],\n  messageText: payload.body || '',\n  fromMe: payload.fromMe || false,\n  isGroup: payload.isGroup || false\n}}];"
+        "jsCode": "const body = $json.body || $json;\nconst headers = $node['Webhook WAHA']?.json?.headers || {};\nconst payload = body.payload || body;\nreturn [{ json: {\n  session: body.session || 'default',\n  chatId: payload.from,\n  senderNumber: payload.from?.split('@')[0],\n  messageText: payload.body || '',\n  fromMe: payload.fromMe || false,\n  isGroup: payload.isGroup || false,\n  webhookSecret: headers['x-webhook-secret'] || ''\n}}];"
       },
       "id": "normalize",
       "name": "Normalize Payload",
@@ -89,7 +89,8 @@
       "position": [
         700,
         280
-      ]
+      ],
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -111,7 +112,7 @@
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({ session: $('Normalize Payload').first().json.session || '{{SESSION_NAME}}', chatId: $('Normalize Payload').first().json.chatId, text: $json.choices?.[0]?.message?.content || 'Maaf kak, sistem sedang sibuk. Mohon tunggu sebentar ya.' }) }}"
+        "body": "={{ JSON.stringify({ session: $('Normalize Payload').first().json.session || '{{SESSION_NAME}}', chatId: $('Normalize Payload').first().json.chatId, text: $json.choices?.[0]?.message?.content || 'Maaf kak, sistem AI sedang sibuk. Mohon tunggu sebentar ya.' }) }}"
       },
       "id": "send-waha",
       "name": "Send WhatsApp Reply",

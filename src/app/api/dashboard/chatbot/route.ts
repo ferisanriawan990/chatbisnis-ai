@@ -2,7 +2,6 @@ import { NextResponse as Response } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { decrypt } from '@/lib/crypto';
 
 export async function GET() {
   try {
@@ -11,7 +10,7 @@ export async function GET() {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const userId = (session.user as any).id;
+    const userId = (session.user as { id: string }).id;
 
     // Get Business Profile
     let businessProfile = await prisma.businessProfile.findFirst({
@@ -38,7 +37,7 @@ export async function GET() {
     });
 
     if (!chatbotSetting) {
-      const crypto = require('crypto');
+      const crypto = await import('crypto');
       const uniqueSessionName = `session_${userId.slice(0, 8)}_${crypto.randomBytes(4).toString('hex')}`;
       
       chatbotSetting = await prisma.chatbotSetting.create({

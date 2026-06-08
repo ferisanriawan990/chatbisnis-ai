@@ -76,7 +76,7 @@ export async function POST(req: Request) {
     }
 
     // Check unique wahaSessionName
-    let chatbot = await prisma.chatbotSetting.findFirst({ where: { userId, businessProfileId: profile.id } });
+    const chatbot = await prisma.chatbotSetting.findFirst({ where: { userId, businessProfileId: profile.id } });
     if (sessionName !== chatbot?.wahaSessionName) {
       const existing = await prisma.chatbotSetting.findUnique({ where: { wahaSessionName: sessionName } });
       if (existing && existing.id !== chatbot?.id) {

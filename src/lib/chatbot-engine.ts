@@ -165,6 +165,7 @@ Aturan tambahan:
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private static async logChat(params: any) {
     try {
       await prisma.chatLog.create({
@@ -187,9 +188,10 @@ Aturan tambahan:
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private static async upsertLead(chatbotSetting: any, phone: string, name: string | undefined, messageIn: string) {
     try {
-      let lead = await prisma.lead.findFirst({
+      const lead = await prisma.lead.findFirst({
         where: { businessProfileId: chatbotSetting.businessProfileId, customerPhone: phone },
       });
 

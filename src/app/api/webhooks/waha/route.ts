@@ -13,41 +13,65 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Too Many Requests' }, { status: 429 });
     }
 
+    // Security validation
+    const webhookSecret = process.env.WAHA_WEBHOOK_SECRET;
+    if (!webhookSecret) {
+      console.error('WAHA_WEBHOOK_SECRET is not configured in production environment.');
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+    }
+
+    const providedSecret = req.headers.get('x-webhook-secret');
+    if (providedSecret !== webhookSecret) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await req.json();
 
-    // WAHA webhook payload structure (depends on the event type)
-    // For now, we assume event = message
-    if (body?.event !== 'message' || !body?.payload) {
+    // Helper to safely extract WAHA payload
+    const getNormalizedPayload = (rawBody: unknown) => {
+      const b = rawBody as Record<string, unknown>;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const payload = (b?.payload || b) as Record<string, any>;
+      const headers = b?.headers as Record<string, string> || {};
+      return {
+        sessionName: (b?.session as string) || 'default',
+        event: (b?.event as string) || 'message',
+        fromMe: Boolean(payload.fromMe),
+        isGroup: Boolean(payload.isGroup),
+        customerPhone: (payload.from as string) || '',
+        customerName: (payload._data?.notifyName as string) || (payload.notifyName as string) || '',
+        messageIn: (payload.body as string) || '',
+        remote: (payload.id?.remote as string) || '',
+        webhookSecret: headers['x-webhook-secret'] || ''
+      };
+    };
+
+    const norm = getNormalizedPayload(body);
+
+    if (norm.event !== 'message') {
       return NextResponse.json({ success: true, message: 'Not a message event, ignored' });
     }
 
-    const payload = body.payload;
-    // Don't process our own messages or status broadcasts
-    if (payload.fromMe || payload.id?.remote?.includes('status@broadcast') || payload.isGroup) {
-      return NextResponse.json({ success: true, message: 'Ignored fromMe, broadcast, or group' });
+    if (norm.fromMe || norm.remote.includes('status@broadcast') || norm.isGroup || !norm.messageIn) {
+      return NextResponse.json({ success: true, message: 'Ignored fromMe, broadcast, group, or empty' });
     }
 
-    const sessionName = body.session;
-    const customerPhone = payload.from; // usually format 628xxx@c.us
-    const customerName = payload._data?.notifyName || payload.notifyName || '';
-    const messageIn = payload.body;
-
-    if (!sessionName || !customerPhone || !messageIn) {
+    if (!norm.sessionName || !norm.customerPhone) {
       return NextResponse.json({ error: 'Invalid payload structure' }, { status: 400 });
     }
 
     // Process using Chatbot Engine
     const reply = await ChatbotEngine.processMessage({
-      wahaSessionName: sessionName,
-      customerPhone,
-      customerName,
-      messageIn,
+      wahaSessionName: norm.sessionName,
+      customerPhone: norm.customerPhone,
+      customerName: norm.customerName,
+      messageIn: norm.messageIn,
     });
 
     if (reply) {
       // Find the waha session config to send the reply back
       const chatbotSetting = await prisma.chatbotSetting.findUnique({
-        where: { wahaSessionName: sessionName },
+        where: { wahaSessionName: norm.sessionName },
       });
 
       if (chatbotSetting && chatbotSetting.wahaBaseUrl && chatbotSetting.wahaApiKeyEncrypted) {
@@ -57,15 +81,17 @@ export async function POST(req: Request) {
         );
 
         // Send reply back via WAHA
-        await waha.sendMessage(sessionName, customerPhone, reply).catch(err => {
-          console.error('Failed to send reply via WAHA:', err);
+        await waha.sendMessage(norm.sessionName, norm.customerPhone, reply).catch(() => {
+          // Do not log full err response which might contain decrypted tokens
+          console.error('Failed to send reply via WAHA. Check connection.');
         });
       }
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('POST /api/webhooks/waha Error:', error);
+    // Only log standard error message, not full object which could leak secrets
+    console.error('POST /api/webhooks/waha Error:', (error as Error).message);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

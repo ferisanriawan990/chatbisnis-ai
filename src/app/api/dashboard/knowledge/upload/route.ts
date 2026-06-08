@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
-import { parseExcel, parseCsv, parsePdf, parseDocx } from '@/lib/parsers';
+import { parseExcel, parseCsv, parsePdf, parseDocx, ParsedItem } from '@/lib/parsers';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
@@ -45,8 +45,8 @@ export async function POST(req: Request) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    let parsedItems: any[] = [];
-    let type: any = 'manual';
+    let parsedItems: ParsedItem[] = [];
+    let type: 'excel' | 'csv' | 'pdf' | 'docx' | 'manual' = 'manual';
 
     try {
       if (['xlsx', 'xls'].includes(extension)) {
@@ -62,12 +62,16 @@ export async function POST(req: Request) {
         parsedItems = await parseDocx(buffer);
         type = 'docx';
       }
-    } catch (parseError: any) {
-      return NextResponse.json({ error: parseError.message || 'Gagal memproses file' }, { status: 400 });
+    } catch (parseError) {
+      return NextResponse.json({ error: (parseError as Error).message || 'Gagal memproses file' }, { status: 400 });
     }
 
     if (parsedItems.length === 0) {
       return NextResponse.json({ error: 'Tidak ada data valid di dalam file' }, { status: 400 });
+    }
+
+    if (parsedItems.length > 500) {
+      return NextResponse.json({ error: 'Maksimal 500 baris data per upload.' }, { status: 400 });
     }
 
     // Save to DB
@@ -83,20 +87,32 @@ export async function POST(req: Request) {
       },
     });
 
-    const itemsToInsert = parsedItems.map((item) => ({
-      userId,
-      businessProfileId: profile.id,
-      sourceId: source.id,
-      category: item.productName ? 'product' : 'qa',
-      question: String(item.question || ''),
-      answer: String(item.answer || ''),
-      productName: String(item.productName || ''),
-      productCategory: String(item.productCategory || ''),
-      price: Number(item.price || 0),
-      stockStatus: String(item.stockStatus || ''),
-      description: String(item.description || ''),
-      searchableText: String(item.searchableText || ''),
-    }));
+    const sanitizeText = (text: unknown) => {
+      if (!text) return '';
+      // Limit max string length to 2000 chars per field to prevent DB DoS
+      const str = String(text).slice(0, 2000);
+      return str.replace(/<[^>]*>?/gm, '').trim();
+    };
+
+    const itemsToInsert = parsedItems.map((item) => {
+      // Ensure searchable text is never fully empty, fallback to product name or question
+      const sText = sanitizeText(item.searchableText) || sanitizeText(item.productName) || sanitizeText(item.question) || 'Data';
+      
+      return {
+        userId,
+        businessProfileId: profile.id,
+        sourceId: source.id,
+        category: item.productName ? 'product' : 'qa',
+        question: sanitizeText(item.question),
+        answer: sanitizeText(item.answer),
+        productName: sanitizeText(item.productName),
+        productCategory: sanitizeText(item.productCategory),
+        price: Number(item.price || 0),
+        stockStatus: sanitizeText(item.stockStatus),
+        description: sanitizeText(item.description),
+        searchableText: sText,
+      };
+    });
 
     await prisma.knowledgeItem.createMany({
       data: itemsToInsert,

@@ -4,7 +4,7 @@
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "waha-webhook",
+        "path": "waha-lead-capture",
         "responseMode": "lastNode",
         "options": {}
       },
@@ -19,7 +19,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const body = $json.body || $json;\nconst payload = body.payload || body;\nreturn [{ json: {\n  session: body.session || 'default',\n  chatId: payload.from,\n  senderNumber: payload.from?.split('@')[0],\n  messageText: payload.body || '',\n  fromMe: payload.fromMe || false,\n  isGroup: payload.isGroup || false\n}}];"
+        "jsCode": "const body = $json.body || $json;\nconst headers = $node['Webhook WAHA']?.json?.headers || {};\nconst payload = body.payload || body;\nreturn [{ json: {\n  session: body.session || 'default',\n  chatId: payload.from,\n  senderNumber: payload.from?.split('@')[0],\n  messageText: payload.body || '',\n  fromMe: payload.fromMe || false,\n  isGroup: payload.isGroup || false,\n  webhookSecret: headers['x-webhook-secret'] || ''\n}}];"
       },
       "id": "normalize",
       "name": "Normalize Payload",
@@ -80,7 +80,7 @@
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({ model: 'claude-haiku-4-5', temperature: 0.3, max_tokens: 450, messages: [{ role: 'system', content: `Anda adalah customer service WhatsApp untuk UMKM Indonesia bernama {{BUSINESS_NAME}}.\\n\\nGaya bicara:\\n- Ramah\\n- Sopan\\n- Natural\\n- Boleh memakai emoji secukupnya\\n\\nTugas utama:\\n- Menjawab pertanyaan customer secara singkat, jelas, dan membantu\\n- Jangan mengarang info di luar konteks bisnis\\n- Jika tidak tahu, arahkan ke admin manusia.\\n\\nJika customer menyebutkan nama, nomor telepon, alamat, atau produk yang diminati, kamu harus menyelipkan blok JSON rahasia di akhir pesanmu dengan format berikut:\\n```json\\n{ \"action\": \"save_lead\", \"name\": \"nama_customer\", \"interest\": \"produk_diminati\", \"phone\": \"nomor\" }\\n```\\nBalasanmu ke customer tetap harus natural, cukup selipkan JSON tersebut paling bawah.` }, { role: 'user', content: $json.messageText }] }) }}"
+        "body": "={{ JSON.stringify({ model: 'claude-haiku-4-5', temperature: 0.3, max_tokens: 450, messages: [{ role: 'system', content: `Anda adalah customer service WhatsApp untuk UMKM Indonesia bernama {{BUSINESS_NAME}}.\\n\\nGaya bicara:\\n- Ramah\\n- Sopan\\n- Natural\\n- Boleh memakai emoji secukupnya\\n\\nTugas utama:\\n- Menjawab pertanyaan customer secara singkat, jelas, dan membantu\\n- Jangan mengarang info di luar konteks bisnis\\n- Jika tidak tahu, arahkan ke admin manusia.\\n\\nJika customer menyebutkan nama, nomor telepon, alamat, atau produk yang diminati, kamu harus menyelipkan blok JSON rahasia di akhir pesanmu dengan format berikut:\\n```json\\n{ \"action\": \"save_lead\", \"name\": \"nama_customer\", \"interest\": \"produk_diminati\", \"phone\": \"nomor\", \"address\": \"alamat_kustomer\" }\\n```\\nBalasanmu ke customer tetap harus natural, cukup selipkan JSON tersebut paling bawah.` }, { role: 'user', content: $json.messageText }] }) }}"
       },
       "id": "flaz-ai",
       "name": "Flaz Cloud AI",
@@ -89,7 +89,8 @@
       "position": [
         700,
         280
-      ]
+      ],
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -127,13 +128,13 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "{{WEBSITE_API_BASE_URL}}/api/leads",
+        "url": "={{'{{WEBSITE_API_BASE_URL}}'.replace(/\\/$/, '') + '/api/internal/chatbot/leads'}}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
-              "name": "Authorization",
-              "value": "Bearer {{WEBSITE_INTERNAL_API_KEY}}"
+              "name": "x-internal-api-key",
+              "value": "{{WEBSITE_INTERNAL_API_KEY}}"
             },
             {
               "name": "Content-Type",
@@ -144,7 +145,7 @@
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
-        "body": "={{ JSON.stringify($json.leadData) }}"
+        "body": "={{ JSON.stringify({ wahaSessionName: '{{SESSION_NAME}}', customerPhone: $('Normalize Payload').first().json.chatId.replace('@c.us',''), customerName: $json.leadData?.name || $('Normalize Payload').first().json.senderNumber, interest: $json.leadData?.interest || '', address: $json.leadData?.address || '', status: 'warm', notes: 'Captured from WhatsApp' }) }}"
       },
       "id": "save-lead",
       "name": "Save Lead to DB",

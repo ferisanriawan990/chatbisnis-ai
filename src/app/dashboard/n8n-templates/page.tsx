@@ -26,14 +26,15 @@ export default function N8nTemplatesPage() {
       });
   }, []);
 
-  const placeholders = `WAHA_BASE_URL=http://202.155.157.219:3000
+  const placeholders = `WAHA_BASE_URL=https://waha.domainanda.com
 WAHA_API_KEY=your_waha_api_key
 FLAZ_API_KEY=sk-your_flaz_api_key
 BUSINESS_NAME=ChatBisnis AI
 ADMIN_WHATSAPP_NUMBER=628123456789
 SESSION_NAME=default
 WEBSITE_API_BASE_URL=https://chatbisnis-ai.vercel.app
-WEBSITE_INTERNAL_API_KEY=your_internal_secret`;
+WEBSITE_INTERNAL_API_KEY=your_internal_secret
+WAHA_WEBHOOK_SECRET=your_webhook_secret_here`;
 
   const copyPlaceholders = () => {
     navigator.clipboard.writeText(placeholders);
@@ -108,7 +109,7 @@ WEBSITE_INTERNAL_API_KEY=your_internal_secret`;
 
       <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 mt-8">
         <h3 className="font-semibold text-slate-900 mb-3">Cara Import ke n8n Cloud</h3>
-        <ol className="list-decimal list-inside space-y-2 text-sm text-slate-600">
+        <ol className="list-decimal list-inside space-y-2 text-sm text-slate-600 mb-6">
           <li>Download salah satu template JSON di atas.</li>
           <li>Buka dashboard n8n Cloud Anda.</li>
           <li>Klik menu tiga titik (⋮) di pojok kanan atas layar n8n.</li>
@@ -116,6 +117,14 @@ WEBSITE_INTERNAL_API_KEY=your_internal_secret`;
           <li>Isi semua placeholder (contoh: <code>{'{{FLAZ_API_KEY}}'}</code>) dengan data asli Anda di setiap node.</li>
           <li>Klik <strong>Save</strong> dan aktifkan toggle <strong>Active</strong>.</li>
         </ol>
+
+        <h3 className="font-semibold text-rose-800 mb-3">⚠️ Peringatan Keamanan (Production)</h3>
+        <ul className="list-disc list-inside space-y-2 text-sm text-rose-700">
+          <li>Untuk production, WAHA <strong>wajib</strong> menggunakan domain HTTPS. Jangan gunakan format <code>IP:3000</code>.</li>
+          <li>Jangan pernah memasukkan API key ke dalam frontend atau kode publik.</li>
+          <li>Simpan kredensial di <strong>n8n Credentials</strong> jika memungkinkan daripada menulis teks mentah (raw text) di HTTP Request.</li>
+          <li>Jangan pernah membagikan (share) API key Anda di forum publik atau chat umum.</li>
+        </ul>
       </div>
     </div>
   );

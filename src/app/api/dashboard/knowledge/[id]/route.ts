@@ -22,14 +22,18 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
       return NextResponse.json({ error: 'Source not found' }, { status: 404 });
     }
 
-    // Prisma cascade delete will handle KnowledgeItems automatically
+    // Prisma onDelete is set to SetNull for items, so we must delete them manually
+    const deletedItems = await prisma.knowledgeItem.deleteMany({
+      where: { sourceId: id, userId },
+    });
+
     await prisma.knowledgeSource.delete({
       where: { id },
     });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, deletedItemsCount: deletedItems.count });
   } catch (error) {
-    console.error('DELETE /api/dashboard/knowledge/[id] Error:', error);
+    console.error('DELETE /api/dashboard/knowledge/[id] Error:', (error as Error).message);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

@@ -72,6 +72,22 @@ export const manualKnowledgeSchema = z.object({
   price: z.coerce.number().min(0).optional(),
   stockStatus: z.string().max(50).optional(),
   description: z.string().max(5000).optional(),
+}).superRefine((data, ctx) => {
+  if (data.type === 'qa') {
+    if (!data.question?.trim()) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Pertanyaan wajib diisi', path: ['question'] });
+    }
+    if (!data.answer?.trim()) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Jawaban wajib diisi', path: ['answer'] });
+    }
+  } else if (data.type === 'product') {
+    if (!data.productName?.trim()) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Nama produk wajib diisi', path: ['productName'] });
+    }
+    if (!data.description?.trim() && !data.price) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Minimal isi deskripsi atau harga', path: ['description'] });
+    }
+  }
 });
 
 // ─── Internal API Schemas ───────────────────────────────
