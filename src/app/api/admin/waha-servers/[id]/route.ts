@@ -28,15 +28,15 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       return NextResponse.json({ error: 'Invalid data' }, { status: 400 });
     }
 
-    const updateData: Prisma.WahaServerUpdateInput = { ...parsed.data };
-    if (parsed.data.baseUrl) {
-      updateData.baseUrl = parsed.data.baseUrl.replace(/\/$/, '');
+    const { apiKey, baseUrl, ...rest } = parsed.data;
+    const updateData: Prisma.WahaServerUpdateInput = { ...rest };
+    
+    if (baseUrl) {
+      updateData.baseUrl = baseUrl.replace(/\/$/, '');
     }
-    if (parsed.data.apiKey) {
-      updateData.apiKeyEncrypted = encrypt(parsed.data.apiKey);
+    if (apiKey) {
+      updateData.apiKeyEncrypted = encrypt(apiKey);
     }
-    // Delete apiKey as it's not in the model
-    delete (updateData as any).apiKey;
 
     const server = await prisma.wahaServer.update({
       where: { id: (await params).id },

@@ -29,7 +29,8 @@ export async function GET() {
       isConfigured: true,
       maskedValue: '••••••••',
       createdAt: k.createdAt,
-      updatedAt: k.updatedAt
+      updatedAt: k.updatedAt,
+      lastRotatedAt: k.lastRotatedAt
     }));
 
     return NextResponse.json(maskedKeys);

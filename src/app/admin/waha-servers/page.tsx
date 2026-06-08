@@ -198,7 +198,10 @@ export default function AdminWahaServersPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Base URL</label>
-                <input type="url" required value={formData.baseUrl} onChange={e => setFormData({...formData, baseUrl: e.target.value})} className="w-full p-2 border border-slate-200 rounded-lg" placeholder="https://waha1.example.com" />
+                <input type="url" required value={formData.baseUrl} onChange={e => setFormData({...formData, baseUrl: e.target.value})} className="w-full p-2 border border-slate-200 rounded-lg" placeholder="https://waha-node.domainanda.com" />
+                {formData.baseUrl && formData.baseUrl.startsWith('http://') && process.env.NODE_ENV === 'production' && (
+                  <p className="text-amber-600 text-xs mt-1">⚠️ Peringatan: Gunakan HTTPS di Production untuk keamanan Webhook!</p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">API Key {editingServer && '(Kosongkan jika tidak ingin mengubah)'}</label>

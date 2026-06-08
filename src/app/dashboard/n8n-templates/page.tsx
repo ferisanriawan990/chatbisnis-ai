@@ -26,14 +26,8 @@ export default function N8nTemplatesPage() {
       });
   }, []);
 
-  const placeholders = `WAHA_BASE_URL=https://waha.domainanda.com
-WAHA_API_KEY=your_waha_api_key
-FLAZ_API_KEY=sk-your_flaz_api_key
-BUSINESS_NAME=ChatBisnis AI
-ADMIN_WHATSAPP_NUMBER=628123456789
-SESSION_NAME=chatbisnis_user_xxxxx
+  const placeholders = `SESSION_NAME=chatbisnis_user_xxxxx
 WEBSITE_API_BASE_URL=https://chatbisnis-ai.vercel.app
-WEBSITE_INTERNAL_API_KEY=your_internal_secret
 WAHA_WEBHOOK_SECRET=your_webhook_secret_here`;
 
   const copyPlaceholders = () => {

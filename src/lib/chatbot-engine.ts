@@ -109,14 +109,17 @@ export class ChatbotEngine {
       const jakartaHour = (now.getUTCHours() + 7) % 24; 
       let isOutOfHours = false;
       
-      const hoursStr = chatbotSetting.businessProfile.openingHours || '08:00-17:00';
-      // format misal 08:00 - 17:00
-      const match = hoursStr.match(/(\d{1,2}):\d{2}\s*-\s*(\d{1,2}):\d{2}/);
-      if (match) {
-        const startHour = parseInt(match[1]);
-        const endHour = parseInt(match[2]);
-        if (jakartaHour < startHour || jakartaHour >= endHour) {
-          isOutOfHours = true;
+      const hoursStr = (chatbotSetting.businessProfile.openingHours || '08:00-17:00').toLowerCase().replace(/\s/g, '');
+      if (hoursStr === '24jam' || hoursStr === '24/7') {
+        isOutOfHours = false;
+      } else {
+        const match = hoursStr.match(/(\d{1,2}):\d{2}-(\d{1,2}):\d{2}/);
+        if (match) {
+          const startHour = parseInt(match[1]);
+          const endHour = parseInt(match[2]);
+          if (jakartaHour < startHour || jakartaHour >= endHour) {
+            isOutOfHours = true;
+          }
         }
       }
 
@@ -217,11 +220,21 @@ export class ChatbotEngine {
       const scoredItems = knowledgeItems.map(item => {
         let score = 0;
         const searchable = item.searchableText.toLowerCase();
+        const productName = item.productName?.toLowerCase() || '';
+        const category = item.productCategory?.toLowerCase() || '';
         
         // Exact product match
-        if (item.productName && lowerMessageIn.includes(item.productName.toLowerCase())) score += 10;
+        if (productName && lowerMessageIn.includes(productName)) score += 20;
+        // Category match
+        if (category && lowerMessageIn.includes(category)) score += 5;
         // Question match
-        if (item.question && lowerMessageIn.includes(item.question.toLowerCase())) score += 5;
+        if (item.question && lowerMessageIn.includes(item.question.toLowerCase())) score += 10;
+        // Intent match
+        if (lowerMessageIn.includes('harga') || lowerMessageIn.includes('berapa')) score += 5;
+        if (lowerMessageIn.includes('stok') || lowerMessageIn.includes('sisa')) score += 5;
+        if (lowerMessageIn.includes('alamat') || lowerMessageIn.includes('lokasi')) score += 5;
+        if (lowerMessageIn.includes('jam') || lowerMessageIn.includes('buka')) score += 5;
+
         // Keyword match
         for (const word of words) {
           if (word.length > 3 && searchable.includes(word)) score += 1;
@@ -231,12 +244,12 @@ export class ChatbotEngine {
       });
 
       scoredItems.sort((a, b) => b.score - a.score);
-      const topItems = scoredItems.filter(s => s.score > 0).slice(0, 10);
+      const topItems = scoredItems.filter(s => s.score > 0).slice(0, 15);
       
       let relevantKnowledge = '';
       let charCount = 0;
       for (const s of topItems) {
-        if (charCount > 1500) break; // Restrict context window length tightly
+        if (charCount > 3500) break; // Restrict context window length tightly to ~4000
         relevantKnowledge += `- ${s.item.searchableText}\n`;
         charCount += s.item.searchableText.length;
       }
@@ -274,7 +287,9 @@ ${isOutOfHours ? `- SAAT INI ADALAH DI LUAR JAM OPERASIONAL. Pastikan untuk meny
       let aiApiKey = '';
       if (activePlan?.allowCustomApiKey && chatbotSetting.aiApiKeyEncrypted) {
         aiApiKey = decrypt(chatbotSetting.aiApiKeyEncrypted);
-      } else {
+      }
+      
+      if (!aiApiKey) {
         // Only use global key if it exists AND isActive = true
         const globalKey = await prisma.secretCredential.findUnique({
           where: { key: 'FLAZ_API_KEY_GLOBAL' },
@@ -285,6 +300,7 @@ ${isOutOfHours ? `- SAAT INI ADALAH DI LUAR JAM OPERASIONAL. Pastikan untuk meny
       }
 
       if (!aiApiKey) {
+        console.error('GLOBAL_AI_KEY_MISSING: No valid API key found for completion');
         await prisma.conversationState.update({
           where: { chatbotSettingId_customerPhone: { chatbotSettingId: chatbotSetting.id, customerPhone } },
           data: { status: 'human_handover' }
@@ -296,12 +312,12 @@ ${isOutOfHours ? `- SAAT INI ADALAH DI LUAR JAM OPERASIONAL. Pastikan untuk meny
           customerPhone,
           customerName,
           messageIn: sanitizedMessageIn,
-          messageOut: chatbotSetting.handoverMessage,
+          messageOut: 'Mohon maaf, layanan sedang gangguan. Admin kami akan segera membantu.',
           status: 'failed',
           tokenUsage: 0,
           needsHuman: true,
         });
-        return chatbotSetting.handoverMessage;
+        return 'Mohon maaf, layanan sedang gangguan. Admin kami akan segera membantu.';
       }
 
       const { reply, tokenUsage } = await AIService.generateReply({

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -32,6 +33,11 @@ interface AdminUserRow {
   chatbotSettings?: ChatbotSettingStatus[];
   whatsappSessions?: WhatsAppSessionStatus[];
   subscriptions?: SubscriptionInfo[];
+  _count?: {
+    knowledgeItems: number;
+    leads: number;
+  };
+  chatsThisMonth?: number;
 }
 
 export default function AdminUsersPage() {
@@ -53,7 +59,6 @@ export default function AdminUsersPage() {
     }
   }, []);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { void fetchUsers(); }, [fetchUsers]);
 
   const filtered = users.filter(
@@ -117,7 +122,8 @@ export default function AdminUsersPage() {
                   <th className="pb-3 font-medium">Nama</th>
                   <th className="pb-3 font-medium">Role</th>
                   <th className="pb-3 font-medium">Status Bot &amp; WAHA</th>
-                  <th className="pb-3 font-medium">Plan</th>
+                  <th className="pb-3 font-medium">Data (Knowledge/Leads)</th>
+                  <th className="pb-3 font-medium">Plan &amp; Chats</th>
                   <th className="pb-3 font-medium">Tanggal Daftar</th>
                   <th className="pb-3 font-medium text-right">Aksi</th>
                 </tr>
@@ -155,8 +161,17 @@ export default function AdminUsersPage() {
                           </span>
                         </div>
                       </td>
-                      <td className="py-4 font-medium text-sm">
-                        {u.subscriptions?.[0]?.plan?.name || 'Free'}
+                      <td className="py-4">
+                        <div className="flex flex-col gap-1 text-sm text-slate-600">
+                          <span>Knowledge: {u._count?.knowledgeItems || 0}</span>
+                          <span>Leads: {u._count?.leads || 0}</span>
+                        </div>
+                      </td>
+                      <td className="py-4">
+                        <div className="flex flex-col gap-1">
+                          <span className="font-medium text-sm">{u.subscriptions?.[0]?.plan?.name || 'Free'}</span>
+                          <span className="text-xs text-slate-500">Chats this month: {u.chatsThisMonth || 0}</span>
+                        </div>
                       </td>
                       <td className="py-4 text-slate-500 text-sm">
                         {new Date(u.createdAt).toLocaleDateString('id-ID')}

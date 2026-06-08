@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -13,6 +14,7 @@ export default function AdminApiKeysPage() {
     key: '',
     value: '',
     provider: 'flaz',
+    description: '',
   });
 
   const fetchKeys = async () => {
@@ -29,7 +31,6 @@ export default function AdminApiKeysPage() {
   };
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchKeys();
   }, []);
 
@@ -44,8 +45,7 @@ export default function AdminApiKeysPage() {
       });
       if (!res.ok) throw new Error('Gagal menyimpan API Key');
       toast.success('API Key berhasil disimpan', { id: 'add' });
-      setFormData({ name: '', key: '', value: '', provider: 'flaz' });
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setFormData({ name: '', key: '', value: '', provider: 'flaz', description: '' });
     fetchKeys();
     } catch (e: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
       toast.error(e.message, { id: 'add' });
@@ -100,6 +100,25 @@ export default function AdminApiKeysPage() {
     }
   };
 
+  const handleEditDescription = async (id: string, currentDesc: string) => {
+    const newDesc = prompt('Masukkan deskripsi baru:', currentDesc || '');
+    if (newDesc === null) return;
+    
+    toast.loading('Memperbarui deskripsi...', { id: 'desc' });
+    try {
+      const res = await fetch(`/api/admin/api-keys/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ description: newDesc })
+      });
+      if (!res.ok) throw new Error('Gagal memperbarui deskripsi');
+      toast.success('Deskripsi diperbarui', { id: 'desc' });
+      fetchKeys();
+    } catch (e: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
+      toast.error(e.message, { id: 'desc' });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -134,6 +153,10 @@ export default function AdminApiKeysPage() {
                 <option value="anthropic">Anthropic</option>
               </select>
             </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Deskripsi (Opsional)</label>
+              <textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. Digunakan untuk engine utama" rows={2} />
+            </div>
             <button type="submit" className="w-full bg-indigo-600 text-white py-2 rounded-lg font-medium hover:bg-indigo-700 flex items-center justify-center gap-2">
               <Plus className="w-4 h-4" /> Simpan Key
             </button>
@@ -159,6 +182,8 @@ export default function AdminApiKeysPage() {
                       <td className="py-4">
                         <div className="font-medium text-slate-900">{k.name}</div>
                         <div className="font-mono text-xs text-slate-500 mt-1">{k.key}</div>
+                        {k.description && <div className="text-xs text-slate-500 mt-1 italic">{k.description}</div>}
+                        {k.lastRotatedAt && <div className="text-xs text-emerald-600 mt-1">Rotated: {new Date(k.lastRotatedAt).toLocaleDateString()}</div>}
                       </td>
                       <td className="py-4">
                         <span className="capitalize bg-slate-100 text-slate-700 px-2 py-1 rounded text-xs">{k.provider}</span>
@@ -174,6 +199,9 @@ export default function AdminApiKeysPage() {
                         </button>
                         <button onClick={() => handleRotateKey(k.id)} className="text-xs px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-700 rounded font-medium">
                           Rotate
+                        </button>
+                        <button onClick={() => handleEditDescription(k.id, k.description)} className="text-xs px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded font-medium">
+                          Edit Desc
                         </button>
                         <button onClick={() => handleDelete(k.id)} className="text-red-500 p-1 hover:bg-red-50 rounded">
                           <Trash2 className="w-4 h-4" />

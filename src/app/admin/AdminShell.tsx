@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 'use client';
 
 import { ReactNode, useState, useEffect } from 'react';
@@ -34,7 +35,6 @@ export default function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   // Close mobile menu on route change
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { void setIsMobileMenuOpen(false); }, [pathname]);
 
   return (

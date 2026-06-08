@@ -32,8 +32,9 @@
           ]
         },
         "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{JSON.stringify($json.body)}}",
+        "specifyBody": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify($json.body || $json) }}",
         "options": {}
       },
       "id": "2",
