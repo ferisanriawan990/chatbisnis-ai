@@ -49,7 +49,8 @@ export class WAHAService {
         throw new Error(`WAHA API error ${res.status}: ${errorDetail}`);
       }
 
-      return res.json();
+      const text = await res.text();
+      return text ? JSON.parse(text) : { success: true };
     } catch (error: unknown) {
       clearTimeout(timeoutId);
       if ((error as { name?: string }).name === 'AbortError') {
