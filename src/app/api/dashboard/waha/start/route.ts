@@ -30,24 +30,32 @@ export async function POST() {
         const servers = await tx.wahaServer.findMany({
           where: { isActive: true },
         });
-        const availableServer = servers.find(
-          (s) => s.currentSessions < s.maxSessions && s.apiKeyEncrypted,
-        );
-
-        if (!availableServer) {
-          throw new Error('SERVER_FULL');
-        }
-
         const isCoreMode = process.env.WAHA_CORE_MODE !== 'false';
         const sessionName = isCoreMode ? 'default' : `waha_plus_${userId}`;
 
-        if (isCoreMode) {
-          const existingDefault = await tx.chatbotSetting.findFirst({
-            where: { wahaServerId: availableServer.id, wahaSessionName: 'default' }
-          });
-          if (existingDefault && existingDefault.userId !== userId) {
-            throw new Error('WAHA_CORE_TAKEN');
+        let availableServer = null;
+
+        for (const s of servers) {
+          if (s.currentSessions >= s.maxSessions || !s.apiKeyEncrypted) continue;
+
+          if (isCoreMode) {
+            const existingDefault = await tx.chatbotSetting.findFirst({
+              where: { wahaServerId: s.id, wahaSessionName: 'default' }
+            });
+            if (existingDefault && existingDefault.userId !== userId) {
+              continue; // This server's core slot is taken, try next server
+            }
           }
+          
+          availableServer = s;
+          break;
+        }
+
+        if (!availableServer) {
+          if (isCoreMode && servers.length > 0) {
+             throw new Error('WAHA_CORE_TAKEN');
+          }
+          throw new Error('SERVER_FULL');
         }
 
         // Increment server usage (will be synced accurately after)
