@@ -65,6 +65,7 @@ model User {
   auditLogs          AuditLog[]
   conversationStates ConversationState[]
   Transaction        Transaction[]
+  botConfig          BusinessBotConfig?
 }
 
 model BusinessProfile {
@@ -400,4 +401,50 @@ model Transaction {
   plan Plan @relation(fields: [planId], references: [id], onDelete: Cascade)
 
   @@index([userId, status])
+}
+
+// ─── Business Template System ────────────────────────────
+
+model BusinessTemplate {
+  id              String   @id @default(uuid())
+  name            String
+  slug            String   @unique
+  category        String
+  description     String   @db.Text
+  systemPrompt    String   @db.Text
+  requiredFields  String   @db.Text    // JSON array of required field names
+  sampleQuestions String   @db.Text    // JSON array of sample customer questions
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  botConfigs      BusinessBotConfig[]
+}
+
+model BusinessBotConfig {
+  id                  String   @id @default(uuid())
+  userId              String   @unique
+  templateId          String
+  businessName        String
+  businessDescription String   @db.Text
+  productsOrServices  String?  @db.Text    // JSON array or free text
+  pricingInfo         String?  @db.Text
+  operationalHours    String?
+  address             String?  @db.Text
+  serviceArea         String?
+  paymentMethods      String?
+  deliveryMethods     String?
+  humanAdminContact   String?
+  catalogUrl          String?
+  mapsUrl             String?
+  customFAQ           String?  @db.Text    // JSON array [{q, a}]
+  tone                String   @default("sopan")
+  languageStyle       String   @default("id")
+  botMode             String   @default("auto_reply")
+  isBotActive         Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  user                User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  template            BusinessTemplate  @relation(fields: [templateId], references: [id])
 }

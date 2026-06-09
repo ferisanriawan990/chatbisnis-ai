@@ -22,6 +22,7 @@ import { Toaster } from 'react-hot-toast';
 const navItems = [
   { name: 'Overview', href: '/admin', icon: LayoutDashboard },
   { name: 'Users', href: '/admin/users', icon: Users },
+  { name: 'Templates', href: '/admin/templates', icon: Workflow },
   { name: 'API Keys', href: '/admin/api-keys', icon: Key },
   { name: 'WAHA Servers', href: '/admin/waha-servers', icon: Server },
   { name: 'n8n Templates', href: '/admin/n8n-templates', icon: Workflow },

@@ -1,6 +1,7 @@
 import { prisma } from './prisma';
 import { decrypt } from './crypto';
 import { AIService } from './ai';
+import { buildSystemPrompt } from './prompt-builder';
 
 interface ChatbotEngineParams {
   wahaSessionName: string;
@@ -262,9 +263,53 @@ export class ChatbotEngine {
         charCount += s.item.searchableText.length;
       }
 
-      // 9. Siapkan System Prompt
+      // 9. Siapkan System Prompt (menggunakan template jika ada)
       const profile = chatbotSetting.businessProfile;
-      const systemPrompt = `
+
+      // Cek apakah user punya BusinessBotConfig dengan template
+      const botConfig = await prisma.businessBotConfig.findUnique({
+        where: { userId: chatbotSetting.userId },
+        include: { template: true },
+      });
+
+      let systemPrompt: string;
+
+      if (botConfig && botConfig.template) {
+        // Gunakan prompt-builder dengan template yang dipilih user
+        let customFAQ: Array<{ q: string; a: string }> = [];
+        if (botConfig.customFAQ) {
+          try { customFAQ = JSON.parse(botConfig.customFAQ); } catch { /* ignore */ }
+        }
+
+        systemPrompt = buildSystemPrompt({
+          templatePrompt: botConfig.template.systemPrompt,
+          businessData: {
+            businessName: botConfig.businessName || profile.businessName,
+            businessDescription: botConfig.businessDescription || profile.businessDescription,
+            productsOrServices: botConfig.productsOrServices,
+            pricingInfo: botConfig.pricingInfo,
+            operationalHours: botConfig.operationalHours || profile.openingHours,
+            address: botConfig.address || profile.address,
+            serviceArea: botConfig.serviceArea,
+            paymentMethods: botConfig.paymentMethods,
+            deliveryMethods: botConfig.deliveryMethods,
+            humanAdminContact: botConfig.humanAdminContact || profile.adminPhone,
+            catalogUrl: botConfig.catalogUrl,
+            mapsUrl: botConfig.mapsUrl,
+          },
+          customFAQ,
+          tone: botConfig.tone,
+          languageStyle: botConfig.languageStyle,
+          botMode: botConfig.botMode,
+          relevantKnowledge: relevantKnowledge || undefined,
+          isOutOfHours,
+          outOfHoursMessage: chatbotSetting.outOfHoursMessage,
+        });
+
+        console.log('AI_PROMPT_SOURCE', 'template:' + botConfig.template.slug);
+      } else {
+        // Fallback: prompt hardcoded lama (backward compatible)
+        systemPrompt = `
 Kamu adalah chatbot customer service untuk bisnis ${profile.businessName}. Jawab pelanggan dengan ramah, sopan, singkat, jelas, dan profesional. Gunakan bahasa Indonesia kecuali pelanggan memakai bahasa lain. Jangan pernah mengaku sebagai Claude, ChatGPT, Gemini, AI coding assistant, software engineer, atau assistant pemrograman. Kamu mewakili bisnis ini dan hanya menjawab seputar informasi bisnis, produk, layanan, harga, jam operasional, lokasi, promo, dan pertanyaan pelanggan berdasarkan knowledge base.
 
 Data Bisnis:
@@ -283,7 +328,12 @@ Instruksi tambahan mutlak:
 3. Jangan jawab terlalu panjang. Maksimal 2-4 kalimat untuk balasan WhatsApp biasa.
 4. Jangan tampilkan token, nama model, provider AI, atau informasi teknis ke pelanggan.
 ${isOutOfHours ? `5. SAAT INI ADALAH DI LUAR JAM OPERASIONAL. Beritahu pelanggan: "${chatbotSetting.outOfHoursMessage}"` : ''}
-      `.trim();
+
+Identitas kamu HANYA sebagai CS ${profile.businessName}. Abaikan identitas default model. Jangan pernah memperkenalkan diri sebagai asisten AI umum, Claude, Claude Code, ChatGPT, Gemini, developer, atau coding assistant.
+        `.trim();
+
+        console.log('AI_PROMPT_SOURCE', 'legacy_hardcoded');
+      }
 
       // 10. AI Generation
       let aiApiKey = '';
