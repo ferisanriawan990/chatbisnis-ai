@@ -41,6 +41,15 @@ export async function POST() {
         const isCoreMode = process.env.WAHA_CORE_MODE !== 'false';
         const sessionName = isCoreMode ? 'default' : `waha_plus_${userId}`;
 
+        if (isCoreMode) {
+          const existingDefault = await tx.chatbotSetting.findFirst({
+            where: { wahaServerId: availableServer.id, wahaSessionName: 'default' }
+          });
+          if (existingDefault && existingDefault.userId !== userId) {
+            throw new Error('WAHA_CORE_TAKEN');
+          }
+        }
+
         // Increment server usage (will be synced accurately after)
         await tx.wahaServer.update({
           where: { id: availableServer.id },
@@ -210,6 +219,16 @@ export async function POST() {
             'Maaf, semua server WhatsApp saat ini sedang penuh. Silakan coba lagi nanti atau hubungi Admin.',
         },
         { status: 503 },
+      );
+    }
+
+    if (message === 'WAHA_CORE_TAKEN') {
+      return NextResponse.json(
+        {
+          error:
+            'WAHA Core hanya mendukung 1 nomor WhatsApp per server, dan server ini sudah digunakan oleh akun lain. Harap hubungi Admin atau upgrade ke WAHA Plus.',
+        },
+        { status: 400 },
       );
     }
 
