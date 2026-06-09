@@ -39,8 +39,8 @@ export async function POST() {
           throw new Error('SERVER_FULL');
         }
 
-        const randomString = crypto.randomBytes(4).toString('hex');
-        const sessionName = `chatbisnis_${userId}_${randomString}`;
+        const isCoreMode = process.env.WAHA_CORE_MODE === 'true';
+        const sessionName = isCoreMode ? 'default' : `chatbisnis_${userId}_${crypto.randomBytes(4).toString('hex')}`;
 
         // Increment server usage (will be synced accurately after)
         await tx.wahaServer.update({

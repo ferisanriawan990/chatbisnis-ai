@@ -128,7 +128,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: true, message: 'Ignored fromMe, broadcast, group, or empty' });
     }
 
-    if (!norm.sessionName || norm.sessionName === 'default' || !norm.customerPhone) {
+    if (!norm.sessionName || !norm.customerPhone) {
       return NextResponse.json(
         { error: 'Invalid payload structure or session name' },
         { status: 400 },

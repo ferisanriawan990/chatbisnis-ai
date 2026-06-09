@@ -11,6 +11,7 @@ export default function WahaDashboard() {
   const [sessionName, setSessionName] = useState('');
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [isCoreMode, setIsCoreMode] = useState(false);
 
   const fetchQrCode = async () => {
     try {
@@ -29,9 +30,10 @@ export default function WahaDashboard() {
     try {
       const res = await fetch('/api/dashboard/waha/status');
       if (res.ok) {
-        const { status, sessionName: sName } = await res.json();
+        const { status, sessionName: sName, isCoreMode: coreMode } = await res.json();
         setWahaStatus(status);
         if (sName) setSessionName(sName);
+        setIsCoreMode(!!coreMode);
 
         if (status === 'qr') {
           fetchQrCode();
@@ -103,6 +105,16 @@ export default function WahaDashboard() {
           <p className="text-slate-500 mt-1">Sambungkan nomor WhatsApp bisnis Anda ke server WAHA untuk mulai melayani pelanggan.</p>
         </div>
       </div>
+
+      {isCoreMode && (
+        <div className="bg-blue-50 border border-blue-200 text-blue-800 px-6 py-4 rounded-xl flex items-start gap-3 shadow-sm">
+          <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-blue-600" />
+          <div>
+            <p className="font-semibold text-sm">Mode WAHA Core aktif</p>
+            <p className="text-sm mt-1">Hanya mendukung 1 nomor WhatsApp (Sesi &quot;default&quot;). Untuk mendaftarkan banyak user dan nomor, gunakan WAHA Plus.</p>
+          </div>
+        </div>
+      )}
 
       <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 space-y-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200 gap-4">

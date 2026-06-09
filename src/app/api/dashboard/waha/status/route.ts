@@ -64,6 +64,7 @@ export async function GET() {
       serverName: wahaServer.name,
       lastConnectedAt: wpSession?.lastConnectedAt,
       lastError: wpSession?.lastError,
+      isCoreMode: process.env.WAHA_CORE_MODE === 'true',
     });
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'unknown';
