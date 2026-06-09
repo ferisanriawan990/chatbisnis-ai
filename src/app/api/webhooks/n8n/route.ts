@@ -21,7 +21,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    const chatbotSetting = await prisma.chatbotSetting.findUnique({
+    const chatbotSetting = await prisma.chatbotSetting.findFirst({
       where: { wahaSessionName: sessionName },
       include: { businessProfile: true }
     });

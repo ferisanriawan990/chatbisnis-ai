@@ -20,7 +20,7 @@ async function main() {
     console.log(`Checking bot for user ${bot.userId} (Session: ${bot.wahaSessionName})`);
 
     // Check if 'default' is already taken
-    const existingDefault = await prisma.chatbotSetting.findUnique({
+    const existingDefault = await prisma.chatbotSetting.findFirst({
       where: { wahaSessionName: 'default' }
     });
 

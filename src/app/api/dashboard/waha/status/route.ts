@@ -40,7 +40,7 @@ export async function GET() {
     }
 
     // Get last connection data
-    const wpSession = await prisma.whatsAppSession.findUnique({
+    const wpSession = await prisma.whatsAppSession.findFirst({
       where: { sessionName: activeSessionName },
     });
 

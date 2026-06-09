@@ -65,25 +65,37 @@ export async function POST() {
     }
 
     const isCoreMode = process.env.WAHA_CORE_MODE !== 'false';
-    if (isCoreMode && chatbot.wahaSessionName !== 'default') {
-      const existingDefault = await prisma.chatbotSetting.findUnique({ where: { wahaSessionName: 'default' } });
+    const needsDefaultUpdate = isCoreMode && (
+      chatbot.wahaSessionName !== 'default' || 
+      chatbot.wahaSessionName.startsWith('chatbisnis_') || 
+      chatbot.wahaSessionName.startsWith('session_')
+    );
+
+    if (needsDefaultUpdate) {
+      const existingDefault = await prisma.chatbotSetting.findFirst({ 
+        where: { 
+          wahaServerId: chatbot.wahaServerId,
+          wahaSessionName: 'default',
+          isActive: true
+        } 
+      });
+
       if (existingDefault && existingDefault.userId !== userId) {
-        return NextResponse.json({ error: 'WAHA Core hanya mendukung 1 nomor WhatsApp. Upgrade ke WAHA Plus untuk multi-user.' }, { status: 400 });
+        return NextResponse.json({ error: 'WAHA Core hanya mendukung 1 nomor WhatsApp. Session default sudah dipakai oleh chatbot lain. Nonaktifkan session lama atau upgrade ke WAHA Plus.' }, { status: 400 });
       }
       
-      chatbot = await prisma.chatbotSetting.update({
-        where: { id: chatbot.id },
-        data: { wahaSessionName: 'default' },
-        include: { wahaServer: true },
-      });
-    } else if (chatbot.wahaSessionName.startsWith('chatbisnis_') || chatbot.wahaSessionName.startsWith('session_')) {
-      // Force convert any legacy string into 'default' if core mode is true
-      if (isCoreMode) {
+      try {
         chatbot = await prisma.chatbotSetting.update({
           where: { id: chatbot.id },
           data: { wahaSessionName: 'default' },
           include: { wahaServer: true },
         });
+      } catch (err: unknown) {
+        const prismaErr = err as { code?: string };
+        if (prismaErr.code === 'P2002') {
+          return NextResponse.json({ error: 'WAHA Core hanya mendukung 1 nomor WhatsApp. Session default sudah dipakai oleh chatbot lain. Nonaktifkan session lama atau upgrade ke WAHA Plus.' }, { status: 400 });
+        }
+        throw err;
       }
     }
 
@@ -112,18 +124,26 @@ export async function POST() {
 
       if (msg.includes('already started')) {
         // Session already exists — ensure DB record exists
-        await prisma.whatsAppSession.upsert({
-          where: { sessionName: chatbot.wahaSessionName },
-          create: {
-            userId,
-            businessProfileId: chatbot.businessProfileId,
-            chatbotSettingId: chatbot.id,
-            wahaServerId: chatbot.wahaServerId!,
-            sessionName: chatbot.wahaSessionName,
-            status: 'connected',
-          },
-          update: { status: 'connected', lastError: null },
+        const existingSession = await prisma.whatsAppSession.findFirst({
+          where: { wahaServerId: chatbot.wahaServerId, sessionName: chatbot.wahaSessionName }
         });
+        if (existingSession) {
+          await prisma.whatsAppSession.update({
+            where: { id: existingSession.id },
+            data: { status: 'connected', lastError: null },
+          });
+        } else {
+          await prisma.whatsAppSession.create({
+            data: {
+              userId,
+              businessProfileId: chatbot.businessProfileId,
+              chatbotSettingId: chatbot.id,
+              wahaServerId: chatbot.wahaServerId!,
+              sessionName: chatbot.wahaSessionName,
+              status: 'connected',
+            }
+          });
+        }
         if (chatbot.wahaServerId) {
           await syncWahaServerSessionCount(chatbot.wahaServerId);
         }
@@ -152,18 +172,27 @@ export async function POST() {
     }
 
     // Ensure session exists in DB
-    await prisma.whatsAppSession.upsert({
-      where: { sessionName: chatbot.wahaSessionName },
-      create: {
-        userId,
-        businessProfileId: chatbot.businessProfileId,
-        chatbotSettingId: chatbot.id,
-        wahaServerId: chatbot.wahaServerId!,
-        sessionName: chatbot.wahaSessionName,
-        status: 'starting',
-      },
-      update: { status: 'starting', lastError: null },
+    const existingSession = await prisma.whatsAppSession.findFirst({
+      where: { wahaServerId: chatbot.wahaServerId, sessionName: chatbot.wahaSessionName }
     });
+    
+    if (existingSession) {
+      await prisma.whatsAppSession.update({
+        where: { id: existingSession.id },
+        data: { status: 'starting', lastError: null },
+      });
+    } else {
+      await prisma.whatsAppSession.create({
+        data: {
+          userId,
+          businessProfileId: chatbot.businessProfileId,
+          chatbotSettingId: chatbot.id,
+          wahaServerId: chatbot.wahaServerId!,
+          sessionName: chatbot.wahaSessionName,
+          status: 'starting',
+        }
+      });
+    }
 
     // Sync accurate counter
     if (chatbot.wahaServerId) {

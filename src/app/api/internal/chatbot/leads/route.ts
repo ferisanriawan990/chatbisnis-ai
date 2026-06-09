@@ -35,7 +35,7 @@ export async function POST(req: Request) {
 
     const data = parseResult.data;
 
-    const chatbotSetting = await prisma.chatbotSetting.findUnique({
+    const chatbotSetting = await prisma.chatbotSetting.findFirst({
       where: { wahaSessionName: data.wahaSessionName },
     });
 

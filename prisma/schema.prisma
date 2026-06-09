@@ -117,7 +117,7 @@ model ChatbotSetting {
   wahaBaseUrl           String?
   wahaApiKeyEncrypted   String?
   wahaServerId          String?
-  wahaSessionName       String   @unique
+  wahaSessionName       String
   n8nWebhookUrl         String?
   internalWebhookSecret String?
   createdAt             DateTime @default(now())
@@ -129,6 +129,8 @@ model ChatbotSetting {
   chatLogs           ChatLog[]
   whatsappSessions   WhatsAppSession[]
   conversationStates ConversationState[]
+
+  @@unique([wahaServerId, wahaSessionName])
 }
 
 model KnowledgeSource {
@@ -232,7 +234,7 @@ model WhatsAppSession {
   businessProfileId String
   chatbotSettingId  String
   wahaServerId      String?
-  sessionName       String    @unique
+  sessionName       String
   status            String    @default("disconnected") // disconnected, starting, qr, connected, failed
   lastConnectedAt   DateTime?
   lastError         String?   @db.Text
@@ -243,6 +245,8 @@ model WhatsAppSession {
   businessProfile BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
   chatbotSetting  ChatbotSetting  @relation(fields: [chatbotSettingId], references: [id], onDelete: Cascade)
   wahaServer      WahaServer?     @relation(fields: [wahaServerId], references: [id], onDelete: SetNull)
+
+  @@unique([wahaServerId, sessionName])
 }
 
 // ─── Admin & System Models ───────────────────────────────

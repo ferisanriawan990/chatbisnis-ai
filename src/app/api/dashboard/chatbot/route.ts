@@ -39,7 +39,7 @@ export async function GET() {
       let uniqueSessionName = 'default';
       
       if (isCoreMode) {
-        const existingDefault = await prisma.chatbotSetting.findUnique({ where: { wahaSessionName: 'default' } });
+        const existingDefault = await prisma.chatbotSetting.findFirst({ where: { wahaSessionName: 'default' } });
         if (existingDefault && existingDefault.userId !== userId) {
           // If default is taken, and WAHA Plus is not explicitly set, we fail gracefully.
           // We can't throw an HTTP error here easily without breaking the UI page load, 

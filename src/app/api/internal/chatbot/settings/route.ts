@@ -15,7 +15,7 @@ export async function GET(req: Request) {
       return Response.json({ error: 'Session name is required' }, { status: 400 });
     }
 
-    const chatbotSetting = await prisma.chatbotSetting.findUnique({
+    const chatbotSetting = await prisma.chatbotSetting.findFirst({
       where: { wahaSessionName: sessionName },
       include: {
         businessProfile: true,

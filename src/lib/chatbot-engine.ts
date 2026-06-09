@@ -15,7 +15,7 @@ export class ChatbotEngine {
       const sanitizedMessageIn = AIService.sanitizeInput(messageIn);
 
       // 1. Ambil setting, profile, dan user dengan subscription
-      const chatbotSetting = await prisma.chatbotSetting.findUnique({
+      const chatbotSetting = await prisma.chatbotSetting.findFirst({
         where: { wahaSessionName },
         include: {
           businessProfile: true,
@@ -357,7 +357,7 @@ ${isOutOfHours ? `- SAAT INI ADALAH DI LUAR JAM OPERASIONAL. Pastikan untuk meny
       console.error('ChatbotEngine Error:', errMsg);
       
       // Jika bisa mendapatkan chatbotSetting untuk fallback
-      const chatbotSetting = await prisma.chatbotSetting.findUnique({
+      const chatbotSetting = await prisma.chatbotSetting.findFirst({
         where: { wahaSessionName }
       });
       

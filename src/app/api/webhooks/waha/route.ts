@@ -145,7 +145,7 @@ export async function POST(req: Request) {
 
     if (reply) {
       // Find chatbot setting with WahaServer relation to send reply
-      const chatbotSetting = await prisma.chatbotSetting.findUnique({
+      const chatbotSetting = await prisma.chatbotSetting.findFirst({
         where: { wahaSessionName: norm.sessionName },
         include: { wahaServer: true },
       });

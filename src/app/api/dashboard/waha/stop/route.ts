@@ -33,7 +33,7 @@ export async function POST() {
     }
 
     // Check current session status for idempotency
-    const wpSession = await prisma.whatsAppSession.findUnique({
+    const wpSession = await prisma.whatsAppSession.findFirst({
       where: { sessionName: activeSessionName },
     });
 

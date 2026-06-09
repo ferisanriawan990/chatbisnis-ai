@@ -73,7 +73,7 @@ export async function POST(req: Request) {
       const isCoreMode = process.env.WAHA_CORE_MODE !== 'false';
       sessionName = 'default';
       if (isCoreMode) {
-        const existingDefault = await prisma.chatbotSetting.findUnique({ where: { wahaSessionName: 'default' } });
+        const existingDefault = await prisma.chatbotSetting.findFirst({ where: { wahaSessionName: 'default' } });
         if (existingDefault && existingDefault.userId !== userId) {
           sessionName = `waha_plus_required_${userId}`;
         }
