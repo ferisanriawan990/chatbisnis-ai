@@ -16,7 +16,15 @@ export class ChatbotEngine {
 
       // 1. Ambil setting, profile, dan user dengan subscription
       const chatbotSetting = await prisma.chatbotSetting.findFirst({
-        where: { wahaSessionName },
+        where: { 
+          wahaSessionName,
+          isActive: true,
+          user: {
+            subscriptions: {
+              some: { status: 'active' }
+            }
+          }
+        },
         include: {
           businessProfile: true,
           user: {
@@ -323,8 +331,8 @@ ${isOutOfHours ? `5. SAAT INI ADALAH DI LUAR JAM OPERASIONAL. Beritahu pelanggan
       });
 
       console.log("AI_SYSTEM_PROMPT_TYPE", "business_customer_service");
-      console.log("AI_CUSTOMER_MESSAGE", sanitizedMessageIn.slice(0, 100));
-      console.log("AI_REPLY_PREVIEW", reply.slice(0, 100));
+      console.log("AI_BUSINESS_NAME", profile.businessName);
+      console.log("AI_REPLY_PREVIEW", reply.slice(0, 120));
 
       // Update token usage and AI chats on success
       await prisma.usageCounter.update({
