@@ -19,7 +19,6 @@ export async function GET() {
         createdAt: true,
         subscriptions: {
           include: { plan: true },
-          where: { status: 'active' }
         },
         chatbotSettings: {
           select: { isActive: true, botName: true }
