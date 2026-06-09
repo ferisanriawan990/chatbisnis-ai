@@ -137,9 +137,29 @@ export async function POST(req: Request) {
       );
     }
 
+    const qUserId = req.nextUrl.searchParams.get('userId');
+
+    const chatbotSetting = await prisma.chatbotSetting.findFirst({
+      where: { 
+        wahaSessionName: norm.sessionName,
+        ...(qUserId ? { userId: qUserId } : {}),
+        isActive: true,
+        user: {
+          subscriptions: {
+            some: { status: 'active' }
+          }
+        }
+      },
+      include: { wahaServer: true },
+    });
+
+    if (!chatbotSetting) {
+      return NextResponse.json({ success: true, message: 'No active chatbot setting found for this session' });
+    }
+
     // Process using Chatbot Engine
     const result = await ChatbotEngine.processMessage({
-      wahaServerId,
+      wahaServerId: chatbotSetting.wahaServerId,
       wahaSessionName: norm.sessionName,
       customerPhone: norm.customerPhone,
       customerName: norm.customerName,
@@ -147,18 +167,6 @@ export async function POST(req: Request) {
     });
 
     if (result && result.reply) {
-      const chatbotSetting = await prisma.chatbotSetting.findFirst({
-        where: { 
-          wahaSessionName: norm.sessionName,
-          isActive: true,
-          user: {
-            subscriptions: {
-              some: { status: 'active' }
-            }
-          }
-        },
-        include: { wahaServer: true },
-      });
 
       if (chatbotSetting?.wahaServer?.apiKeyEncrypted) {
         const wahaServer = chatbotSetting.wahaServer;
