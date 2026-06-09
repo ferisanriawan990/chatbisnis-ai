@@ -35,16 +35,19 @@ export async function GET() {
     });
 
     if (!chatbotSetting) {
-      const crypto = await import('crypto');
-      const isCoreMode = process.env.WAHA_CORE_MODE === 'true';
-      let uniqueSessionName = isCoreMode ? 'default' : `session_${userId.slice(0, 8)}_${crypto.randomBytes(4).toString('hex')}`;
+      const isCoreMode = process.env.WAHA_CORE_MODE !== 'false';
+      let uniqueSessionName = 'default';
       
       if (isCoreMode) {
         const existingDefault = await prisma.chatbotSetting.findUnique({ where: { wahaSessionName: 'default' } });
-        if (existingDefault) {
-          // Fallback if 'default' is already taken so we don't crash on initial load. The error will trigger on start/save.
-          uniqueSessionName = `session_${userId.slice(0, 8)}_${crypto.randomBytes(4).toString('hex')}`;
+        if (existingDefault && existingDefault.userId !== userId) {
+          // If default is taken, and WAHA Plus is not explicitly set, we fail gracefully.
+          // We can't throw an HTTP error here easily without breaking the UI page load, 
+          // so we use a dummy session name that will fail on Start.
+          uniqueSessionName = `waha_plus_required_${userId}`;
         }
+      } else {
+         uniqueSessionName = `waha_plus_${userId}`;
       }
 
       chatbotSetting = await prisma.chatbotSetting.create({

@@ -4,7 +4,6 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { WAHAService } from '@/lib/waha';
 import { syncWahaServerSessionCount } from '@/lib/waha-session-sync';
-import crypto from 'crypto';
 
 export async function POST() {
   try {
@@ -39,8 +38,8 @@ export async function POST() {
           throw new Error('SERVER_FULL');
         }
 
-        const isCoreMode = process.env.WAHA_CORE_MODE === 'true';
-        const sessionName = isCoreMode ? 'default' : `chatbisnis_${userId}_${crypto.randomBytes(4).toString('hex')}`;
+        const isCoreMode = process.env.WAHA_CORE_MODE !== 'false';
+        const sessionName = isCoreMode ? 'default' : `waha_plus_${userId}`;
 
         // Increment server usage (will be synced accurately after)
         await tx.wahaServer.update({
@@ -65,7 +64,7 @@ export async function POST() {
       newlyAssignedServerId = assigned.server.id;
     }
 
-    const isCoreMode = process.env.WAHA_CORE_MODE === 'true';
+    const isCoreMode = process.env.WAHA_CORE_MODE !== 'false';
     if (isCoreMode && chatbot.wahaSessionName !== 'default') {
       const existingDefault = await prisma.chatbotSetting.findUnique({ where: { wahaSessionName: 'default' } });
       if (existingDefault && existingDefault.userId !== userId) {
@@ -77,6 +76,15 @@ export async function POST() {
         data: { wahaSessionName: 'default' },
         include: { wahaServer: true },
       });
+    } else if (chatbot.wahaSessionName.startsWith('chatbisnis_') || chatbot.wahaSessionName.startsWith('session_')) {
+      // Force convert any legacy string into 'default' if core mode is true
+      if (isCoreMode) {
+        chatbot = await prisma.chatbotSetting.update({
+          where: { id: chatbot.id },
+          data: { wahaSessionName: 'default' },
+          include: { wahaServer: true },
+        });
+      }
     }
 
     // Always read config from WahaServer relation

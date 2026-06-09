@@ -4,7 +4,6 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { encrypt } from '@/lib/crypto';
 import { saveChatbotSchema } from '@/lib/validations';
-import crypto from 'crypto';
 
 export async function POST(req: Request) {
   try {
@@ -71,13 +70,15 @@ export async function POST(req: Request) {
     // Always preserve existing wahaSessionName or generate a new one
     let sessionName = chatbot?.wahaSessionName;
     if (!sessionName) {
-      const isCoreMode = process.env.WAHA_CORE_MODE === 'true';
-      sessionName = isCoreMode ? 'default' : `session_${userId.slice(0, 8)}_${crypto.randomBytes(4).toString('hex')}`;
+      const isCoreMode = process.env.WAHA_CORE_MODE !== 'false';
+      sessionName = 'default';
       if (isCoreMode) {
         const existingDefault = await prisma.chatbotSetting.findUnique({ where: { wahaSessionName: 'default' } });
-        if (existingDefault) {
-          sessionName = `session_${userId.slice(0, 8)}_${crypto.randomBytes(4).toString('hex')}`;
+        if (existingDefault && existingDefault.userId !== userId) {
+          sessionName = `waha_plus_required_${userId}`;
         }
+      } else {
+        sessionName = `waha_plus_${userId}`;
       }
     }
 
