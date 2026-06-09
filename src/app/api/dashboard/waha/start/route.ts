@@ -65,6 +65,20 @@ export async function POST() {
       newlyAssignedServerId = assigned.server.id;
     }
 
+    const isCoreMode = process.env.WAHA_CORE_MODE === 'true';
+    if (isCoreMode && chatbot.wahaSessionName !== 'default') {
+      const existingDefault = await prisma.chatbotSetting.findUnique({ where: { wahaSessionName: 'default' } });
+      if (existingDefault && existingDefault.userId !== userId) {
+        return NextResponse.json({ error: 'WAHA Core hanya mendukung 1 nomor WhatsApp. Upgrade ke WAHA Plus untuk multi-user.' }, { status: 400 });
+      }
+      
+      chatbot = await prisma.chatbotSetting.update({
+        where: { id: chatbot.id },
+        data: { wahaSessionName: 'default' },
+        include: { wahaServer: true },
+      });
+    }
+
     // Always read config from WahaServer relation
     const wahaServer = chatbot.wahaServer;
     if (!wahaServer || !wahaServer.isActive) {

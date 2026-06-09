@@ -22,7 +22,10 @@ export async function POST() {
       return NextResponse.json({ error: 'Chatbot setting tidak ditemukan' }, { status: 404 });
     }
 
-    if (!chatbot.wahaSessionName) {
+    const isCoreMode = process.env.WAHA_CORE_MODE === 'true';
+    const activeSessionName = isCoreMode ? 'default' : chatbot.wahaSessionName;
+
+    if (!activeSessionName) {
       return NextResponse.json(
         { error: 'Tidak ada sesi WAHA aktif untuk dihentikan.' },
         { status: 400 },
@@ -31,7 +34,7 @@ export async function POST() {
 
     // Check current session status for idempotency
     const wpSession = await prisma.whatsAppSession.findUnique({
-      where: { sessionName: chatbot.wahaSessionName },
+      where: { sessionName: activeSessionName },
     });
 
     if (wpSession && wpSession.status === 'disconnected') {
@@ -58,7 +61,7 @@ export async function POST() {
     const waha = WAHAService.fromEncrypted(wahaServer.baseUrl, wahaServer.apiKeyEncrypted);
 
     try {
-      await waha.stopSession(chatbot.wahaSessionName);
+      await waha.stopSession(activeSessionName);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'unknown';
       // Log but don't block — still update DB to disconnected
@@ -67,7 +70,7 @@ export async function POST() {
 
     // Update DB safely regardless of WAHA call result
     await prisma.whatsAppSession.updateMany({
-      where: { sessionName: chatbot.wahaSessionName },
+      where: { sessionName: activeSessionName },
       data: { status: 'disconnected', lastError: null },
     });
 

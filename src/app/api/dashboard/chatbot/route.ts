@@ -36,7 +36,16 @@ export async function GET() {
 
     if (!chatbotSetting) {
       const crypto = await import('crypto');
-      const uniqueSessionName = `session_${userId.slice(0, 8)}_${crypto.randomBytes(4).toString('hex')}`;
+      const isCoreMode = process.env.WAHA_CORE_MODE === 'true';
+      let uniqueSessionName = isCoreMode ? 'default' : `session_${userId.slice(0, 8)}_${crypto.randomBytes(4).toString('hex')}`;
+      
+      if (isCoreMode) {
+        const existingDefault = await prisma.chatbotSetting.findUnique({ where: { wahaSessionName: 'default' } });
+        if (existingDefault) {
+          // Fallback if 'default' is already taken so we don't crash on initial load. The error will trigger on start/save.
+          uniqueSessionName = `session_${userId.slice(0, 8)}_${crypto.randomBytes(4).toString('hex')}`;
+        }
+      }
 
       chatbotSetting = await prisma.chatbotSetting.create({
         data: {

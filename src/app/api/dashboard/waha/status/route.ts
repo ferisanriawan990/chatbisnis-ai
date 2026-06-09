@@ -24,21 +24,24 @@ export async function GET() {
 
     // Read config from WahaServer relation
     const wahaServer = chatbot.wahaServer;
-    if (!wahaServer || !wahaServer.apiKeyEncrypted || !chatbot.wahaSessionName) {
-      return NextResponse.json({ status: 'disconnected' });
+    const isCoreMode = process.env.WAHA_CORE_MODE === 'true';
+    const activeSessionName = isCoreMode ? 'default' : chatbot.wahaSessionName;
+
+    if (!wahaServer || !wahaServer.apiKeyEncrypted || !activeSessionName) {
+      return NextResponse.json({ status: 'disconnected', isCoreMode });
     }
 
     let statusValue = 'disconnected';
     try {
       const waha = WAHAService.fromEncrypted(wahaServer.baseUrl, wahaServer.apiKeyEncrypted);
-      statusValue = await waha.getStatus(chatbot.wahaSessionName);
+      statusValue = await waha.getStatus(activeSessionName);
     } catch {
       statusValue = 'disconnected';
     }
 
     // Get last connection data
     const wpSession = await prisma.whatsAppSession.findUnique({
-      where: { sessionName: chatbot.wahaSessionName },
+      where: { sessionName: activeSessionName },
     });
 
     // Update session status in DB if changed
@@ -60,7 +63,7 @@ export async function GET() {
 
     return NextResponse.json({
       status: statusValue,
-      sessionName: chatbot.wahaSessionName,
+      sessionName: activeSessionName,
       serverName: wahaServer.name,
       lastConnectedAt: wpSession?.lastConnectedAt,
       lastError: wpSession?.lastError,

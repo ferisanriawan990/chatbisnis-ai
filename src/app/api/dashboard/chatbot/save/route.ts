@@ -71,7 +71,14 @@ export async function POST(req: Request) {
     // Always preserve existing wahaSessionName or generate a new one
     let sessionName = chatbot?.wahaSessionName;
     if (!sessionName) {
-      sessionName = `session_${userId.slice(0, 8)}_${crypto.randomBytes(4).toString('hex')}`;
+      const isCoreMode = process.env.WAHA_CORE_MODE === 'true';
+      sessionName = isCoreMode ? 'default' : `session_${userId.slice(0, 8)}_${crypto.randomBytes(4).toString('hex')}`;
+      if (isCoreMode) {
+        const existingDefault = await prisma.chatbotSetting.findUnique({ where: { wahaSessionName: 'default' } });
+        if (existingDefault) {
+          sessionName = `session_${userId.slice(0, 8)}_${crypto.randomBytes(4).toString('hex')}`;
+        }
+      }
     }
 
     const chatbotData = {

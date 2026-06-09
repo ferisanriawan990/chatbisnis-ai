@@ -23,12 +23,15 @@ export async function GET() {
 
     // Read config from WahaServer relation
     const wahaServer = chatbot.wahaServer;
-    if (!wahaServer || !wahaServer.apiKeyEncrypted || !chatbot.wahaSessionName) {
+    const isCoreMode = process.env.WAHA_CORE_MODE === 'true';
+    const activeSessionName = isCoreMode ? 'default' : chatbot.wahaSessionName;
+
+    if (!wahaServer || !wahaServer.apiKeyEncrypted || !activeSessionName) {
       return NextResponse.json({ error: 'WAHA tidak dikonfigurasi' }, { status: 400 });
     }
 
     const waha = WAHAService.fromEncrypted(wahaServer.baseUrl, wahaServer.apiKeyEncrypted);
-    const qrData = await waha.getQR(chatbot.wahaSessionName);
+    const qrData = await waha.getQR(activeSessionName);
 
     return NextResponse.json({ qr: qrData });
   } catch (error) {
