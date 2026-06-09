@@ -282,8 +282,7 @@ ${relevantKnowledge}`;
         maxTokens: chatbotSetting.maxReplyLength === 'pendek' ? 150 : chatbotSetting.maxReplyLength === 'panjang' ? 800 : 450,
       });
 
-      const debugInfo = `globalKey: ${!!globalKey}, gActive: ${globalKey?.isActive}, gModel: ${globalModel ? globalModel.key : 'null'}, mActive: ${globalModel?.isActive}, aiModel: ${aiModel}`;
-      return { replyMessage: aiResult.reply, tokenUsage: aiResult.tokenUsage || 0, usedCatalogUrl: Boolean(chatbotSetting.catalogUrl && aiResult.reply.includes(chatbotSetting.catalogUrl)), promptSource: 'ai', aiModelUsed: debugInfo };
+      return { replyMessage: aiResult.reply, tokenUsage: aiResult.tokenUsage || 0, usedCatalogUrl: Boolean(chatbotSetting.catalogUrl && aiResult.reply.includes(chatbotSetting.catalogUrl)), promptSource: 'ai', aiModelUsed: aiModel };
     } catch (error) {
       console.error('AI Error:', error);
       return { replyMessage: chatbotSetting.fallbackMessage, tokenUsage: 0, usedCatalogUrl: false, promptSource: 'error', aiModelUsed: aiModel };
