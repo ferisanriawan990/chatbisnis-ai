@@ -22,7 +22,7 @@ export default function ChatbotDashboard() {
     businessName: '', businessIndustry: '', businessDescription: '', address: '', openingHours: '', adminPhone: '', websiteUrl: '', instagramUrl: '', marketplaceUrl: '',
     botName: '', toneStyle: 'Profesional', language: 'id', useEmoji: true, maxReplyLength: 'sedang', allowSelling: true, allowPromoOffer: true,
     fallbackMessage: '', handoverMessage: '', handoverKeywords: '', outOfHoursMessage: '',
-    aiProvider: 'Flaz Cloud', aiModel: 'claude-haiku-4-5', aiApiKey: '',
+    aiProvider: 'Flaz Cloud', aiModel: 'gpt-4o-mini', aiApiKey: '',
     dailyChatLimit: 1000, monthlyChatLimit: 30000,
     isActive: false,
   });

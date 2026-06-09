@@ -144,9 +144,16 @@ export async function POST(req: Request) {
     });
 
     if (reply) {
-      // Find chatbot setting with WahaServer relation to send reply
       const chatbotSetting = await prisma.chatbotSetting.findFirst({
-        where: { wahaSessionName: norm.sessionName },
+        where: { 
+          wahaSessionName: norm.sessionName,
+          isActive: true,
+          user: {
+            subscriptions: {
+              some: { status: 'active' }
+            }
+          }
+        },
         include: { wahaServer: true },
       });
 

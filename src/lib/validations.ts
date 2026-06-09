@@ -47,7 +47,7 @@ export const chatbotSettingSchema = z.object({
   handoverKeywords: z.string().max(500).default('admin, cs, manusia'),
   outOfHoursMessage: z.string().max(1000).default('Mohon maaf, saat ini kami sedang di luar jam operasional.'),
   aiProvider: z.string().max(100).default('Flaz Cloud'),
-  aiModel: z.string().max(100).default('claude-haiku-4-5'),
+  aiModel: z.string().max(100).default('gpt-4o-mini'),
   aiApiKey: z.string().max(500).optional().or(z.literal('')).or(z.literal('••••••••')),
   dailyChatLimit: z.coerce.number().int().min(1).max(100000).default(1000),
   monthlyChatLimit: z.coerce.number().int().min(1).max(10000000).default(30000),

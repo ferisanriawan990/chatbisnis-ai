@@ -36,7 +36,7 @@ export class AIService {
           Authorization: `Bearer ${config.apiKey}`,
         },
         body: JSON.stringify({
-          model: config.model || 'claude-haiku-4-5',
+          model: config.model || 'gpt-4o-mini',
           messages: [
             { role: 'system', content: config.systemPrompt },
             { role: 'user', content: config.userMessage },

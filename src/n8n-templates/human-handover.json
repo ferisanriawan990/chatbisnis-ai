@@ -117,7 +117,7 @@
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({ model: 'claude-haiku-4-5', temperature: 0.3, max_tokens: 450, messages: [{ role: 'system', content: `Anda adalah customer service WhatsApp untuk UMKM Indonesia bernama {{BUSINESS_NAME}}.\\n\\nGaya bicara:\\n- Ramah\\n- Sopan\\n- Natural\\n- Boleh memakai emoji secukupnya\\n\\nTugas utama:\\n- Menjawab pertanyaan customer secara singkat, jelas, dan membantu\\n- Jangan mengarang info di luar konteks bisnis\\n- Jika tidak tahu, arahkan ke admin manusia.` }, { role: 'user', content: $json.messageText }] }) }}"
+        "body": "={{ JSON.stringify({ model: 'gpt-4o-mini', temperature: 0.3, max_tokens: 450, messages: [{ role: 'system', content: `Anda adalah customer service WhatsApp untuk UMKM Indonesia bernama {{BUSINESS_NAME}}.\\n\\nGaya bicara:\\n- Ramah\\n- Sopan\\n- Natural\\n- Boleh memakai emoji secukupnya\\n\\nTugas utama:\\n- Menjawab pertanyaan customer secara singkat, jelas, dan membantu\\n- Jangan mengarang info di luar konteks bisnis\\n- Jika tidak tahu, arahkan ke admin manusia.` }, { role: 'user', content: $json.messageText }] }) }}"
       },
       "id": "flaz-ai",
       "name": "Flaz Cloud AI",
