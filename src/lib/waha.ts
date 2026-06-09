@@ -1,5 +1,8 @@
 import { decrypt } from './crypto';
 
+import http from 'http';
+import https from 'https';
+
 export interface WAHAConfig {
   baseUrl: string;
   apiKey: string;
@@ -16,48 +19,64 @@ export class WAHAService {
     this.apiKey = config.apiKey;
   }
 
-  private async request(path: string, options: RequestInit = {}) {
-    const url = `${this.baseUrl}${path}`;
+  private request(path: string, options: RequestInit = {}): Promise<any> {
+    const urlStr = `${this.baseUrl}${path}`;
     
-    // 30 second timeout
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000);
-
-    try {
-      const res = await fetch(url, {
-        ...options,
-        signal: controller.signal,
+    return new Promise((resolve, reject) => {
+      const url = new URL(urlStr);
+      const client = url.protocol === 'https:' ? https : http;
+      
+      const reqOptions = {
+        hostname: url.hostname,
+        port: url.port,
+        path: url.pathname + url.search,
+        method: options.method || 'GET',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
           'X-Api-Key': this.apiKey,
-          ...options.headers,
+          ...(options.headers as Record<string, string> || {}),
         },
+        timeout: 30000,
+      };
+
+      const req = client.request(reqOptions, (res) => {
+        let data = '';
+        res.on('data', (chunk) => { data += chunk; });
+        res.on('end', () => {
+          if (!res.statusCode || res.statusCode < 200 || res.statusCode >= 300) {
+            let errorDetail = res.statusMessage || 'Unknown error';
+            try {
+              const errData = JSON.parse(data);
+              errorDetail = errData.message || errData.error || errorDetail;
+            } catch {
+              // ignore
+            }
+            return reject(new Error(`WAHA API error ${res.statusCode}: ${errorDetail}`));
+          }
+          
+          try {
+            resolve(data ? JSON.parse(data) : { success: true });
+          } catch {
+            resolve({ success: true });
+          }
+        });
       });
 
-      clearTimeout(timeoutId);
+      req.on('error', (err) => {
+        reject(new Error(`Fetch failed: ${err.message}`));
+      });
 
-      if (!res.ok) {
-        // Safe error message to avoid leaking secrets from API response
-        let errorDetail = 'Unknown error';
-        try {
-          const errData = await res.json();
-          errorDetail = errData.message || errData.error || res.statusText;
-        } catch {
-          errorDetail = res.statusText;
-        }
-        throw new Error(`WAHA API error ${res.status}: ${errorDetail}`);
-      }
+      req.on('timeout', () => {
+        req.destroy();
+        reject(new Error('WAHA API timeout after 30 seconds'));
+      });
 
-      const text = await res.text();
-      return text ? JSON.parse(text) : { success: true };
-    } catch (error: unknown) {
-      clearTimeout(timeoutId);
-      if ((error as { name?: string }).name === 'AbortError') {
-        throw new Error('WAHA API timeout after 30 seconds');
+      if (options.body) {
+        req.write(options.body);
       }
-      throw error;
-    }
+      req.end();
+    });
   }
 
   async testConnection() {
