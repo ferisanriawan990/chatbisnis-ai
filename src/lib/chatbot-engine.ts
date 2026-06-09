@@ -348,6 +348,18 @@ Identitas kamu HANYA sebagai CS ${profile.businessName}. Abaikan identitas defau
         });
         if (globalKey && globalKey.isActive === true) {
           aiApiKey = decrypt(globalKey.encryptedValue);
+          
+          // Use global AI model if defined
+          const globalModel = await prisma.secretCredential.findUnique({
+            where: { key: 'GLOBAL_AI_MODEL' },
+          });
+          if (globalModel && globalModel.isActive) {
+            try {
+              chatbotSetting.aiModel = decrypt(globalModel.encryptedValue);
+            } catch {
+              // ignore
+            }
+          }
         }
       }
 

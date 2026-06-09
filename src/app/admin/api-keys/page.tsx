@@ -3,11 +3,13 @@
 
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { Key, Plus, Trash2 } from 'lucide-react';
+import { Key, Plus, Trash2, Bot, Save } from 'lucide-react';
 
 export default function AdminApiKeysPage() {
   const [keys, setKeys] = useState<any[]>([]) // eslint-disable-line @typescript-eslint/no-explicit-any
   const [loading, setLoading] = useState(true);
+  const [globalModel, setGlobalModel] = useState('gpt-4o-mini');
+  const [savingModel, setSavingModel] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -22,7 +24,7 @@ export default function AdminApiKeysPage() {
       const res = await fetch('/api/admin/api-keys');
       if (!res.ok) throw new Error('Failed to fetch API keys');
       const data = await res.json();
-      setKeys(data);
+      setKeys(data.filter((k: any) => k.key !== 'GLOBAL_AI_MODEL')); // eslint-disable-line @typescript-eslint/no-explicit-any
     } catch (e: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
       toast.error(e.message);
     } finally {
@@ -30,9 +32,40 @@ export default function AdminApiKeysPage() {
     }
   };
 
+  const fetchGlobalModel = async () => {
+    try {
+      const res = await fetch('/api/admin/global-ai-model');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.model) setGlobalModel(data.model);
+      }
+    } catch (error) {
+      console.error('Failed to fetch global model:', error);
+    }
+  };
+
   useEffect(() => {
     fetchKeys();
+    fetchGlobalModel();
   }, []);
+
+  const handleSaveModel = async () => {
+    setSavingModel(true);
+    toast.loading('Menyimpan model AI...', { id: 'model' });
+    try {
+      const res = await fetch('/api/admin/global-ai-model', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: globalModel })
+      });
+      if (!res.ok) throw new Error('Gagal menyimpan model AI');
+      toast.success('Model AI global berhasil disimpan', { id: 'model' });
+    } catch (e: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
+      toast.error(e.message, { id: 'model' });
+    } finally {
+      setSavingModel(false);
+    }
+  };
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -130,7 +163,40 @@ export default function AdminApiKeysPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-1">
+        <div className="lg:col-span-1 space-y-6">
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 space-y-4">
+            <h2 className="text-lg font-semibold border-b pb-2 flex items-center gap-2">
+              <Bot className="w-5 h-5 text-indigo-600" /> Model AI Global
+            </h2>
+            <p className="text-sm text-slate-500">
+              Pilih model AI yang akan digunakan saat menggunakan Global API Key.
+            </p>
+            <div>
+              <label className="block text-sm font-medium mb-1">Pilih Model AI</label>
+              <select
+                value={globalModel}
+                onChange={e => setGlobalModel(e.target.value)}
+                className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
+              >
+                <option value="gpt-4o-mini">GPT-4o Mini (OpenAI / Flaz)</option>
+                <option value="gpt-4o">GPT-4o (OpenAI / Flaz)</option>
+                <option value="claude-3-haiku-20240307">Claude 3 Haiku (Anthropic / Flaz)</option>
+                <option value="claude-3-5-sonnet-20240620">Claude 3.5 Sonnet (Anthropic / Flaz)</option>
+                <option value="gemini-1.5-flash">Gemini 1.5 Flash (Google / Flaz)</option>
+                <option value="gemini-1.5-pro">Gemini 1.5 Pro (Google / Flaz)</option>
+                <option value="llama-3.1-8b-instruct">Llama 3.1 8B (Meta / Flaz)</option>
+                <option value="llama-3.1-70b-instruct">Llama 3.1 70B (Meta / Flaz)</option>
+              </select>
+            </div>
+            <button 
+              onClick={handleSaveModel}
+              disabled={savingModel}
+              className="w-full bg-slate-900 text-white py-2 rounded-lg font-medium hover:bg-slate-800 disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              <Save className="w-4 h-4" /> Simpan Model
+            </button>
+          </div>
+
           <form onSubmit={handleAdd} className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 space-y-4">
             <h2 className="text-lg font-semibold border-b pb-2">Tambah API Key</h2>
             <div>

@@ -91,12 +91,26 @@ export async function POST(req: Request) {
     const chatbotSetting = await prisma.chatbotSetting.findFirst({
       where: { userId },
     });
+    
+    let aiModel = chatbotSetting?.aiModel || 'gpt-4o-mini';
+    if (globalKey?.isActive) {
+      const globalModel = await prisma.secretCredential.findUnique({
+        where: { key: 'GLOBAL_AI_MODEL' },
+      });
+      if (globalModel && globalModel.isActive) {
+        try {
+          aiModel = decrypt(globalModel.encryptedValue);
+        } catch {
+          // ignore
+        }
+      }
+    }
 
     const { reply } = await AIService.generateReply({
       systemPrompt,
       userMessage: message.trim(),
       provider: chatbotSetting?.aiProvider || 'Flaz Cloud',
-      model: chatbotSetting?.aiModel || 'gpt-4o-mini',
+      model: aiModel,
       apiKey: aiApiKey,
     });
 
