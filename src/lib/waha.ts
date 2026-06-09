@@ -41,13 +41,16 @@ export class WAHAService {
       };
 
       const req = client.request(reqOptions, (res) => {
-        let data = '';
-        res.on('data', (chunk) => { data += chunk; });
+        const chunks: Buffer[] = [];
+        res.on('data', (chunk) => { chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)); });
         res.on('end', () => {
+          const dataBuffer = Buffer.concat(chunks);
+          const dataStr = dataBuffer.toString('utf8');
+
           if (!res.statusCode || res.statusCode < 200 || res.statusCode >= 300) {
             let errorDetail = res.statusMessage || 'Unknown error';
             try {
-              const errData = JSON.parse(data);
+              const errData = JSON.parse(dataStr);
               errorDetail = errData.message || errData.error || errorDetail;
             } catch {
               // ignore
@@ -56,9 +59,12 @@ export class WAHAService {
           }
           
           try {
-            resolve(data ? JSON.parse(data) : { success: true });
+            if (res.headers['content-type']?.includes('image/png')) {
+              return resolve({ mimetype: 'image/png', data: dataBuffer.toString('base64') });
+            }
+            resolve(dataStr ? JSON.parse(dataStr) : { success: true });
           } catch {
-            resolve({ success: true });
+            reject(new Error('Invalid JSON response'));
           }
         });
       });
