@@ -16,9 +16,25 @@ export async function GET() {
     });
 
     const hasGlobalKey = globalKey !== null && globalKey.isActive === true;
+    
+    let globalAiModel = null;
+    if (hasGlobalKey) {
+      const gModel = await prisma.secretCredential.findUnique({
+        where: { key: 'GLOBAL_AI_MODEL' }
+      });
+      if (gModel && gModel.isActive) {
+        const { decrypt } = await import('@/lib/crypto');
+        try {
+          globalAiModel = decrypt(gModel.encryptedValue);
+        } catch {
+          // fallback
+        }
+      }
+    }
 
-    return NextResponse.json({ hasGlobalKey });
-  } catch {
+    return NextResponse.json({ hasGlobalKey, globalAiModel });
+  } catch (error) {
+    console.error('global-key-check error:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

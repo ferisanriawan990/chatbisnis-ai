@@ -78,16 +78,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             <BotMessageSquare className="w-5 h-5" />
             <span className="font-medium">AI Chatbot</span>
           </Link>
-          <Link 
-            href="/dashboard/bot-settings" 
-            onClick={() => setMobileMenuOpen(false)}
-            className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-              pathname === '/dashboard/bot-settings' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-            }`}
-          >
-            <Store className="w-5 h-5" />
-            <span className="font-medium">Template Bot</span>
-          </Link>
+
           <Link 
             href="/dashboard/waha" 
             onClick={() => setMobileMenuOpen(false)}

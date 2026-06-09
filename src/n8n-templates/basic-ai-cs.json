@@ -4,7 +4,7 @@
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "waha-ai-cs-basic",
+        "path": "waha-webhook-n8n",
         "responseMode": "lastNode",
         "options": {}
       },
@@ -12,64 +12,18 @@
       "name": "Webhook WAHA",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [
-        100,
-        300
-      ]
-    },
-    {
-      "parameters": {
-        "jsCode": "const body = $json.body || $json;\nconst headers = $node['Webhook WAHA']?.json?.headers || {};\nconst payload = body.payload || body;\nreturn [{ json: {\n  session: body.session || '{{SESSION_NAME}}',\n  chatId: payload.from,\n  senderNumber: payload.from?.split('@')[0],\n  messageText: payload.body || '',\n  fromMe: payload.fromMe || false,\n  isGroup: payload.isGroup || false,\n  webhookSecret: headers['x-webhook-secret'] || ''\n}}];"
-      },
-      "id": "normalize",
-      "name": "Normalize Payload",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        300,
-        300
-      ]
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "boolean": [
-            {
-              "value1": "={{$json.fromMe}}",
-              "value2": false
-            },
-            {
-              "value1": "={{$json.isGroup}}",
-              "value2": false
-            }
-          ],
-          "string": [
-            {
-              "value1": "={{$json.messageText}}",
-              "operation": "isNotEmpty"
-            }
-          ]
-        }
-      },
-      "id": "filter",
-      "name": "Filter Message",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
-      "position": [
-        500,
-        300
-      ]
+      "position": [ 100, 300 ]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "https://ai.flaz.id/v1/chat/completions",
+        "url": "={{'{{WEBSITE_API_BASE_URL}}'.replace(/\\/$/, '') + '/api/webhooks/waha'}}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
-              "name": "Authorization",
-              "value": "Bearer {{FLAZ_API_KEY}}"
+              "name": "x-webhook-secret",
+              "value": "{{WAHA_WEBHOOK_SECRET}}"
             },
             {
               "name": "Content-Type",
@@ -80,48 +34,14 @@
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({ model: 'gpt-4o-mini', temperature: 0.3, max_tokens: 450, messages: [{ role: 'system', content: `Anda adalah customer service WhatsApp untuk UMKM Indonesia bernama {{BUSINESS_NAME}}.\\n\\nGaya bicara:\\n- Ramah\\n- Sopan\\n- Natural\\n- Boleh memakai emoji secukupnya\\n\\nTugas utama:\\n- Menjawab pertanyaan customer secara singkat, jelas, dan membantu\\n- Jangan mengarang info di luar konteks bisnis\\n- Jika tidak tahu, arahkan ke admin manusia.` }, { role: 'user', content: $json.messageText }] }) }}"
+        "body": "={{ JSON.stringify($json.body || $json) }}"
       },
-      "id": "flaz-ai",
-      "name": "Flaz Cloud AI",
+      "id": "forward-chatbisnis",
+      "name": "Forward to ChatBisnis",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [
-        700,
-        280
-      ],
+      "position": [ 300, 300 ],
       "onError": "continueErrorOutput"
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "={{'{{WAHA_BASE_URL}}'.replace(/\\/$/, '') + '/api/sendText'}}",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "X-Api-Key",
-              "value": "{{WAHA_API_KEY}}"
-            },
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "contentType": "raw",
-        "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({ session: $('Normalize Payload').first().json.session || '{{SESSION_NAME}}', chatId: $('Normalize Payload').first().json.chatId, text: $json.choices?.[0]?.message?.content || 'Maaf kak, sistem AI sedang sibuk. Mohon tunggu sebentar ya.' }) }}"
-      },
-      "id": "send-waha",
-      "name": "Send WhatsApp Reply",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        900,
-        280
-      ]
     }
   ],
   "connections": {
@@ -129,40 +49,7 @@
       "main": [
         [
           {
-            "node": "Normalize Payload",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Normalize Payload": {
-      "main": [
-        [
-          {
-            "node": "Filter Message",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Filter Message": {
-      "main": [
-        [
-          {
-            "node": "Flaz Cloud AI",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Flaz Cloud AI": {
-      "main": [
-        [
-          {
-            "node": "Send WhatsApp Reply",
+            "node": "Forward to ChatBisnis",
             "type": "main",
             "index": 0
           }

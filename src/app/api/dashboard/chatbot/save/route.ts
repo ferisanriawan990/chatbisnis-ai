@@ -122,6 +122,34 @@ export async function POST(req: Request) {
       });
     }
 
+    // Sync back to BusinessBotConfig so Template Bot uses the latest info
+    const botConfig = await prisma.businessBotConfig.findUnique({ where: { userId } });
+    if (botConfig) {
+      await prisma.businessBotConfig.update({
+        where: { userId },
+        data: {
+          businessName: data.businessName,
+          businessDescription: data.businessDescription || '',
+          tone: data.toneStyle,
+          languageStyle: data.language === 'en' ? 'id-en' : 'id',
+          ...(data.templateId && { templateId: data.templateId, isBotActive: true }),
+        }
+      });
+    } else if (data.templateId) {
+      await prisma.businessBotConfig.create({
+        data: {
+          userId,
+          templateId: data.templateId,
+          businessName: data.businessName,
+          businessDescription: data.businessDescription || '',
+          tone: data.toneStyle,
+          languageStyle: data.language === 'en' ? 'id-en' : 'id',
+          botMode: 'auto_reply',
+          isBotActive: true,
+        }
+      });
+    }
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('POST /api/dashboard/chatbot/save Error:', error);

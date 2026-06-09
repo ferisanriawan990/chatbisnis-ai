@@ -15,6 +15,12 @@ export async function GET() {
     const sources = await prisma.knowledgeSource.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
+      include: {
+        knowledgeItems: {
+          take: 5,
+          orderBy: { createdAt: 'desc' }
+        }
+      }
     });
 
     return NextResponse.json({ sources });

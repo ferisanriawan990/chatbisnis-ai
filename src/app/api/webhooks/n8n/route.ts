@@ -16,23 +16,34 @@ export async function POST(req: Request) {
 
     const body = await req.json();
     const { sessionName, customerPhone, messageOut, tokenUsage } = body;
+    const wahaServerId = req.headers.get('x-waha-server-id') || undefined;
 
     if (!sessionName || !customerPhone || !messageOut) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
+    const whereClause: any = { wahaSessionName: sessionName };
+    if (wahaServerId) whereClause.wahaServerId = wahaServerId;
+
     const chatbotSetting = await prisma.chatbotSetting.findFirst({
-      where: { wahaSessionName: sessionName },
-      include: { businessProfile: true }
+      where: whereClause,
+      include: { businessProfile: true, wahaServer: true }
     });
 
-    if (!chatbotSetting || !chatbotSetting.wahaBaseUrl || !chatbotSetting.wahaApiKeyEncrypted) {
+    if (!chatbotSetting) {
       return NextResponse.json({ error: 'Chatbot not configured' }, { status: 404 });
     }
 
-    const waha = WAHAService.fromEncrypted(chatbotSetting.wahaBaseUrl, chatbotSetting.wahaApiKeyEncrypted);
-
-    await waha.sendMessage(sessionName, customerPhone, messageOut);
+    if (chatbotSetting.wahaServer?.apiKeyEncrypted) {
+      const wahaServer = chatbotSetting.wahaServer;
+      const waha = WAHAService.fromEncrypted(wahaServer.baseUrl, wahaServer.apiKeyEncrypted || '');
+      await waha.sendMessage(sessionName, customerPhone, messageOut);
+    } else if (chatbotSetting.wahaApiKeyEncrypted && chatbotSetting.wahaBaseUrl) {
+      const waha = WAHAService.fromEncrypted(chatbotSetting.wahaBaseUrl, chatbotSetting.wahaApiKeyEncrypted || '');
+      await waha.sendMessage(sessionName, customerPhone, messageOut);
+    } else {
+      return NextResponse.json({ error: 'WAHA connection not configured' }, { status: 400 });
+    }
 
     // Log the message and usage
     await prisma.chatLog.create({

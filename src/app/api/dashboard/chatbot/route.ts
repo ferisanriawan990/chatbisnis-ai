@@ -85,13 +85,31 @@ export async function GET() {
 
     const hasCustomAiKey = Boolean(chatbotSetting.aiApiKeyEncrypted);
 
+    // Get BotConfig (if any)
+    const botConfig = await prisma.businessBotConfig.findUnique({ where: { userId } });
+    
+    // Check Global AI Key & Model
+    const globalKey = await prisma.secretCredential.findUnique({ where: { key: 'FLAZ_API_KEY_GLOBAL' } });
+    const hasGlobalKey = globalKey !== null && globalKey.isActive === true;
+    let globalAiModel = null;
+    if (hasGlobalKey) {
+      const gModel = await prisma.secretCredential.findUnique({ where: { key: 'GLOBAL_AI_MODEL' } });
+      if (gModel && gModel.isActive) {
+        const { decrypt } = await import('@/lib/crypto');
+        try { globalAiModel = decrypt(gModel.encryptedValue); } catch {}
+      }
+    }
+
     return NextResponse.json({
       businessProfile,
       chatbotSetting: safeChatbotSetting,
+      botConfig,
       knowledgeCount,
       subscription,
       activePlan: subscription?.plan || null,
       hasCustomAiKey,
+      hasGlobalKey,
+      globalAiModel,
     });
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'unknown';

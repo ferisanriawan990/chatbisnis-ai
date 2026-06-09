@@ -94,7 +94,7 @@ export async function POST(req: Request) {
   try {
     // Basic rate limiting for webhook
     const ip = getClientIp(req);
-    const rl = rateLimit(`webhook:waha:${ip}`, 60, 60 * 1000); // 60 msgs per minute
+    const rl = await rateLimit(`webhook:waha:${ip}`, 60, 60 * 1000); // 60 msgs per minute
     if (!rl.success) {
       return NextResponse.json({ error: 'Too Many Requests' }, { status: 429 });
     }
@@ -110,6 +110,8 @@ export async function POST(req: Request) {
     if (providedSecret !== webhookSecret) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const wahaServerId = req.headers.get('x-waha-server-id') || undefined;
 
     const body = (await req.json()) as WahaIncomingBody;
     const norm = normalizePayload(body);
@@ -136,14 +138,15 @@ export async function POST(req: Request) {
     }
 
     // Process using Chatbot Engine
-    const reply = await ChatbotEngine.processMessage({
+    const result = await ChatbotEngine.processMessage({
+      wahaServerId,
       wahaSessionName: norm.sessionName,
       customerPhone: norm.customerPhone,
       customerName: norm.customerName,
       messageIn: norm.messageIn,
     });
 
-    if (reply) {
+    if (result && result.reply) {
       const chatbotSetting = await prisma.chatbotSetting.findFirst({
         where: { 
           wahaSessionName: norm.sessionName,
@@ -157,11 +160,16 @@ export async function POST(req: Request) {
         include: { wahaServer: true },
       });
 
-      const wahaServer = chatbotSetting?.wahaServer;
-      if (wahaServer && wahaServer.apiKeyEncrypted) {
-        const waha = WAHAService.fromEncrypted(wahaServer.baseUrl, wahaServer.apiKeyEncrypted);
-        await waha.sendMessage(norm.sessionName, norm.customerPhone, reply).catch(() => {
+      if (chatbotSetting?.wahaServer?.apiKeyEncrypted) {
+        const wahaServer = chatbotSetting.wahaServer;
+        const waha = WAHAService.fromEncrypted(wahaServer.baseUrl, wahaServer.apiKeyEncrypted || '');
+        await waha.sendMessage(norm.sessionName, norm.customerPhone, result.reply).catch(() => {
           console.error('Failed to send reply via WAHA. Check server connection.');
+        });
+      } else if (chatbotSetting?.wahaApiKeyEncrypted && chatbotSetting?.wahaBaseUrl) {
+        const waha = WAHAService.fromEncrypted(chatbotSetting.wahaBaseUrl, chatbotSetting.wahaApiKeyEncrypted || '');
+        await waha.sendMessage(norm.sessionName, norm.customerPhone, result.reply).catch(() => {
+          console.error('Failed to send reply via Legacy WAHA. Check server connection.');
         });
       } else {
         console.error(

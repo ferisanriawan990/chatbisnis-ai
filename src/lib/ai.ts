@@ -4,6 +4,7 @@ interface GenerateConfig {
   provider: string;
   model: string;
   apiKey: string;
+  maxTokens?: number;
 }
 
 interface GenerateResult {
@@ -28,6 +29,10 @@ export class AIService {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
 
+      console.log('--- AI_SERVICE_CALL ---');
+      console.log('Using Model:', config.model || 'gpt-4o-mini');
+      console.log('Using Provider:', config.provider);
+
       const res = await fetch(url, {
         method: 'POST',
         signal: controller.signal,
@@ -41,7 +46,7 @@ export class AIService {
             { role: 'system', content: config.systemPrompt },
             { role: 'user', content: config.userMessage },
           ],
-          max_tokens: 1500,
+          max_tokens: config.maxTokens || 1500,
           temperature: 0.7,
         }),
         // Add timeout via AbortController if supported in edge/node, or just rely on platform defaults

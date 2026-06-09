@@ -21,7 +21,7 @@ export default function AdminApiKeysPage() {
 
   const fetchKeys = async () => {
     try {
-      const res = await fetch('/api/admin/api-keys');
+      const res = await fetch('/api/admin/api-keys', { cache: 'no-store' });
       if (!res.ok) throw new Error('Failed to fetch API keys');
       const data = await res.json();
       setKeys(data.filter((k: any) => k.key !== 'GLOBAL_AI_MODEL')); // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -34,7 +34,7 @@ export default function AdminApiKeysPage() {
 
   const fetchGlobalModel = async () => {
     try {
-      const res = await fetch('/api/admin/global-ai-model');
+      const res = await fetch('/api/admin/global-ai-model', { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
         if (data.model) setGlobalModel(data.model);
@@ -182,8 +182,9 @@ export default function AdminApiKeysPage() {
                 <option value="gpt-4o">GPT-4o (OpenAI / Flaz)</option>
                 <option value="claude-3-haiku-20240307">Claude 3 Haiku (Anthropic / Flaz)</option>
                 <option value="claude-3-5-sonnet-20240620">Claude 3.5 Sonnet (Anthropic / Flaz)</option>
-                <option value="gemini-1.5-flash">Gemini 1.5 Flash (Google / Flaz)</option>
-                <option value="gemini-1.5-pro">Gemini 1.5 Pro (Google / Flaz)</option>
+                <option value="gemini/gemini-1.5-flash">Gemini 1.5 Flash (Google / Flaz)</option>
+                <option value="gemini/gemini-1.5-pro">Gemini 1.5 Pro (Google / Flaz)</option>
+                <option value="gemini/gemini-2.5-flash-lite">Gemini 2.5 Flash Lite (Google / Flaz)</option>
                 <option value="llama-3.1-8b-instruct">Llama 3.1 8B (Meta / Flaz)</option>
                 <option value="llama-3.1-70b-instruct">Llama 3.1 70B (Meta / Flaz)</option>
               </select>

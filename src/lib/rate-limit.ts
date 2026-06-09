@@ -3,10 +3,21 @@
  * For production, replace with Redis-based solution.
  */
 
+import { Redis } from '@upstash/redis';
+
+// Only init Redis if URL and Token exist
+const redis = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
+  ? new Redis({
+      url: process.env.UPSTASH_REDIS_REST_URL,
+      token: process.env.UPSTASH_REDIS_REST_TOKEN,
+    })
+  : null;
+
 interface RateLimitEntry {
   timestamps: number[];
 }
 
+// In-Memory Fallback Store
 const store = new Map<string, RateLimitEntry>();
 
 // Clean up expired entries every 5 minutes
@@ -38,14 +49,40 @@ export interface RateLimitResult {
  * @param limit - Maximum number of requests allowed in the window
  * @param windowMs - Time window in milliseconds
  */
-export function rateLimit(
+export async function rateLimit(
   identifier: string,
   limit: number,
   windowMs: number
-): RateLimitResult {
+): Promise<RateLimitResult> {
+  const now = Date.now();
+
+  // Try Redis first
+  if (redis) {
+    try {
+      const windowSeconds = Math.ceil(windowMs / 1000);
+      const key = `ratelimit:${identifier}`;
+      
+      const tx = redis.multi();
+      tx.zadd(key, { score: now, member: now.toString() });
+      tx.zremrangebyscore(key, 0, now - windowMs);
+      tx.zcard(key);
+      tx.expire(key, windowSeconds);
+      
+      const results = await tx.exec();
+      const count = results[2] as number;
+
+      if (count > limit) {
+        return { success: false, remaining: 0, limit };
+      }
+      return { success: true, remaining: limit - count, limit };
+    } catch (error) {
+      console.warn("Redis rate limit failed, falling back to memory:", error);
+    }
+  }
+
+  // Fallback to In-Memory
   cleanup(windowMs);
 
-  const now = Date.now();
   const entry = store.get(identifier) || { timestamps: [] };
 
   // Remove timestamps outside the window

@@ -8,7 +8,7 @@ export async function POST(req: Request) {
   try {
     // Rate limit: 3 requests per minute per IP
     const ip = getClientIp(req);
-    const rl = rateLimit(`register:${ip}`, 3, 60 * 1000);
+    const rl = await rateLimit(`register:${ip}`, 3, 60 * 1000);
     if (!rl.success) {
       return NextResponse.json(
         { error: 'Terlalu banyak percobaan. Coba lagi dalam 1 menit.' },

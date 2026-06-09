@@ -48,7 +48,8 @@ WAHA_WEBHOOK_SECRET=your_webhook_secret_here`;
       <div className="bg-amber-50 border border-amber-200 rounded-xl p-6">
         <h3 className="text-lg font-semibold text-amber-800 mb-2">Penting: Placeholder Setup</h3>
         <p className="text-amber-700 mb-4 text-sm">
-          Semua file JSON template menggunakan variabel placeholder demi keamanan. Anda wajib menggantinya dengan kredensial asli langsung di dalam dashboard n8n Anda. Jangan pernah share API Key Anda di chat umum atau frontend!
+          Semua file JSON template saat ini difungsikan sebagai <strong>Forwarder</strong> yang akan meneruskan payload dari WAHA langsung ke server ChatBisnis AI. Hal ini untuk memastikan chatbot Anda menggunakan AI Engine ChatBisnis terbaru, lengkap dengan Knowledge Base & Intent Search.
+          Anda wajib mengganti variabel placeholder dengan kredensial asli di dalam dashboard n8n Anda. Jangan pernah share API Key Anda di chat umum!
         </p>
         <div className="bg-white rounded-lg p-4 font-mono text-sm border border-amber-100 flex justify-between items-start">
           <pre className="text-slate-700 whitespace-pre-wrap">{placeholders}</pre>

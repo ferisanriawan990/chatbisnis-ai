@@ -16,6 +16,7 @@ interface ChatLogRow {
   tokenUsage?: number;
   createdAt: string;
   chatbotSettingId: string;
+  metadataJson?: string | null;
 }
 
 export default function ChatLogsPage() {
@@ -170,7 +171,26 @@ export default function ChatLogsPage() {
 
                   {log.messageOut && (
                     <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
-                      <p className="text-xs text-blue-400 font-medium mb-1 flex items-center gap-1"><Bot className="w-3 h-3" /> Balasan AI</p>
+                      <div className="flex justify-between items-start mb-1">
+                        <p className="text-xs text-blue-400 font-medium flex items-center gap-1"><Bot className="w-3 h-3" /> Balasan AI</p>
+                        {log.metadataJson && (
+                          <div className="flex gap-2">
+                            {(() => {
+                              try {
+                                const meta = JSON.parse(log.metadataJson);
+                                return (
+                                  <>
+                                    {meta.intent && <span className="px-1.5 py-0.5 bg-blue-100 text-blue-600 rounded text-[10px] uppercase font-bold border border-blue-200">Intent: {meta.intent}</span>}
+                                    {meta.promptSource && <span className="px-1.5 py-0.5 bg-indigo-100 text-indigo-600 rounded text-[10px] uppercase font-bold border border-indigo-200">Src: {meta.promptSource}</span>}
+                                    {meta.knowledgeMatchCount !== undefined && <span className="px-1.5 py-0.5 bg-purple-100 text-purple-600 rounded text-[10px] uppercase font-bold border border-purple-200">KB: {meta.knowledgeMatchCount}</span>}
+                                    {meta.usedCatalogUrl && <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-600 rounded text-[10px] uppercase font-bold border border-emerald-200">Catalog</span>}
+                                  </>
+                                );
+                              } catch { return null; }
+                            })()}
+                          </div>
+                        )}
+                      </div>
                       <p className="text-sm text-slate-700">{log.messageOut}</p>
                       {(log.tokenUsage ?? 0) > 0 && <p className="text-xs text-blue-300 mt-2 text-right">{log.tokenUsage} tokens</p>}
                     </div>

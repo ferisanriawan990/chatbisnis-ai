@@ -4,36 +4,52 @@ import * as ExcelJS from 'exceljs';
 export async function GET() {
   try {
     const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('Knowledge Base');
 
-    worksheet.columns = [
-      { header: 'pertanyaan', key: 'pertanyaan', width: 30 },
-      { header: 'jawaban', key: 'jawaban', width: 40 },
-      { header: 'nama_produk', key: 'nama_produk', width: 20 },
+    // SHEET 1: Instruksi
+    const wsInstruksi = workbook.addWorksheet('Instruksi & Panduan');
+    wsInstruksi.columns = [{ header: 'Panduan Pengisian Template', width: 80 }];
+    wsInstruksi.addRow(['PENTING: Jangan ubah nama kolom di baris pertama (Header).']);
+    wsInstruksi.addRow(['']);
+    wsInstruksi.addRow(['Sheet "Data Produk":']);
+    wsInstruksi.addRow(['- Digunakan khusus untuk menginput daftar stok/produk Anda.']);
+    wsInstruksi.addRow(['- Wajib isi "nama_produk" dan "deskripsi" (atau harga).']);
+    wsInstruksi.addRow(['']);
+    wsInstruksi.addRow(['Sheet "Tanya Jawab (FAQ)":']);
+    wsInstruksi.addRow(['- Digunakan khusus untuk pertanyaan umum (Jam Buka, Alamat, Kebijakan, dll).']);
+    wsInstruksi.addRow(['- Wajib isi "pertanyaan" dan "jawaban".']);
+    wsInstruksi.addRow(['']);
+    wsInstruksi.addRow(['Catatan: Sheet "Instruksi" ini akan diabaikan oleh sistem saat di-upload.']);
+    
+    // SHEET 2: Data Produk
+    const wsProduk = workbook.addWorksheet('Data Produk');
+    wsProduk.columns = [
+      { header: 'nama_produk', key: 'nama_produk', width: 25 },
       { header: 'kategori', key: 'kategori', width: 15 },
       { header: 'harga', key: 'harga', width: 15 },
       { header: 'stok', key: 'stok', width: 15 },
-      { header: 'deskripsi', key: 'deskripsi', width: 30 },
+      { header: 'deskripsi', key: 'deskripsi', width: 40 },
     ];
-
-    worksheet.addRow({
-      pertanyaan: 'Berapa harga produk X?',
-      jawaban: 'Harga produk X adalah Rp 100.000.',
-      nama_produk: 'Produk X',
-      kategori: 'Pakaian',
-      harga: 100000,
+    wsProduk.addRow({
+      nama_produk: 'Sepeda Listrik Goda 125',
+      kategori: 'Sepeda Listrik',
+      harga: 4500000,
       stok: 'Tersedia',
-      deskripsi: 'Pakaian berkualitas tinggi.',
+      deskripsi: 'Warna merah, baterai 48V, garansi 1 tahun.',
     });
 
-    worksheet.addRow({
-      pertanyaan: 'Apakah toko buka di hari Minggu?',
-      jawaban: 'Ya, kami buka setiap hari dari jam 08:00 sampai 17:00.',
-      nama_produk: '',
-      kategori: '',
-      harga: '',
-      stok: '',
-      deskripsi: '',
+    // SHEET 3: FAQ
+    const wsFaq = workbook.addWorksheet('Tanya Jawab (FAQ)');
+    wsFaq.columns = [
+      { header: 'pertanyaan', key: 'pertanyaan', width: 40 },
+      { header: 'jawaban', key: 'jawaban', width: 50 },
+    ];
+    wsFaq.addRow({
+      pertanyaan: 'Apakah toko buka hari Minggu?',
+      jawaban: 'Ya, kami buka setiap hari dari jam 08:00 sampai 17:00 WIB.',
+    });
+    wsFaq.addRow({
+      pertanyaan: 'Bisa cicilan atau kredit?',
+      jawaban: 'Bisa, kami menerima cicilan via Home Credit atau Kredivo.',
     });
 
     const buffer = await workbook.xlsx.writeBuffer();

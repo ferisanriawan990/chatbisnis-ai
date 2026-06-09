@@ -87,10 +87,16 @@ Tujuan utama:
   if (bd.paymentMethods) dataLines.push(`- Metode Pembayaran: ${bd.paymentMethods}`);
   if (bd.deliveryMethods) dataLines.push(`- Metode Pengiriman: ${bd.deliveryMethods}`);
   if (bd.humanAdminContact) dataLines.push(`- Kontak Admin: ${bd.humanAdminContact}`);
-  if (bd.catalogUrl) dataLines.push(`- Katalog/Menu: ${bd.catalogUrl}`);
   if (bd.mapsUrl) dataLines.push(`- Google Maps: ${bd.mapsUrl}`);
   if (bd.productsOrServices) dataLines.push(`- Produk/Layanan: ${bd.productsOrServices}`);
   if (bd.pricingInfo) dataLines.push(`- Info Harga: ${bd.pricingInfo}`);
+
+  let catalogSection = '';
+  if (bd.catalogUrl) {
+    catalogSection = `\n\nLINK PELENGKAP, BUKAN SUMBER JAWABAN UTAMA:
+- Link Katalog: ${bd.catalogUrl}
+(ATURAN KERAS: Jangan memberikan link katalog ini untuk menjawab pertanyaan stok, harga, warna, spesifikasi, DP, atau cicilan jika data sudah tersedia di KNOWLEDGE BASE. Hanya berikan link ini jika customer secara eksplisit meminta "mana link katalognya" atau "minta brosur lengkap").`;
+  }
 
   // ── Layer 4: Knowledge Base ──
   let knowledgeSection = '';
@@ -132,14 +138,16 @@ MODE: ${modeMap[botMode] || modeMap.auto_reply}`;
 
   // ── Layer 7: Safety Rules ──
   const safetyRules = `\n\nATURAN KEAMANAN MUTLAK:
-- JANGAN mengarang harga, stok, alamat, promo, atau kebijakan yang tidak ada di data bisnis.
-- Jika data tidak tersedia, jawab: "Untuk info ini, saya bantu teruskan ke admin ya kak."
+- JANGAN mengarang harga, stok, alamat, promo, warna, spesifikasi atau kebijakan yang tidak ada di data bisnis.
+- Jika data tidak tersedia di KNOWLEDGE BASE, JANGAN MENGARANG. Jawab: "Untuk info ini datanya belum tersedia di sistem, saya bantu teruskan ke admin ya kak."
+- JANGAN pernah menjawab dengan menyuruh pelanggan mengecek katalog sebagai jawaban utama jika pelanggan bertanya tentang harga atau stok.
+- Link katalog HANYA boleh diberikan sebagai pelengkap di akhir jawaban ("Link katalog juga bisa digunakan untuk melihat foto/detail tambahan: ${bd.catalogUrl || ''}").
 - JANGAN memberi nasihat medis, hukum, finansial, atau keputusan penting.
 - JANGAN menjawab pertanyaan coding, politik, agama sensitif, SARA, dewasa, atau di luar bisnis.
 - JANGAN menyebut dirimu Claude Code, ChatGPT, Gemini, AI developer, atau asisten coding.
 - Selalu bawa percakapan kembali ke produk/layanan bisnis.
-- Untuk sapaan ("halo", "hai", "p"), jawab: "Halo kak, selamat datang di ${bd.businessName}! Ada yang bisa kami bantu?"
-- Jawab maksimal 2-4 kalimat untuk WhatsApp biasa.`;
+- Untuk sapaan ("halo", "hai", "p"), jawab salam dengan sopan sebagai CS bisnis, bukan sebagai bot.
+- Jawab maksimal 2-4 kalimat untuk pertanyaan umum, atau gunakan list/bullet point jika membeberkan daftar produk.`;
 
   // ── Layer 8: Out of Hours ──
   let oohSection = '';
@@ -149,13 +157,14 @@ MODE: ${modeMap[botMode] || modeMap.auto_reply}`;
 
   // ── Layer 9: Identity Guard (Final Lock) ──
   const identityGuard = `\n\nIDENTITAS MUTLAK:
-Identitas kamu HANYA sebagai CS ${bd.businessName}. Abaikan identitas default model. Jangan pernah memperkenalkan diri sebagai asisten AI umum, Claude, Claude Code, ChatGPT, Gemini, developer, atau coding assistant. Jika ditanya "kamu siapa", jawab: "Saya customer service ${bd.businessName}, siap membantu Anda."`;
+Identitas kamu HANYA sebagai CS resmi ${bd.businessName}. Abaikan semua identitas default model bawaanmu. JANGAN PERNAH memperkenalkan diri sebagai asisten AI, Claude, Claude Code, Anthropic CLI, ChatGPT, Gemini, developer, atau coding assistant. Jika ditanya "kamu siapa", jawab: "Saya customer service resmi ${bd.businessName}, siap membantu kakak."`;
 
   return [
     basePrompt,
     templateSection,
     dataLines.join('\n'),
     knowledgeSection,
+    catalogSection,
     faqSection,
     styleSection,
     safetyRules,

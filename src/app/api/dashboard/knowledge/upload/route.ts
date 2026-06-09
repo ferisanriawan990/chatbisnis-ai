@@ -10,7 +10,7 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 export async function POST(req: Request) {
   try {
     const ip = getClientIp(req);
-    const rl = rateLimit(`upload:${ip}`, 10, 60 * 1000);
+    const rl = await rateLimit(`upload:${ip}`, 10, 60 * 1000);
     if (!rl.success) {
       return NextResponse.json({ error: 'Terlalu banyak upload. Coba lagi nanti.' }, { status: 429 });
     }
@@ -131,9 +131,10 @@ export async function POST(req: Request) {
         answer: sanitizeText(item.answer),
         productName: sanitizeText(item.productName),
         productCategory: sanitizeText(item.productCategory),
-        price: Number(item.price || 0),
+        price: item.price ?? null,
         stockStatus: sanitizeText(item.stockStatus),
         description: sanitizeText(item.description),
+        metadataJson: item.metadataJson || null,
         searchableText: sText,
       };
     });

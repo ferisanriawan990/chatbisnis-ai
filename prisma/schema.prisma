@@ -196,6 +196,7 @@ model ChatLog {
   aiUsed            String?
   status            ChatLogStatus @default(success)
   errorMessage      String?       @db.Text
+  metadataJson      String?       @db.Text
   needsHuman        Boolean       @default(false)
   tokenUsage        Int           @default(0)
   createdAt         DateTime      @default(now())

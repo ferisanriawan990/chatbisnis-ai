@@ -54,6 +54,7 @@ export const chatbotSettingSchema = z.object({
   n8nWebhookUrl: z.string().url().optional().or(z.literal('')).nullable(),
   // WAHA fields (wahaBaseUrl, wahaApiKey, wahaSessionName, wahaServerId) are platform-managed.
   // Users CANNOT set these via this schema. They are controlled by admin/platform.
+  templateId: z.string().optional().nullable(),
 });
 
 // ─── Combined Save Schema ───────────────────────────────
