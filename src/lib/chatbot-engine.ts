@@ -156,8 +156,19 @@ export class ChatbotEngine {
     if (hoursStr !== '24jam' && hoursStr !== '24/7') {
       const match = hoursStr.match(/(\d{1,2}):\d{2}-(\d{1,2}):\d{2}/);
       if (match) {
-        if (jakartaHour < parseInt(match[1]) || jakartaHour >= parseInt(match[2])) {
-          return { allowed: false, replyMessage: chatbotSetting.outOfHoursMessage };
+        const startHour = parseInt(match[1], 10);
+        let endHour = parseInt(match[2], 10);
+        if (endHour === 0) endHour = 24;
+
+        if (endHour <= startHour) {
+          // Overnight hours, e.g. 09:00-02:00
+          const isAllowed = jakartaHour >= startHour || jakartaHour < endHour;
+          if (!isAllowed) return { allowed: false, replyMessage: chatbotSetting.outOfHoursMessage };
+        } else {
+          // Normal hours, e.g. 08:00-17:00
+          if (jakartaHour < startHour || jakartaHour >= endHour) {
+            return { allowed: false, replyMessage: chatbotSetting.outOfHoursMessage };
+          }
         }
       }
     }
