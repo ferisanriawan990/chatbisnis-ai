@@ -52,9 +52,16 @@ export const chatbotSettingSchema = z.object({
   dailyChatLimit: z.coerce.number().int().min(1).max(100000).default(1000),
   monthlyChatLimit: z.coerce.number().int().min(1).max(10000000).default(30000),
   n8nWebhookUrl: z.string().url().optional().or(z.literal('')).nullable(),
-  // WAHA fields (wahaBaseUrl, wahaApiKey, wahaSessionName, wahaServerId) are platform-managed.
-  // Users CANNOT set these via this schema. They are controlled by admin/platform.
   templateId: z.string().optional().nullable(),
+  // Advanced bot config fields
+  productsOrServices: z.string().max(2000).optional().nullable(),
+  pricingInfo: z.string().max(2000).optional().nullable(),
+  paymentMethods: z.string().max(1000).optional().nullable(),
+  deliveryMethods: z.string().max(1000).optional().nullable(),
+  serviceArea: z.string().max(1000).optional().nullable(),
+  catalogUrl: z.string().url().optional().or(z.literal('')).nullable(),
+  mapsUrl: z.string().url().optional().or(z.literal('')).nullable(),
+  customFAQ: z.string().optional().nullable(),
 });
 
 // ─── Combined Save Schema ───────────────────────────────

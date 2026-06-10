@@ -19,6 +19,26 @@ export const BusinessProfileForm = ({ form, handleChange, isComplete }: any) => 
       <div><label className="block text-sm font-medium text-slate-700 mb-1">Jam Operasional</label><input name="openingHours" value={form.openingHours} onChange={handleChange} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none" /></div>
       <div><label className="block text-sm font-medium text-slate-700 mb-1">Nomor Admin (Opsional)</label><input name="adminPhone" value={form.adminPhone} onChange={handleChange} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none" /></div>
       <div className="md:col-span-2"><label className="block text-sm font-medium text-slate-700 mb-1">Alamat Lengkap</label><input name="address" value={form.address} onChange={handleChange} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none" /></div>
+
+      <div className="md:col-span-2 mt-2">
+        <details className="group border border-slate-200 rounded-lg bg-slate-50">
+          <summary className="flex justify-between items-center font-medium cursor-pointer list-none p-3 text-slate-700">
+            <span>Tampilkan Pengaturan Lanjutan (Katalog, Area, dll)</span>
+            <span className="transition group-open:rotate-180">
+              <svg fill="none" height="24" shapeRendering="geometricPrecision" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" viewBox="0 0 24 24" width="24"><path d="M6 9l6 6 6-6"></path></svg>
+            </span>
+          </summary>
+          <div className="p-4 pt-0 border-t border-slate-200 mt-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="md:col-span-2"><label className="block text-sm font-medium text-slate-700 mb-1">Produk atau Layanan</label><textarea name="productsOrServices" value={form.productsOrServices || ''} onChange={handleChange} rows={2} className="w-full p-2.5 bg-white border border-slate-200 rounded-lg outline-none" placeholder="Detail produk/layanan yang disediakan..."></textarea></div>
+            <div className="md:col-span-2"><label className="block text-sm font-medium text-slate-700 mb-1">Informasi Harga</label><textarea name="pricingInfo" value={form.pricingInfo || ''} onChange={handleChange} rows={2} className="w-full p-2.5 bg-white border border-slate-200 rounded-lg outline-none" placeholder="Cth: Mulai dari Rp10.000..."></textarea></div>
+            <div><label className="block text-sm font-medium text-slate-700 mb-1">Metode Pembayaran</label><input name="paymentMethods" value={form.paymentMethods || ''} onChange={handleChange} className="w-full p-2.5 bg-white border border-slate-200 rounded-lg outline-none" placeholder="Cth: Transfer BCA, COD" /></div>
+            <div><label className="block text-sm font-medium text-slate-700 mb-1">Metode Pengiriman</label><input name="deliveryMethods" value={form.deliveryMethods || ''} onChange={handleChange} className="w-full p-2.5 bg-white border border-slate-200 rounded-lg outline-none" placeholder="Cth: Gojek, JNE, Kurir Toko" /></div>
+            <div><label className="block text-sm font-medium text-slate-700 mb-1">Area Layanan</label><input name="serviceArea" value={form.serviceArea || ''} onChange={handleChange} className="w-full p-2.5 bg-white border border-slate-200 rounded-lg outline-none" placeholder="Cth: Jakarta & Sekitarnya" /></div>
+            <div><label className="block text-sm font-medium text-slate-700 mb-1">Link Google Maps</label><input name="mapsUrl" value={form.mapsUrl || ''} onChange={handleChange} className="w-full p-2.5 bg-white border border-slate-200 rounded-lg outline-none" placeholder="Cth: https://maps.app.goo.gl/..." /></div>
+            <div className="md:col-span-2"><label className="block text-sm font-medium text-slate-700 mb-1">Link Katalog (PDF/Google Drive/Sheet)</label><input name="catalogUrl" value={form.catalogUrl || ''} onChange={handleChange} className="w-full p-2.5 bg-white border border-slate-200 rounded-lg outline-none" placeholder="Cth: https://docs.google.com/..." /></div>
+          </div>
+        </details>
+      </div>
     </div>
   </section>
 );

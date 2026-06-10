@@ -30,6 +30,7 @@ export default function ChatbotDashboard() {
     dailyChatLimit: 1000, monthlyChatLimit: 30000,
     isActive: false,
     templateId: '',
+    productsOrServices: '', pricingInfo: '', paymentMethods: '', deliveryMethods: '', serviceArea: '', catalogUrl: '', mapsUrl: '', customFAQ: '',
   });
 
   const [activeModelDisplay, setActiveModelDisplay] = useState('gpt-4o-mini');
@@ -51,6 +52,14 @@ export default function ChatbotDashboard() {
             ...json.businessProfile,
             ...json.chatbotSetting,
             templateId: json.botConfig?.templateId || '',
+            productsOrServices: json.botConfig?.productsOrServices || '',
+            pricingInfo: json.botConfig?.pricingInfo || '',
+            paymentMethods: json.botConfig?.paymentMethods || '',
+            deliveryMethods: json.botConfig?.deliveryMethods || '',
+            serviceArea: json.botConfig?.serviceArea || '',
+            catalogUrl: json.botConfig?.catalogUrl || '',
+            mapsUrl: json.botConfig?.mapsUrl || '',
+            customFAQ: json.botConfig?.customFAQ || '',
           });
           
           if (json.hasGlobalKey && json.globalAiModel) {
