@@ -273,6 +273,7 @@ export default function ChatbotDashboard() {
     waha: wahaStatus === 'connected'
   };
 
+  return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50/50 via-white to-purple-50/50">
       {/* Floating Action Bar (Glassmorphism) */}
       <div className="fixed bottom-0 left-0 right-0 md:left-64 z-50 p-4 animate-in slide-in-from-bottom-10 duration-500">
@@ -468,6 +469,7 @@ export default function ChatbotDashboard() {
 
         </div>
       </div>
+    </div>
     </div>
   );
 }
