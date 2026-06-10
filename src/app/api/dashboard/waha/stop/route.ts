@@ -54,6 +54,7 @@ export async function POST() {
     const waha = WAHAService.fromEncrypted(wahaServer.baseUrl, wahaServer.apiKeyEncrypted);
 
     try {
+      await waha.logoutSession(activeSessionName).catch(() => {});
       await waha.stopSession(activeSessionName);
     } catch (err) {
       console.error('WAHA stopSession call failed:', err instanceof Error ? err.message : 'unknown');

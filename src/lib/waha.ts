@@ -113,6 +113,13 @@ export class WAHAService {
     });
   }
 
+  async logoutSession(sessionName: string) {
+    return this.request('/api/sessions/logout', {
+      method: 'POST',
+      body: JSON.stringify({ name: this.getEffectiveSession(sessionName) }),
+    });
+  }
+
   async getStatus(sessionName: string): Promise<WAHASessionStatus> {
     try {
       const data = await this.request(`/api/sessions/${this.getEffectiveSession(sessionName)}`);
