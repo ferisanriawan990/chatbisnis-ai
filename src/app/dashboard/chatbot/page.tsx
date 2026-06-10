@@ -273,31 +273,47 @@ export default function ChatbotDashboard() {
     waha: wahaStatus === 'connected'
   };
 
-  return (
-    <div className="max-w-6xl mx-auto space-y-8 pb-20">
-      <Toaster position="top-right" />
-      
-      {/* Header & Status Bot */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-            <Bot className="w-8 h-8 text-blue-600" />
-            Pengaturan Chatbot AI
-          </h1>
-          <p className="text-slate-500 mt-1">Lengkapi langkah-langkah di bawah untuk mengaktifkan asisten virtual Anda.</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-
-          <button onClick={handleToggle} className={`px-4 py-2 rounded-xl font-medium flex items-center gap-2 transition-all ${form.isActive ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'}`}>
-            {form.isActive ? <PowerOff className="w-4 h-4" /> : <Power className="w-4 h-4" />}
-            {form.isActive ? 'Matikan Bot' : 'Aktifkan Bot'}
-          </button>
-          <button onClick={handleSave} disabled={saving} className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium flex items-center gap-2 transition-all shadow-md shadow-blue-200 disabled:opacity-50">
-            <Save className="w-4 h-4" />
-            {saving ? 'Menyimpan...' : 'Simpan Semua'}
-          </button>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50/50 via-white to-purple-50/50">
+      {/* Floating Action Bar (Glassmorphism) */}
+      <div className="fixed bottom-0 left-0 right-0 md:left-64 z-50 p-4 animate-in slide-in-from-bottom-10 duration-500">
+        <div className="max-w-6xl mx-auto">
+          <div className="bg-white/80 backdrop-blur-xl border border-white/40 shadow-2xl shadow-indigo-500/10 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-semibold text-slate-800">Status Chatbot: <span className={form.isActive ? 'text-emerald-600' : 'text-slate-500'}>{form.isActive ? 'Aktif & Menjawab' : 'Nonaktif'}</span></p>
+              <p className="text-xs text-slate-500">Jangan lupa simpan perubahan sebelum mengaktifkan bot.</p>
+            </div>
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <button onClick={handleToggle} className={`flex-1 sm:flex-none px-6 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-all duration-300 ${form.isActive ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-100' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-100'}`}>
+                {form.isActive ? <PowerOff className="w-4 h-4" /> : <Power className="w-4 h-4" />}
+                {form.isActive ? 'Matikan Bot' : 'Aktifkan Bot'}
+              </button>
+              <button onClick={handleSave} disabled={saving} className="flex-1 sm:flex-none px-8 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all duration-300 shadow-lg shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed transform hover:-translate-y-0.5">
+                <Save className="w-4 h-4" />
+                {saving ? 'Menyimpan...' : 'Simpan Semua'}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
+
+      <div className="max-w-6xl mx-auto space-y-8 pb-32 pt-8 px-4 sm:px-6 animate-in fade-in duration-700">
+        <Toaster position="top-right" />
+        
+        {/* Header & Status Bot */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/60 backdrop-blur-lg p-8 rounded-3xl border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
+          <div className="absolute -right-20 -top-20 w-64 h-64 bg-blue-400/10 rounded-full blur-3xl pointer-events-none"></div>
+          <div className="absolute -left-20 -bottom-20 w-64 h-64 bg-purple-400/10 rounded-full blur-3xl pointer-events-none"></div>
+          
+          <div className="relative z-10">
+            <h1 className="text-3xl font-extrabold bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 bg-clip-text text-transparent flex items-center gap-3">
+              <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-lg shadow-blue-500/20">
+                <Bot className="w-8 h-8 text-white" />
+              </div>
+              Pengaturan Chatbot AI
+            </h1>
+            <p className="text-slate-500 mt-2 font-medium text-lg ml-14">Desain cerdas, asisten responsif. Sesuaikan profil bisnis Anda.</p>
+          </div>
+        </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
@@ -451,6 +467,7 @@ export default function ChatbotDashboard() {
           <AdvancedRulesPanel form={form} handleChange={handleChange} />
 
         </div>
+      </div>
       </div>
     </div>
   );

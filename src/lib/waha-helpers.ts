@@ -14,6 +14,9 @@ export function getWahaCoreMode(): boolean {
  * E.g., user-12345 or biz-67890
  */
 export function getActiveWahaSessionName(userId: string, businessProfileId?: string | null): string {
+  if (getWahaCoreMode()) {
+    return 'default';
+  }
   if (businessProfileId) {
     return `biz-${businessProfileId}`;
   }

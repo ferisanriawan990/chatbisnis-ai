@@ -58,17 +58,29 @@ export const AIStyleForm = ({ form, handleChange, activeModelDisplay }: any) => 
           <option value="Profesional">Profesional</option><option value="Ramah">Ramah</option><option value="Santai">Santai</option><option value="Sales / Soft Selling">Sales / Soft Selling</option>
         </select>
       </div>
-      <div className="flex flex-col gap-2">
-        <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" name="useEmoji" checked={form.useEmoji} onChange={handleChange} className="w-4 h-4 text-purple-600 rounded" /><span className="text-sm font-medium text-slate-700">Gunakan Emoji dalam membalas pesan</span></label>
-        <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" name="allowSelling" checked={form.allowSelling} onChange={handleChange} className="w-4 h-4 text-purple-600 rounded" /><span className="text-sm font-medium text-slate-700">Izinkan AI menawarkan Promo</span></label>
+      <div className="flex flex-col gap-2 mt-2">
+        <label className="block text-sm font-semibold text-slate-700 ml-1">Karakteristik Balasan</label>
+        <label className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-100 transition-colors">
+          <input type="checkbox" name="useEmoji" checked={form.useEmoji} onChange={handleChange} className="w-5 h-5 text-purple-600 rounded focus:ring-purple-500 cursor-pointer" />
+          <span className="text-sm font-medium text-slate-700">Gunakan Emoji 😊🚀</span>
+        </label>
+        <label className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-100 transition-colors">
+          <input type="checkbox" name="allowSelling" checked={form.allowSelling} onChange={handleChange} className="w-5 h-5 text-purple-600 rounded focus:ring-purple-500 cursor-pointer" />
+          <span className="text-sm font-medium text-slate-700">Izinkan AI Jualan/Terima Order</span>
+        </label>
+        <label className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-100 transition-colors">
+          <input type="checkbox" name="allowPromoOffer" checked={form.allowPromoOffer} onChange={handleChange} className="w-5 h-5 text-purple-600 rounded focus:ring-purple-500 cursor-pointer" />
+          <span className="text-sm font-medium text-slate-700">Izinkan AI Tawarkan Promo/Diskon</span>
+        </label>
       </div>
-      <div className="md:col-span-2 mt-2 p-3 bg-purple-50 rounded-xl border border-purple-100 flex items-center justify-between">
+      <div className="md:col-span-2 mt-4 p-5 bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl border border-purple-100/50 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
         <div>
           <h3 className="text-sm font-bold text-purple-900">Model AI Aktif</h3>
-          <p className="text-xs text-purple-700 mt-0.5">Model ini sedang digunakan oleh chatbot Anda.</p>
+          <p className="text-xs text-purple-700 mt-1">Model bahasa ini dikelola secara terpusat oleh sistem.</p>
         </div>
-        <div className="px-3 py-1 bg-white border border-purple-200 rounded-lg text-sm font-semibold text-purple-700 shadow-sm">
+        <div className="px-4 py-2 bg-white/80 backdrop-blur-sm border border-purple-200 rounded-xl text-sm font-extrabold text-purple-700 shadow-sm flex items-center gap-2">
           {activeModelDisplay}
+          <span className="px-2 py-0.5 bg-slate-100 text-slate-500 text-[10px] rounded-full uppercase tracking-wider">Locked</span>
         </div>
       </div>
     </div>
@@ -76,14 +88,26 @@ export const AIStyleForm = ({ form, handleChange, activeModelDisplay }: any) => 
 );
 
 export const WhatsAppConnectionCard = ({ wahaStatus, isComplete }: any) => (
-  <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 relative overflow-hidden">
-    <div className="absolute top-0 right-0 p-4">
-      {isComplete ? <CheckCircle2 className="w-8 h-8 text-emerald-400 opacity-20" /> : <span className="text-4xl font-black text-slate-100">4</span>}
+  <section className="bg-white/80 backdrop-blur-xl p-8 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60 hover:shadow-xl hover:shadow-emerald-100/50 transition-all duration-500 relative overflow-hidden group">
+    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-emerald-100/50 to-transparent rounded-bl-full pointer-events-none transition-transform duration-500 group-hover:scale-110"></div>
+    <div className="absolute top-0 right-0 p-6 z-10">
+      {isComplete ? <CheckCircle2 className="w-10 h-10 text-emerald-400 drop-shadow-md" /> : <span className="text-5xl font-black text-slate-100 drop-shadow-sm">4</span>}
     </div>
-    <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2 relative z-10"><Key className="w-5 h-5 text-emerald-500" /> Step 4: Hubungkan WhatsApp</h2>
-    <div className="space-y-4 relative z-10">
-      <p className="text-sm text-slate-600">Status WhatsApp Anda saat ini: <span className={`font-bold ${wahaStatus === 'connected' ? 'text-emerald-600' : 'text-amber-600 capitalize'}`}>{wahaStatus}</span></p>
-      <Link href="/dashboard/waha" className="inline-block w-full text-center px-4 py-2 bg-emerald-100 text-emerald-700 font-medium rounded-lg hover:bg-emerald-200 transition-colors">
+    <h2 className="text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-600 mb-6 flex items-center gap-3 relative z-10">
+      <div className="p-2.5 bg-emerald-50 rounded-xl">
+        <Key className="w-6 h-6 text-emerald-600" />
+      </div>
+      Hubungkan WhatsApp
+    </h2>
+    <div className="space-y-5 relative z-10">
+      <div className="flex items-center gap-3 p-4 bg-slate-50 border border-slate-200 rounded-xl">
+        <div className="relative flex h-3 w-3">
+          {wahaStatus === 'connected' && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>}
+          <span className={`relative inline-flex rounded-full h-3 w-3 ${wahaStatus === 'connected' ? 'bg-emerald-500' : 'bg-amber-500'}`}></span>
+        </div>
+        <p className="text-sm font-semibold text-slate-700">Status WhatsApp Anda saat ini: <span className={`font-bold ${wahaStatus === 'connected' ? 'text-emerald-600' : 'text-amber-600 capitalize'}`}>{wahaStatus}</span></p>
+      </div>
+      <Link href="/dashboard/waha" className="flex items-center justify-center gap-2 w-full px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold rounded-xl transition-all shadow-lg shadow-emerald-500/30 transform hover:-translate-y-0.5">
         Kelola Koneksi WhatsApp
       </Link>
     </div>
@@ -91,35 +115,46 @@ export const WhatsAppConnectionCard = ({ wahaStatus, isComplete }: any) => (
 );
 
 export const AdvancedRulesPanel = ({ form, handleChange }: any) => (
-  <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-    <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><ShieldAlert className="w-5 h-5 text-amber-500" /> Aturan Lanjutan & Fallback</h2>
-    <div className="space-y-4">
-      <div><label className="block text-sm font-medium text-slate-700 mb-1">Fallback Message (Bila bot tidak tahu)</label><textarea name="fallbackMessage" value={form.fallbackMessage} onChange={handleChange} rows={2} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none"></textarea></div>
-      <div><label className="block text-sm font-medium text-slate-700 mb-1">Pesan Handover (Saat diteruskan ke Admin)</label><textarea name="handoverMessage" value={form.handoverMessage} onChange={handleChange} rows={2} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none"></textarea></div>
-      <div><label className="block text-sm font-medium text-slate-700 mb-1">Keyword Handover (Dipisah koma)</label><input name="handoverKeywords" value={form.handoverKeywords} onChange={handleChange} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none" placeholder="cth: admin, manusia, cs" /></div>
+  <section className="bg-white/80 backdrop-blur-xl p-8 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60 hover:shadow-xl hover:shadow-amber-100/50 transition-all duration-500 relative overflow-hidden group">
+    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-amber-100/50 to-transparent rounded-bl-full pointer-events-none transition-transform duration-500 group-hover:scale-110"></div>
+    <h2 className="text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-orange-500 mb-6 flex items-center gap-3 relative z-10">
+      <div className="p-2.5 bg-amber-50 rounded-xl">
+        <ShieldAlert className="w-6 h-6 text-amber-500" />
+      </div>
+      Aturan Lanjutan & Fallback
+    </h2>
+    <div className="space-y-5 relative z-10">
+      <div><label className="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">Fallback Message (Bila bot tidak tahu)</label><textarea name="fallbackMessage" value={form.fallbackMessage} onChange={handleChange} rows={2} className="w-full p-3.5 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-amber-500/10 focus:border-amber-500 outline-none transition-all shadow-sm hover:border-amber-300 resize-none"></textarea></div>
+      <div><label className="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">Pesan Handover (Saat diteruskan ke Admin)</label><textarea name="handoverMessage" value={form.handoverMessage} onChange={handleChange} rows={2} className="w-full p-3.5 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-amber-500/10 focus:border-amber-500 outline-none transition-all shadow-sm hover:border-amber-300 resize-none"></textarea></div>
+      <div><label className="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">Keyword Handover (Dipisah koma)</label><input name="handoverKeywords" value={form.handoverKeywords} onChange={handleChange} className="w-full p-3.5 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-amber-500/10 focus:border-amber-500 outline-none transition-all shadow-sm hover:border-amber-300" placeholder="cth: admin, manusia, cs" /></div>
     </div>
   </section>
 );
 
 export const ChatbotPreview = ({ chatLogs }: any) => (
-  <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 relative overflow-hidden">
-    <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2 relative z-10"><MessageSquare className="w-5 h-5 text-indigo-500" /> Chat Logs (5 Terakhir)</h2>
-    <div className="space-y-3 relative z-10">
+  <section className="bg-white/80 backdrop-blur-xl p-8 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60 relative overflow-hidden mt-8">
+    <h2 className="text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-slate-700 to-slate-900 mb-6 flex items-center gap-3 relative z-10">
+      <div className="p-2.5 bg-slate-100 rounded-xl">
+        <MessageSquare className="w-6 h-6 text-slate-600" />
+      </div>
+      Chat Logs (5 Terakhir)
+    </h2>
+    <div className="space-y-4 relative z-10">
       {chatLogs.length === 0 ? (
-        <div className="text-center py-8 text-slate-500 border border-slate-100 rounded-xl bg-slate-50">Belum ada percakapan terbaru.</div>
+        <div className="text-center py-10 text-slate-500 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50">Belum ada percakapan terbaru.</div>
       ) : chatLogs.map((log: any) => (
-        <div key={log.id} className="p-3 border border-slate-100 rounded-lg bg-slate-50">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-xs font-semibold text-slate-600">{log.customerPhone}</span>
-            <span className="text-xs text-slate-400">{new Date(log.createdAt).toLocaleString()}</span>
+        <div key={log.id} className="p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm hover:bg-slate-100 transition-colors">
+          <div className="flex justify-between text-xs text-slate-500 mb-2">
+            <span className="font-bold text-slate-700">Dari: {log.customerPhone}</span>
+            <span>{new Date(log.createdAt).toLocaleString()}</span>
           </div>
-          <p className="text-sm"><b>Masuk:</b> {log.messageIn}</p>
-          <p className="text-sm mt-1 text-slate-600"><b>Balas:</b> {log.messageOut}</p>
+          <p className="mb-2"><span className="font-semibold text-blue-600">User:</span> {log.messageIn}</p>
+          <p className="pl-4 border-l-2 border-emerald-400 bg-white p-2 rounded-lg shadow-sm"><span className="font-semibold text-emerald-600">AI:</span> {log.messageOut}</p>
         </div>
       ))}
-    </div>
-    <div className="mt-4 text-center relative z-10">
-      <Link href="/dashboard/chat-logs" className="text-sm text-blue-600 hover:underline">Lihat Semua Logs</Link>
+      <Link href="/dashboard/chat-logs" className="block text-center mt-6 text-sm font-bold text-blue-600 hover:text-blue-800 transition-colors">
+        Lihat Semua Logs →
+      </Link>
     </div>
   </section>
 );
