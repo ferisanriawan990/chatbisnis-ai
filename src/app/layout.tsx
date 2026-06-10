@@ -1,11 +1,16 @@
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/Providers";
 
 
+const inter = Inter({ subsets: ["latin"] });
+
 export const metadata: Metadata = {
   title: "ChatBisnis AI - Chatbot WhatsApp AI untuk UMKM",
   description: "Platform chatbot WhatsApp AI untuk UMKM Indonesia dengan WAHA, n8n, knowledge base, dan otomatisasi customer service.",
+  keywords: "chatbot whatsapp, ai customer service, umkm digital, waha, n8n chatbot, whatsapp otomatis, chatbisnis ai",
+  robots: "index, follow",
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://chatbisnis-ai.vercel.app'),
   openGraph: {
     title: "ChatBisnis AI - Chatbot WhatsApp AI untuk UMKM",
@@ -37,9 +42,9 @@ export default function RootLayout({
   return (
     <html
       lang="id"
-      className="h-full antialiased font-sans"
+      className="h-full antialiased"
     >
-      <body className="min-h-full flex flex-col">
+      <body className={`${inter.className} min-h-full flex flex-col bg-slate-50 text-slate-900`}>
         <Providers>{children}</Providers>
       </body>
     </html>

@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { getActiveWahaSessionName, getWahaCoreMode, assertUserOwnsWahaSession } from '@/lib/waha-helpers';
+import { getActiveWahaSessionName, assertUserOwnsWahaSession } from '@/lib/waha-helpers';
 import { WAHAService } from '@/lib/waha';
 
 export default async function DashboardIndex() {
@@ -43,15 +43,13 @@ export default async function DashboardIndex() {
   // 4. Analytics
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-  let todayChats = 0, monthlyChats = 0, newLeads = 0, needsHuman = 0;
+  let todayChats = 0, newLeads = 0, needsHuman = 0;
   if (chatbotSetting) {
-    [todayChats, monthlyChats, newLeads, needsHuman] = await Promise.all([
+    [todayChats, newLeads, needsHuman] = await Promise.all([
       prisma.chatLog.count({ where: { chatbotSettingId: chatbotSetting.id, createdAt: { gte: today } } }),
-      prisma.chatLog.count({ where: { chatbotSettingId: chatbotSetting.id, createdAt: { gte: firstDayOfMonth } } }),
       prisma.lead.count({ where: { businessProfileId: chatbotSetting.businessProfileId, createdAt: { gte: sevenDaysAgo } } }),
       prisma.chatLog.count({ where: { chatbotSettingId: chatbotSetting.id, needsHuman: true, status: 'success' } }),
     ]);

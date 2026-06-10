@@ -18,8 +18,8 @@ export default function Home() {
             <Link href="/contact" className="hover:text-blue-600">Kontak</Link>
           </nav>
           <div className="flex items-center gap-4">
-            <Link href="/login" className="text-sm font-medium text-slate-600 hover:text-blue-600">Masuk</Link>
-            <Link href="/register" className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-full hover:bg-blue-700 transition shadow-md shadow-blue-200">Coba Gratis</Link>
+            <Link href="/login" className="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors">Masuk</Link>
+            <Link href="/register" className="px-5 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-full hover:bg-blue-700 hover:shadow-lg hover:-translate-y-0.5 transition-all shadow-md shadow-blue-200/50">Coba Gratis</Link>
           </div>
         </div>
       </header>
@@ -37,10 +37,10 @@ export default function Home() {
             Tidak perlu lagi begadang membalas chat pelanggan. ChatBisnis AI merespon 24/7, menjawab pertanyaan produk, dan menangkap prospek secara otomatis. Tanpa coding, tanpa ribet setting server.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-            <Link href="/register" className="px-8 py-4 bg-blue-600 text-white text-lg font-bold rounded-full hover:bg-blue-700 transition shadow-xl shadow-blue-200 w-full sm:w-auto">
+            <Link href="/register" className="px-8 py-4 bg-blue-600 text-white text-lg font-bold rounded-full hover:bg-blue-700 hover:shadow-2xl hover:shadow-blue-500/30 hover:-translate-y-1 transition-all w-full sm:w-auto">
               Mulai Sekarang (Gratis)
             </Link>
-            <Link href="/contact" className="px-8 py-4 bg-white text-slate-700 border border-slate-200 text-lg font-bold rounded-full hover:bg-slate-50 transition w-full sm:w-auto">
+            <Link href="/contact" className="px-8 py-4 bg-white/80 backdrop-blur-sm text-slate-700 border border-slate-200 text-lg font-bold rounded-full hover:bg-slate-50 hover:shadow-lg hover:-translate-y-1 transition-all w-full sm:w-auto">
               Hubungi Sales
             </Link>
           </div>
@@ -52,20 +52,20 @@ export default function Home() {
         <div className="max-w-5xl mx-auto text-center space-y-12">
           <h2 className="text-3xl font-bold text-slate-900">Masalah UMKM Saat Ini</h2>
           <div className="grid md:grid-cols-3 gap-8 text-left">
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4"><span className="text-xl">😴</span></div>
-              <h3 className="text-xl font-bold mb-2">Pesan Menumpuk</h3>
-              <p className="text-slate-600">Banyak chat masuk di luar jam kerja yang tidak terbalas cepat, membuat pembeli kabur ke kompetitor.</p>
+            <div className="bg-white/60 backdrop-blur-md p-8 rounded-3xl shadow-sm border border-slate-200/60 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+              <div className="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center mb-6 shadow-inner"><span className="text-2xl">😴</span></div>
+              <h3 className="text-xl font-bold mb-3 text-slate-800">Pesan Menumpuk</h3>
+              <p className="text-slate-600 leading-relaxed">Banyak chat masuk di luar jam kerja yang tidak terbalas cepat, membuat pembeli kabur ke kompetitor.</p>
             </div>
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-              <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mb-4"><span className="text-xl">💰</span></div>
-              <h3 className="text-xl font-bold mb-2">Kehilangan Prospek</h3>
-              <p className="text-slate-600">Pelanggan yang tanya-tanya seringkali terlupakan untuk di-follow up sehingga gagal closing.</p>
+            <div className="bg-white/60 backdrop-blur-md p-8 rounded-3xl shadow-sm border border-slate-200/60 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+              <div className="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center mb-6 shadow-inner"><span className="text-2xl">💰</span></div>
+              <h3 className="text-xl font-bold mb-3 text-slate-800">Kehilangan Prospek</h3>
+              <p className="text-slate-600 leading-relaxed">Pelanggan yang tanya-tanya seringkali terlupakan untuk di-follow up sehingga gagal closing.</p>
             </div>
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-              <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mb-4"><span className="text-xl">🤯</span></div>
-              <h3 className="text-xl font-bold mb-2">Terlalu Teknis</h3>
-              <p className="text-slate-600">Sistem API WhatsApp dan AI sangat rumit. Mengurus server dan integrasi memusingkan orang awam.</p>
+            <div className="bg-white/60 backdrop-blur-md p-8 rounded-3xl shadow-sm border border-slate-200/60 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+              <div className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center mb-6 shadow-inner"><span className="text-2xl">🤯</span></div>
+              <h3 className="text-xl font-bold mb-3 text-slate-800">Terlalu Teknis</h3>
+              <p className="text-slate-600 leading-relaxed">Sistem API WhatsApp dan AI sangat rumit. Mengurus server dan integrasi memusingkan orang awam.</p>
             </div>
           </div>
         </div>

@@ -28,9 +28,6 @@ export async function POST() {
         missing.push('Profil bisnis belum lengkap (businessName dan businessIndustry wajib diisi)');
       }
 
-      const knowledgeCount = await prisma.knowledgeItem.count({
-        where: { userId, isActive: true },
-      });
       // Knowledge base is now optional, as bots can function using just Templates and Business Profiles.
 
       const waSession = await prisma.whatsAppSession.findFirst({
