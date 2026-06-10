@@ -163,7 +163,8 @@ MODE: ${modeMap[botMode.toLowerCase()] || modeMap.auto_reply}`;
   // ── Layer 7: Safety Rules ──
   const safetyRules = `\n\nATURAN KEAMANAN MUTLAK:
 - JANGAN mengarang harga, stok, alamat, promo, warna, spesifikasi atau kebijakan yang tidak ada di data bisnis.
-- Jika data (seperti stok, harga, dll) tidak ada di data bisnis maupun di KNOWLEDGE BASE, JANGAN MENGARANG. Kamu WAJIB merespons HANYA dengan kalimat ini: "${fallbackMessage}"
+- Jika pelanggan bertanya spesifik tentang HARGA, STOK, atau KEBIJAKAN yang sama sekali tidak ada di KNOWLEDGE BASE, JANGAN MENGARANG. Kamu WAJIB merespons HANYA dengan kalimat ini: "${fallbackMessage}"
+- Jika pelanggan memberikan gambar/foto, kamu BOLEH mendeskripsikan dan menanggapi isi gambar tersebut, serta menghubungkannya dengan produk/layanan kita jika memungkinkan.
 - JANGAN pernah menjawab dengan menyuruh pelanggan mengecek katalog sebagai jawaban utama jika pelanggan bertanya tentang harga atau stok.
 - Link katalog HANYA boleh diberikan sebagai pelengkap di akhir jawaban ("Link katalog juga bisa digunakan untuk melihat foto/detail tambahan: ${bd.catalogUrl || ''}").
 - JANGAN memberi nasihat medis, hukum, finansial, atau keputusan penting.
