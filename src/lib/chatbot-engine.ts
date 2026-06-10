@@ -38,7 +38,7 @@ export class ChatbotEngine {
     if (!access.allowed) {
       if (access.replyMessage) {
         if (!isTest) {
-          await this.sendLog({ ...params, chatbotSetting, messageOut: access.replyMessage, needsHuman: true, intent });
+          await this.sendLog({ ...params, chatbotSetting, messageOut: access.replyMessage, needsHuman: access.needsHuman ?? true, intent });
         }
         return { reply: access.replyMessage, metadata: { intent, promptSource: 'handover' } };
       }
@@ -142,6 +142,13 @@ export class ChatbotEngine {
     }
 
     if (convoState.status === 'human_handover' && convoState.handoverUntil && convoState.handoverUntil > new Date()) {
+      // Allow customer to reset handover via chat
+      const lowerMsg = messageIn.toLowerCase().trim();
+      const resetKeywords = ['kembali ke ai', 'selesai', 'reset', 'batal', 'kembali'];
+      if (resetKeywords.includes(lowerMsg)) {
+        await prisma.conversationState.update({ where: { id: convoState.id }, data: { status: 'ai_active', handoverUntil: null } });
+        return { allowed: false, replyMessage: "✅ Sesi dengan admin telah diakhiri. Asisten AI kembali aktif! Ada yang bisa dibantu?", needsHuman: false };
+      }
       return { allowed: false };
     }
 
