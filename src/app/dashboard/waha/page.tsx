@@ -36,7 +36,7 @@ export default function WahaDashboard() {
         setIsCoreMode(!!coreMode);
 
         if (status === 'qr') {
-          fetchQrCode();
+          await fetchQrCode();
         }
       }
     } catch {
@@ -51,6 +51,29 @@ export default function WahaDashboard() {
     (fetchStatus as any)();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Auto-polling when starting
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (wahaStatus === 'starting') {
+      interval = setInterval(() => {
+        void fetchStatus();
+      }, 3000);
+    }
+    return () => clearInterval(interval);
+  }, [wahaStatus, fetchStatus]);
+
+  // Auto-refresh QR code every 15 seconds
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (wahaStatus === 'qr') {
+      interval = setInterval(() => {
+        void fetchQrCode();
+        void fetchStatus(); // Also check if it became connected
+      }, 15000);
+    }
+    return () => clearInterval(interval);
+  }, [wahaStatus, fetchStatus]);
 
   const handleStart = async () => {
     setLoading(true);
