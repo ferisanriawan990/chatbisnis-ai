@@ -468,7 +468,6 @@ export default function ChatbotDashboard() {
 
         </div>
       </div>
-      </div>
     </div>
   );
 }
