@@ -147,8 +147,7 @@ export async function POST(req: NextRequest) {
 
     const chatbotSetting = await prisma.chatbotSetting.findFirst({
       where: { 
-        wahaSessionName: norm.sessionName,
-        ...(wahaServerId ? { wahaServerId } : {}),
+        ...(coreMode ? { wahaServerId: wahaServerId! } : { wahaSessionName: norm.sessionName, ...(wahaServerId ? { wahaServerId } : {}) }),
         // Only fallback to userId in URL in non-production for debugging
         ...(qUserId && process.env.NODE_ENV !== 'production' ? { userId: qUserId } : {}),
         isActive: true,
@@ -165,10 +164,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, message: 'No active chatbot setting found for this session' });
     }
 
+    // Use the actual session name from DB if in core mode (since payload brings 'default')
+    const actualSessionName = coreMode ? chatbotSetting.wahaSessionName! : norm.sessionName;
+
     // Process using Chatbot Engine
     const result = await ChatbotEngine.processMessage({
       wahaServerId: chatbotSetting.wahaServerId ?? undefined,
-      wahaSessionName: norm.sessionName,
+      wahaSessionName: actualSessionName,
       customerPhone: norm.customerPhone,
       customerName: norm.customerName,
       messageIn: norm.messageIn,
@@ -179,7 +181,7 @@ export async function POST(req: NextRequest) {
       if (chatbotSetting?.wahaServer?.apiKeyEncrypted) {
         const wahaServer = chatbotSetting.wahaServer;
         const waha = WAHAService.fromEncrypted(wahaServer.baseUrl, wahaServer.apiKeyEncrypted || '');
-        await waha.sendMessage(norm.sessionName, norm.customerPhone, result.reply).catch(() => {
+        await waha.sendMessage(actualSessionName, norm.customerPhone, result.reply).catch(() => {
           console.error('Failed to send reply via WAHA. Check server connection.');
         });
       } else if (chatbotSetting?.wahaApiKeyEncrypted && chatbotSetting?.wahaBaseUrl) {

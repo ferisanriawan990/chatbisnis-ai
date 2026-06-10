@@ -86,6 +86,10 @@ export class WAHAService {
     });
   }
 
+  private getEffectiveSession(name: string) {
+    return (process.env.WAHA_CORE_MODE === 'false') ? name : 'default';
+  }
+
   async testConnection() {
     try {
       await this.request('/api/sessions?all=true');
@@ -98,20 +102,20 @@ export class WAHAService {
   async startSession(sessionName: string) {
     return this.request('/api/sessions/start', {
       method: 'POST',
-      body: JSON.stringify({ name: sessionName }),
+      body: JSON.stringify({ name: this.getEffectiveSession(sessionName) }),
     });
   }
 
   async stopSession(sessionName: string) {
     return this.request('/api/sessions/stop', {
       method: 'POST',
-      body: JSON.stringify({ name: sessionName }),
+      body: JSON.stringify({ name: this.getEffectiveSession(sessionName) }),
     });
   }
 
   async getStatus(sessionName: string): Promise<WAHASessionStatus> {
     try {
-      const data = await this.request(`/api/sessions/${sessionName}`);
+      const data = await this.request(`/api/sessions/${this.getEffectiveSession(sessionName)}`);
       const status = data?.status?.toLowerCase() || 'disconnected';
 
       if (status === 'working' || status === 'connected' || status === 'authenticated') return 'connected';
@@ -126,7 +130,7 @@ export class WAHAService {
 
   async getQR(sessionName: string): Promise<string | null> {
     try {
-      const data = await this.request(`/api/${sessionName}/auth/qr`);
+      const data = await this.request(`/api/${this.getEffectiveSession(sessionName)}/auth/qr`);
       if (data?.mimetype && data?.data) {
         return `data:${data.mimetype};base64,${data.data}`;
       }
@@ -140,7 +144,7 @@ export class WAHAService {
     return this.request(`/api/sendText`, {
       method: 'POST',
       body: JSON.stringify({
-        session: sessionName,
+        session: this.getEffectiveSession(sessionName),
         chatId: phone.includes('@') ? phone : `${phone}@c.us`,
         text,
       }),
