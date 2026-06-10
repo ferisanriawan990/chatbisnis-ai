@@ -96,10 +96,15 @@ function normalizePayload(rawBody: WahaIncomingBody): NormalizedWahaPayload {
   const payloadId = (messagePayload.id as any);
   const messageId = typeof payloadId === 'string' ? payloadId : (payloadId?._serialized || payloadId?.id || '');
   
-  // Cast payload as any to check for hasMedia and type
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mpAny = messagePayload as any;
-  const hasMedia = Boolean(mpAny.hasMedia) || mpAny.type === 'image';
+  const hasMedia = 
+    Boolean(mpAny.hasMedia) || 
+    mpAny.type === 'image' || 
+    Boolean(mpAny.message?.imageMessage) || 
+    Boolean(mpAny.message?.videoMessage) ||
+    Boolean(mpAny.message?.documentMessage) ||
+    Boolean(mpAny.message?.audioMessage);
 
   return { sessionName, event, fromMe, isGroup, customerPhone, customerName, messageIn, remote, hasMedia, messageId };
 }
