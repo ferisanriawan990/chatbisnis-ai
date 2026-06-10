@@ -125,6 +125,13 @@ export async function POST() {
     const waha = WAHAService.fromEncrypted(wahaServer.baseUrl, wahaServer.apiKeyEncrypted);
 
     try {
+      // Auto-reset if the session is currently in FAILED state on WAHA server
+      const currentStatus = await waha.getStatus(sessionName).catch(() => 'disconnected');
+      if (currentStatus === 'failed') {
+        await waha.logoutSession(sessionName).catch(() => {});
+        await waha.stopSession(sessionName).catch(() => {});
+      }
+
       await waha.startSession(sessionName);
     } catch (error) {
       const msg = (error as { message?: string })?.message || '';
