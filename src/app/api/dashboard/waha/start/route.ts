@@ -132,7 +132,11 @@ export async function POST() {
         await waha.stopSession(sessionName).catch(() => {});
       }
 
-      await waha.startSession(sessionName);
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || 'https://chatbisnis-ai.vercel.app';
+      const webhookUrl = `${baseUrl.replace(/\/$/, '')}/api/webhooks/waha`;
+      const webhookSecret = process.env.WAHA_WEBHOOK_SECRET || '';
+
+      await waha.startSession(sessionName, wahaServer.id, webhookUrl, webhookSecret);
     } catch (error) {
       const msg = (error as { message?: string })?.message || '';
 

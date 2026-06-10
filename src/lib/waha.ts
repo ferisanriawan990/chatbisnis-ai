@@ -99,10 +99,29 @@ export class WAHAService {
     }
   }
 
-  async startSession(sessionName: string) {
+  async startSession(sessionName: string, wahaServerId?: string, webhookUrl?: string, webhookSecret?: string) {
+    const payload: any = { name: this.getEffectiveSession(sessionName) };
+
+    if (wahaServerId && webhookUrl && webhookSecret) {
+      payload.config = {
+        webhooks: [
+          {
+            url: webhookUrl,
+            events: ["message"],
+            hmac: null,
+            retries: null,
+            customHeaders: [
+              { name: "x-webhook-secret", value: webhookSecret },
+              { name: "x-waha-server-id", value: wahaServerId }
+            ]
+          }
+        ]
+      };
+    }
+
     return this.request('/api/sessions/start', {
       method: 'POST',
-      body: JSON.stringify({ name: this.getEffectiveSession(sessionName) }),
+      body: JSON.stringify(payload),
     });
   }
 
