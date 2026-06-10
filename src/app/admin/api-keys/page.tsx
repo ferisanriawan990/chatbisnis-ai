@@ -4,6 +4,8 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { Key, Plus, Trash2, Bot, Save } from 'lucide-react';
+import ConfirmModal from '@/components/ConfirmModal';
+import InputModal from '@/components/InputModal';
 
 export default function AdminApiKeysPage() {
   const [keys, setKeys] = useState<any[]>([]) // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -18,6 +20,12 @@ export default function AdminApiKeysPage() {
     provider: 'flaz',
     description: '',
   });
+
+  const [modalState, setModalState] = useState<{
+    type: 'delete' | 'rotate' | 'desc' | null;
+    targetId: string | null;
+    currentValue?: string;
+  }>({ type: null, targetId: null });
 
   const fetchKeys = async () => {
     try {
@@ -86,7 +94,6 @@ export default function AdminApiKeysPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Yakin ingin menghapus API Key ini? Layanan yang menggunakannya mungkin akan berhenti berfungsi.')) return;
     toast.loading('Menghapus...', { id: 'del' });
     try {
       const res = await fetch(`/api/admin/api-keys/${id}`, { method: 'DELETE' });
@@ -114,10 +121,7 @@ export default function AdminApiKeysPage() {
     }
   };
 
-  const handleRotateKey = async (id: string) => {
-    const newValue = prompt('Masukkan Secret Value baru untuk API Key ini:');
-    if (!newValue) return;
-    
+  const handleRotateKey = async (id: string, newValue: string) => {
     toast.loading('Merotasi Key...', { id: 'rotate' });
     try {
       const res = await fetch(`/api/admin/api-keys/${id}`, {
@@ -133,10 +137,7 @@ export default function AdminApiKeysPage() {
     }
   };
 
-  const handleEditDescription = async (id: string, currentDesc: string) => {
-    const newDesc = prompt('Masukkan deskripsi baru:', currentDesc || '');
-    if (newDesc === null) return;
-    
+  const handleEditDescription = async (id: string, newDesc: string) => {
     toast.loading('Memperbarui deskripsi...', { id: 'desc' });
     try {
       const res = await fetch(`/api/admin/api-keys/${id}`, {
@@ -264,13 +265,13 @@ export default function AdminApiKeysPage() {
                         <button onClick={() => handleToggleStatus(k.id, k.isActive)} className="text-xs px-2 py-1 bg-slate-100 hover:bg-slate-200 rounded font-medium">
                           {k.isActive ? 'Disable' : 'Enable'}
                         </button>
-                        <button onClick={() => handleRotateKey(k.id)} className="text-xs px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-700 rounded font-medium">
+                        <button onClick={() => setModalState({ type: 'rotate', targetId: k.id })} className="text-xs px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-700 rounded font-medium">
                           Rotate
                         </button>
-                        <button onClick={() => handleEditDescription(k.id, k.description)} className="text-xs px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded font-medium">
+                        <button onClick={() => setModalState({ type: 'desc', targetId: k.id, currentValue: k.description })} className="text-xs px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded font-medium">
                           Edit Desc
                         </button>
-                        <button onClick={() => handleDelete(k.id)} className="text-red-500 p-1 hover:bg-red-50 rounded">
+                        <button onClick={() => setModalState({ type: 'delete', targetId: k.id })} className="text-red-500 p-1 hover:bg-red-50 rounded">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </td>
@@ -282,6 +283,32 @@ export default function AdminApiKeysPage() {
           </div>
         </div>
       </div>
+      
+      <ConfirmModal
+        isOpen={modalState.type === 'delete'}
+        onClose={() => setModalState({ type: null, targetId: null })}
+        onConfirm={() => { if (modalState.targetId) handleDelete(modalState.targetId); }}
+        title="Hapus API Key"
+        message="Yakin ingin menghapus API Key ini? Layanan yang menggunakannya mungkin akan berhenti berfungsi."
+      />
+
+      <InputModal
+        isOpen={modalState.type === 'rotate'}
+        onClose={() => setModalState({ type: null, targetId: null })}
+        onSubmit={(val) => { if (modalState.targetId) handleRotateKey(modalState.targetId, val); }}
+        title="Rotate API Key"
+        message="Masukkan Secret Value baru untuk API Key ini:"
+        inputType="password"
+      />
+
+      <InputModal
+        isOpen={modalState.type === 'desc'}
+        onClose={() => setModalState({ type: null, targetId: null })}
+        onSubmit={(val) => { if (modalState.targetId) handleEditDescription(modalState.targetId, val); }}
+        title="Edit Deskripsi"
+        message="Masukkan deskripsi baru:"
+        defaultValue={modalState.currentValue || ''}
+      />
     </div>
   );
 }

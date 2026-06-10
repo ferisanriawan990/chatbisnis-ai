@@ -21,9 +21,34 @@ export async function POST(req: Request) {
 
     const data = parsed.data;
 
-    const profile = await prisma.businessProfile.findFirst({ where: { userId } });
+    const profile = await prisma.businessProfile.findFirst({
+      where: { userId },
+      include: {
+        user: {
+          include: {
+            subscriptions: {
+              include: { plan: true },
+              where: { status: 'active' },
+              take: 1
+            }
+          }
+        }
+      }
+    });
+    
     if (!profile) {
       return NextResponse.json({ error: 'Profil bisnis tidak ditemukan' }, { status: 404 });
+    }
+
+    const activePlan = profile.user.subscriptions[0]?.plan;
+    const maxKnowledgeItems = activePlan?.maxKnowledgeItems || 50;
+
+    const currentKnowledgeCount = await prisma.knowledgeItem.count({
+      where: { businessProfileId: profile.id }
+    });
+
+    if (currentKnowledgeCount >= maxKnowledgeItems) {
+      return NextResponse.json({ error: `Batas maksimal knowledge base Anda adalah ${maxKnowledgeItems} item.` }, { status: 400 });
     }
 
     let title = 'Input Manual';

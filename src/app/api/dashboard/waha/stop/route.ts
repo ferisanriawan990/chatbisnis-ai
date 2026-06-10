@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { WAHAService } from '@/lib/waha';
 import { syncWahaServerSessionCount } from '@/lib/waha-session-sync';
+import { getActiveWahaSessionName, assertUserOwnsWahaSession } from '@/lib/waha-helpers';
 
 export async function POST() {
   try {
@@ -22,30 +23,22 @@ export async function POST() {
       return NextResponse.json({ error: 'Chatbot setting tidak ditemukan' }, { status: 404 });
     }
 
-    const isCoreMode = process.env.WAHA_CORE_MODE === 'true';
-    const activeSessionName = isCoreMode ? 'default' : chatbot.wahaSessionName;
+    const activeSessionName = getActiveWahaSessionName(userId, chatbot.businessProfileId);
 
-    if (!activeSessionName) {
-      return NextResponse.json(
-        { error: 'Tidak ada sesi WAHA aktif untuk dihentikan.' },
-        { status: 400 },
-      );
+    if (!(await assertUserOwnsWahaSession(userId, activeSessionName))) {
+       return NextResponse.json({ error: 'Akses ditolak' }, { status: 403 });
     }
 
-    // Check current session status for idempotency
     const wpSession = await prisma.whatsAppSession.findFirst({
       where: { sessionName: activeSessionName },
     });
 
     if (wpSession && wpSession.status === 'disconnected') {
-      // Already stopped — idempotent success
       return NextResponse.json({ success: true, message: 'Sesi sudah dihentikan sebelumnya.' });
     }
 
-    // Read config from WahaServer relation
     const wahaServer = chatbot.wahaServer;
     if (!wahaServer || !wahaServer.apiKeyEncrypted) {
-      // Server missing — just mark DB as disconnected
       if (wpSession) {
         await prisma.whatsAppSession.update({
           where: { id: wpSession.id },
@@ -63,26 +56,21 @@ export async function POST() {
     try {
       await waha.stopSession(activeSessionName);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'unknown';
-      // Log but don't block — still update DB to disconnected
-      console.error('WAHA stopSession call failed (will still update DB):', msg);
+      console.error('WAHA stopSession call failed:', err instanceof Error ? err.message : 'unknown');
     }
 
-    // Update DB safely regardless of WAHA call result
     await prisma.whatsAppSession.updateMany({
       where: { sessionName: activeSessionName },
       data: { status: 'disconnected', lastError: null },
     });
 
-    // Sync accurate counter
     if (chatbot.wahaServerId) {
       await syncWahaServerSessionCount(chatbot.wahaServerId);
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    console.error('WAHA Stop Error:', message);
-    return NextResponse.json({ error: `Gagal menghentikan sesi WAHA: ${message}` }, { status: 500 });
+    console.error('WAHA Stop Error:', error instanceof Error ? error.message : 'Unknown error');
+    return NextResponse.json({ error: 'Gagal menghentikan sesi WAHA' }, { status: 500 });
   }
 }

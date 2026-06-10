@@ -169,16 +169,19 @@ export async function parseExcel(buffer: Buffer): Promise<ParsedItem[]> {
       }
 
       const headers: string[] = [];
+      let rowCount = 0;
       worksheet.eachRow((row, rowNumber) => {
+        if (rowCount > 1000) return; // Limit excel rows
+        rowCount++;
         const rowValues = row.values as unknown[];
         if (rowNumber === 1) {
           // Assume first row is header
-          for (let i = 1; i < rowValues.length; i++) {
+          for (let i = 1; i < Math.min(rowValues.length, 50); i++) { // Limit columns to 50
             headers[i] = String(rowValues[i] || `column_${i}`);
           }
         } else {
           const rowData: Record<string, unknown> = {};
-          for (let i = 1; i < rowValues.length; i++) {
+          for (let i = 1; i < Math.min(rowValues.length, 50); i++) {
             if (headers[i]) {
               rowData[headers[i]] = rowValues[i];
             }
@@ -247,9 +250,10 @@ function chunkText(text: string, maxChunkLength = 1000): ParsedItem[] {
 
 export async function parsePdf(buffer: Buffer): Promise<ParsedItem[]> {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const pdfParse = require('pdf-parse');
-    const data = await pdfParse(buffer);
+    const pdfParseModule = await import('pdf-parse');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const pdfParse = (pdfParseModule as any).default || pdfParseModule;
+    const data = await pdfParse(buffer, { max: 50 }); // limit to 50 pages
     return chunkText(data.text);
   } catch {
     throw new Error('Gagal membaca file PDF.');
@@ -258,8 +262,9 @@ export async function parsePdf(buffer: Buffer): Promise<ParsedItem[]> {
 
 export async function parseDocx(buffer: Buffer): Promise<ParsedItem[]> {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const mammoth = require('mammoth');
+    const mammothModule = await import('mammoth');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const mammoth = (mammothModule as any).default || mammothModule;
     const result = await mammoth.extractRawText({ buffer });
     return chunkText(result.value);
   } catch {

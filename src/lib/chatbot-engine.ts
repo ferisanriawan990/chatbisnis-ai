@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { prisma } from './prisma';
 import { decrypt } from './crypto';
 import { AIService } from './ai';
@@ -135,13 +137,16 @@ export class ChatbotEngine {
       return { allowed: false };
     }
 
-    const keywords = chatbotSetting.handoverKeywords.split(',').map((k: string) => k.trim().toLowerCase());
-    const lowerMessageIn = messageIn.toLowerCase();
-    if (keywords.some((k: string) => k && lowerMessageIn.includes(k))) {
-      const until = new Date();
-      until.setHours(until.getHours() + 24);
-      await prisma.conversationState.update({ where: { id: convoState.id }, data: { status: 'human_handover', handoverUntil: until } });
-      return { allowed: false, replyMessage: chatbotSetting.handoverMessage };
+    const allowHumanHandover = activePlan ? activePlan.allowHumanHandover : false;
+    if (allowHumanHandover) {
+      const keywords = chatbotSetting.handoverKeywords.split(',').map((k: string) => k.trim().toLowerCase());
+      const lowerMessageIn = messageIn.toLowerCase();
+      if (keywords.some((k: string) => k && lowerMessageIn.includes(k))) {
+        const until = new Date();
+        until.setHours(until.getHours() + 24);
+        await prisma.conversationState.update({ where: { id: convoState.id }, data: { status: 'human_handover', handoverUntil: until } });
+        return { allowed: false, replyMessage: chatbotSetting.handoverMessage };
+      }
     }
 
     // Out of Hours Check
@@ -220,38 +225,33 @@ export class ChatbotEngine {
       charCount += item.searchableText.length;
     }
 
-    if (botConfig && botConfig.template && botConfig.isBotActive) {
-      let customFAQ: Array<{ q: string; a: string }> = [];
+    let customFAQ: Array<{ q: string; a: string }> = [];
+    if (botConfig && botConfig.customFAQ) {
       try { customFAQ = JSON.parse(botConfig.customFAQ || '[]'); } catch { /* ignore */ }
-      
-      return buildSystemPrompt({
-        templatePrompt: botConfig.template.systemPrompt,
-        businessData: {
-          businessName: botConfig.businessName || profile.businessName,
-          businessDescription: botConfig.businessDescription || profile.businessDescription,
-          productsOrServices: botConfig.productsOrServices,
-          pricingInfo: botConfig.pricingInfo,
-          operationalHours: botConfig.operationalHours || profile.openingHours,
-          address: botConfig.address || profile.address,
-          serviceArea: botConfig.serviceArea,
-          paymentMethods: botConfig.paymentMethods,
-          deliveryMethods: botConfig.deliveryMethods,
-          humanAdminContact: botConfig.humanAdminContact || profile.adminPhone,
-          catalogUrl: botConfig.catalogUrl,
-          mapsUrl: botConfig.mapsUrl,
-        },
-        customFAQ,
-        tone: botConfig.tone || chatbotSetting.toneStyle,
-        languageStyle: botConfig.languageStyle || chatbotSetting.language,
-        botMode: botConfig.botMode || 'auto_reply',
-        relevantKnowledge,
-      });
-    } else {
-      return `Anda adalah asisten virtual untuk ${profile.businessName}. ${profile.businessDescription}
-Jawab dengan ${chatbotSetting.toneStyle} dalam bahasa ${chatbotSetting.language}.
-Gunakan data referensi berikut jika relevan:
-${relevantKnowledge}`;
     }
+    
+    return buildSystemPrompt({
+      templatePrompt: (botConfig?.template?.systemPrompt) || '',
+      businessData: {
+        businessName: botConfig?.businessName || profile.businessName,
+        businessDescription: botConfig?.businessDescription || profile.businessDescription,
+        productsOrServices: botConfig?.productsOrServices,
+        pricingInfo: botConfig?.pricingInfo,
+        operationalHours: botConfig?.operationalHours || profile.openingHours,
+        address: botConfig?.address || profile.address,
+        serviceArea: botConfig?.serviceArea,
+        paymentMethods: botConfig?.paymentMethods,
+        deliveryMethods: botConfig?.deliveryMethods,
+        humanAdminContact: botConfig?.humanAdminContact || profile.adminPhone,
+        catalogUrl: botConfig?.catalogUrl,
+        mapsUrl: botConfig?.mapsUrl,
+      },
+      customFAQ,
+      tone: botConfig?.tone || chatbotSetting.toneStyle,
+      languageStyle: botConfig?.languageStyle || chatbotSetting.language,
+      botMode: botConfig?.botMode || 'auto_reply',
+      relevantKnowledge,
+    });
   }
 
   private static async callAI(chatbotSetting: any, activePlan: any, systemPrompt: string, messageIn: string, isTest: boolean) {
@@ -269,8 +269,16 @@ ${relevantKnowledge}`;
       return { replyMessage: chatbotSetting.fallbackMessage, tokenUsage: 0, usedCatalogUrl: false, promptSource: 'error', aiModelUsed: aiModel };
     }
 
-    const allowSelling = activePlan ? activePlan.allowSelling : chatbotSetting.allowSelling;
-    const finalSystemPrompt = systemPrompt + (!allowSelling ? '\nDILARANG keras melakukan hard-selling atau promosi berlebihan.' : '');
+    const allowSelling = chatbotSetting.allowSelling ?? false;
+    const allowPromoOffer = chatbotSetting.allowPromoOffer ?? false;
+    
+    let finalSystemPrompt = systemPrompt;
+    if (!allowSelling) {
+      finalSystemPrompt += '\n\nDILARANG keras melakukan hard-selling. Berikan informasi saja.';
+    }
+    if (!allowPromoOffer) {
+      finalSystemPrompt += '\n\nDILARANG keras memberikan promosi, diskon, atau janji penawaran yang tidak tertulis eksplisit.';
+    }
 
     try {
       const aiResult = await AIService.generateReply({

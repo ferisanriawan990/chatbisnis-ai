@@ -78,6 +78,18 @@ export async function searchKnowledgeItems(message: string, businessProfileId: s
       else if (searchable.includes(word)) score += 2;
     }
 
+    const meta = extractMetadata(item);
+    for (const val of Object.values(meta)) {
+      const normVal = normalizeText(String(val));
+      for (const word of words) {
+        if (normVal.includes(word)) score += 8;
+      }
+    }
+    
+    if (item.price && msg.includes(item.price.toString())) {
+      score += 15;
+    }
+
     const intent = detectCustomerIntent(msg);
     if ((['stok_produk', 'harga_produk', 'harga_kredit', 'dp_cicilan', 'warna', 'spesifikasi'].includes(intent)) && productName) {
       score += 10; // Boost products when asking product questions

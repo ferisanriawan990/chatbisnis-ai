@@ -64,7 +64,32 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Format file tidak didukung' }, { status: 400 });
     }
 
+    const mimeType = file.type;
+    const allowedMimeTypes = [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-excel',
+      'text/csv',
+      'application/pdf',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    ];
+
+    if (!allowedMimeTypes.includes(mimeType) && extension !== 'csv') {
+      return NextResponse.json({ error: 'MIME type tidak didukung' }, { status: 400 });
+    }
+
     const buffer = Buffer.from(await file.arrayBuffer());
+    
+    // Magic Bytes check
+    if (extension === 'pdf') {
+      if (buffer.length < 4 || buffer.toString('utf8', 0, 4) !== '%PDF') {
+         return NextResponse.json({ error: 'File PDF tidak valid (Magic bytes mismatch)' }, { status: 400 });
+      }
+    } else if (['xlsx', 'docx'].includes(extension)) {
+      if (buffer.length < 4 || buffer[0] !== 0x50 || buffer[1] !== 0x4B || buffer[2] !== 0x03 || buffer[3] !== 0x04) {
+         return NextResponse.json({ error: 'File dokumen tidak valid (Magic bytes mismatch)' }, { status: 400 });
+      }
+    }
+
     let parsedItems: ParsedItem[] = [];
     let type: 'excel' | 'csv' | 'pdf' | 'docx' | 'manual' = 'manual';
 

@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { WAHAService } from '@/lib/waha';
+import { getActiveWahaSessionName, assertUserOwnsWahaSession } from '@/lib/waha-helpers';
 
 export async function GET() {
   try {
@@ -21,12 +22,14 @@ export async function GET() {
       return NextResponse.json({ error: 'Chatbot setting tidak ditemukan' }, { status: 404 });
     }
 
-    // Read config from WahaServer relation
-    const wahaServer = chatbot.wahaServer;
-    const isCoreMode = process.env.WAHA_CORE_MODE === 'true';
-    const activeSessionName = isCoreMode ? 'default' : chatbot.wahaSessionName;
+    const activeSessionName = getActiveWahaSessionName(userId, chatbot.businessProfileId);
 
-    if (!wahaServer || !wahaServer.apiKeyEncrypted || !activeSessionName) {
+    if (!(await assertUserOwnsWahaSession(userId, activeSessionName))) {
+       return NextResponse.json({ error: 'Akses ditolak' }, { status: 403 });
+    }
+
+    const wahaServer = chatbot.wahaServer;
+    if (!wahaServer || !wahaServer.apiKeyEncrypted) {
       return NextResponse.json({ error: 'WAHA tidak dikonfigurasi' }, { status: 400 });
     }
 
@@ -35,8 +38,7 @@ export async function GET() {
 
     return NextResponse.json({ qr: qrData });
   } catch (error) {
-    const msg = error instanceof Error ? error.message : 'unknown';
-    console.error('GET /api/dashboard/waha/qr Error:', msg);
+    console.error('GET /api/dashboard/waha/qr Error:', error instanceof Error ? error.message : 'unknown');
     return NextResponse.json({ error: 'Gagal mengambil QR' }, { status: 500 });
   }
 }

@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { WAHAService } from '@/lib/waha';
 import { syncWahaServerSessionCount } from '@/lib/waha-session-sync';
+import { getWahaCoreMode, getActiveWahaSessionName, assertUserOwnsWahaSession } from '@/lib/waha-helpers';
 
 export async function GET() {
   try {
@@ -22,12 +23,15 @@ export async function GET() {
       return NextResponse.json({ error: 'Chatbot setting tidak ditemukan' }, { status: 404 });
     }
 
-    // Read config from WahaServer relation
-    const wahaServer = chatbot.wahaServer;
-    const isCoreMode = process.env.WAHA_CORE_MODE === 'true';
-    const activeSessionName = isCoreMode ? 'default' : chatbot.wahaSessionName;
+    const activeSessionName = getActiveWahaSessionName(userId, chatbot.businessProfileId);
+    const isCoreMode = getWahaCoreMode();
 
-    if (!wahaServer || !wahaServer.apiKeyEncrypted || !activeSessionName) {
+    if (!(await assertUserOwnsWahaSession(userId, activeSessionName))) {
+       return NextResponse.json({ status: 'disconnected', isCoreMode });
+    }
+
+    const wahaServer = chatbot.wahaServer;
+    if (!wahaServer || !wahaServer.apiKeyEncrypted) {
       return NextResponse.json({ status: 'disconnected', isCoreMode });
     }
 
@@ -39,23 +43,19 @@ export async function GET() {
       statusValue = 'disconnected';
     }
 
-    // Get last connection data
     const wpSession = await prisma.whatsAppSession.findFirst({
       where: { sessionName: activeSessionName },
     });
 
-    // Update session status in DB if changed
     if (wpSession && wpSession.status !== statusValue) {
       await prisma.whatsAppSession.update({
         where: { id: wpSession.id },
         data: {
           status: statusValue,
-          lastConnectedAt:
-            statusValue === 'connected' ? new Date() : wpSession.lastConnectedAt,
+          lastConnectedAt: statusValue === 'connected' ? new Date() : wpSession.lastConnectedAt,
         },
       });
 
-      // Sync counter when status changes
       if (chatbot.wahaServerId) {
         await syncWahaServerSessionCount(chatbot.wahaServerId);
       }
@@ -67,11 +67,10 @@ export async function GET() {
       serverName: wahaServer.name,
       lastConnectedAt: wpSession?.lastConnectedAt,
       lastError: wpSession?.lastError,
-      isCoreMode: process.env.WAHA_CORE_MODE === 'true',
+      isCoreMode,
     });
   } catch (error) {
-    const msg = error instanceof Error ? error.message : 'unknown';
-    console.error('GET /api/dashboard/waha/status Error:', msg);
+    console.error('GET /api/dashboard/waha/status Error:', error instanceof Error ? error.message : 'unknown');
     return NextResponse.json({ status: 'disconnected' });
   }
 }

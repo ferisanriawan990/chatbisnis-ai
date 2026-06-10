@@ -4,7 +4,7 @@ import { ReactNode, useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
 import { usePathname } from 'next/navigation';
-import { BotMessageSquare, Menu, X, Settings, FileJson, Users, MessageSquare, CreditCard, LayoutDashboard, Store } from 'lucide-react';
+import { BotMessageSquare, Menu, X, Settings, FileJson, Users, MessageSquare, CreditCard, LayoutDashboard } from 'lucide-react';
 import Link from 'next/link';
 import LogoutButton from '@/components/LogoutButton';
 

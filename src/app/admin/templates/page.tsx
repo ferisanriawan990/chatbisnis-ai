@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Layers, Plus, Pencil, Trash2, ToggleLeft, ToggleRight, Users, X, Save } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
+import ConfirmModal from '@/components/ConfirmModal';
 
 interface Template {
   id: string;
@@ -28,6 +29,7 @@ export default function AdminTemplatesPage() {
   const [createModal, setCreateModal] = useState(false);
   const [form, setForm] = useState(EMPTY_TEMPLATE);
   const [saving, setSaving] = useState(false);
+  const [deleteModal, setDeleteModal] = useState<Template | null>(null);
 
   const fetchTemplates = useCallback(async () => {
     try {
@@ -115,7 +117,6 @@ export default function AdminTemplatesPage() {
   };
 
   const handleDelete = async (tmpl: Template) => {
-    if (!confirm(`Hapus template "${tmpl.name}"? Ini tidak bisa dibatalkan.`)) return;
     try {
       const res = await fetch(`/api/admin/templates/${tmpl.id}`, { method: 'DELETE' });
       if (res.ok) {
@@ -195,7 +196,7 @@ export default function AdminTemplatesPage() {
                 </td>
                 <td className="px-4 py-3 text-right space-x-2">
                   <button onClick={() => openEdit(tmpl)} className="text-indigo-500 hover:text-indigo-700"><Pencil className="w-4 h-4 inline" /></button>
-                  <button onClick={() => handleDelete(tmpl)} className="text-red-400 hover:text-red-600"><Trash2 className="w-4 h-4 inline" /></button>
+                  <button onClick={() => setDeleteModal(tmpl)} className="text-red-400 hover:text-red-600"><Trash2 className="w-4 h-4 inline" /></button>
                 </td>
               </tr>
             ))}
@@ -231,6 +232,14 @@ export default function AdminTemplatesPage() {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={!!deleteModal}
+        onClose={() => setDeleteModal(null)}
+        onConfirm={() => { if (deleteModal) handleDelete(deleteModal); }}
+        title="Hapus Template"
+        message={`Hapus template "${deleteModal?.name}"? Ini tidak bisa dibatalkan.`}
+      />
     </div>
   );
 }

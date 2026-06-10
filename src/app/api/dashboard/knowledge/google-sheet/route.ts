@@ -69,14 +69,33 @@ export async function POST(req: Request) {
     const exportUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/export?format=csv&gid=${gid}`;
 
     // Fetch CSV
-    const response = await fetch(exportUrl);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+
+    let response;
+    try {
+      response = await fetch(exportUrl, { signal: controller.signal });
+      clearTimeout(timeoutId);
+    } catch {
+      clearTimeout(timeoutId);
+      return NextResponse.json({ error: 'Gagal menghubungi Google Sheet (Timeout atau URL salah).' }, { status: 400 });
+    }
+
     if (!response.ok) {
       return NextResponse.json({ 
         error: 'Gagal mengambil data dari Google Sheet. Pastikan aksesnya "Anyone with the link can view".' 
       }, { status: 400 });
     }
 
+    const contentLength = response.headers.get('content-length');
+    if (contentLength && parseInt(contentLength, 10) > 10 * 1024 * 1024) {
+      return NextResponse.json({ error: 'Ukuran sheet terlalu besar (maksimal 10MB).' }, { status: 400 });
+    }
+
     const csvText = await response.text();
+    if (csvText.length > 10 * 1024 * 1024) {
+      return NextResponse.json({ error: 'Ukuran sheet terlalu besar (maksimal 10MB).' }, { status: 400 });
+    }
     // Check if it returned HTML (e.g. login page)
     if (csvText.trim().startsWith('<html') || csvText.trim().startsWith('<!DOCTYPE html>')) {
       return NextResponse.json({ 

@@ -3,6 +3,7 @@ import { getRequiredAdminOrResponse, validateAdminMutationOrigin } from '@/lib/a
 import { prisma } from '@/lib/prisma';
 import { encrypt } from '@/lib/crypto';
 import { Prisma } from '@prisma/client';
+import { validatePublicHttpsUrl } from '@/lib/security';
 import { z } from 'zod';
 
 const updateWahaServerSchema = z.object({
@@ -26,6 +27,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
     if (!parsed.success) {
       return NextResponse.json({ error: 'Invalid data' }, { status: 400 });
+    }
+
+    if (parsed.data.baseUrl && process.env.NODE_ENV === 'production' && !validatePublicHttpsUrl(parsed.data.baseUrl)) {
+      return NextResponse.json({ error: 'URL WAHA Server harus HTTPS publik dan bukan IP lokal (SSRF Protection).' }, { status: 400 });
     }
 
     const { apiKey, baseUrl, ...rest } = parsed.data;

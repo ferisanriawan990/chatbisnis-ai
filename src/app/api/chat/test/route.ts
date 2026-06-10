@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { ChatbotEngine } from '@/lib/chatbot-engine';
 
+export const maxDuration = 60;
+
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   const userId = (session?.user as unknown as { id: string })?.id;

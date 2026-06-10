@@ -1,7 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse as Response } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
-
+import { requireHeaderSecret, parseJsonSafe } from '@/lib/security';
 const leadSchema = z.object({
   wahaSessionName: z.string(),
   customerPhone: z.string(),
@@ -15,18 +16,14 @@ const leadSchema = z.object({
 
 export async function POST(req: Request) {
   try {
-    const internalSecret = process.env.INTERNAL_API_KEY;
-    if (!internalSecret) {
-      console.error('INTERNAL_API_KEY is not configured.');
-      return Response.json({ error: 'Server configuration error' }, { status: 500 });
+    if (!requireHeaderSecret(req, 'x-internal-api-key', process.env.INTERNAL_API_KEY)) {
+      return Response.json({ error: 'Unauthorized or missing secret' }, { status: 401 });
     }
 
-    const apiKey = req.headers.get('x-internal-api-key');
-    if (apiKey !== internalSecret) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    const body = await parseJsonSafe<any>(req, 5 * 1024 * 1024);
+    if (!body) {
+      return Response.json({ error: 'Invalid or too large payload' }, { status: 400 });
     }
-
-    const body = await req.json();
     const parseResult = leadSchema.safeParse(body);
     
     if (!parseResult.success) {

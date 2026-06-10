@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getRequiredAdminOrResponse, validateAdminMutationOrigin } from '@/lib/admin-helper';
 import { prisma } from '@/lib/prisma';
 import { encrypt } from '@/lib/crypto';
+import { validatePublicHttpsUrl } from '@/lib/security';
 import { z } from 'zod';
 
 const wahaServerSchema = z.object({
@@ -53,6 +54,10 @@ export async function POST(req: Request) {
 
     if (!parsed.success) {
       return NextResponse.json({ error: 'Invalid data' }, { status: 400 });
+    }
+
+    if (process.env.NODE_ENV === 'production' && !validatePublicHttpsUrl(parsed.data.baseUrl)) {
+      return NextResponse.json({ error: 'URL WAHA Server harus HTTPS publik dan bukan IP lokal (SSRF Protection).' }, { status: 400 });
     }
 
     const apiKeyEncrypted = parsed.data.apiKey ? encrypt(parsed.data.apiKey) : null;

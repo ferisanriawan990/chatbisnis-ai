@@ -1,20 +1,21 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { WAHAService } from '@/lib/waha';
+import { requireHeaderSecret, parseJsonSafe } from '@/lib/security';
+
+export const maxDuration = 60; // Set max duration to 60 seconds for Vercel Hobby tier
 
 export async function POST(req: Request) {
   try {
-    const webhookSecret = process.env.INTERNAL_WEBHOOK_SECRET;
-    if (!webhookSecret) {
-      return NextResponse.json({ error: 'Server misconfigured' }, { status: 500 });
+    if (!requireHeaderSecret(req, 'x-n8n-secret', process.env.INTERNAL_WEBHOOK_SECRET)) {
+      return NextResponse.json({ error: 'Unauthorized or missing secret' }, { status: 401 });
     }
 
-    const providedSecret = req.headers.get('x-n8n-secret');
-    if (providedSecret !== webhookSecret) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const body = await parseJsonSafe<any>(req, 5 * 1024 * 1024);
+    if (!body) {
+      return NextResponse.json({ error: 'Invalid or too large payload' }, { status: 400 });
     }
-
-    const body = await req.json();
     const { sessionName, customerPhone, messageOut, tokenUsage } = body;
     const wahaServerId = req.headers.get('x-waha-server-id') || undefined;
 

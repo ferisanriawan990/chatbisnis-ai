@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { encrypt } from '@/lib/crypto';
 import { saveChatbotSchema } from '@/lib/validations';
+import { getActiveWahaSessionName } from '@/lib/waha-helpers';
 
 export async function POST(req: Request) {
   try {
@@ -60,6 +61,18 @@ export async function POST(req: Request) {
     // Encrypt keys if provided (and not masked)
     let encryptedAiApiKey: string | undefined = undefined;
     if (data.aiApiKey && data.aiApiKey !== '••••••••' && data.aiApiKey.length > 0) {
+      const subscription = await prisma.subscription.findFirst({
+        where: { userId, status: 'active' },
+        include: { plan: true },
+        orderBy: { createdAt: 'desc' },
+      });
+      const activePlan = subscription?.plan;
+      const allowCustomApiKey = activePlan?.allowCustomApiKey ?? false;
+      
+      if (!allowCustomApiKey) {
+        return NextResponse.json({ error: 'Plan Anda tidak mengizinkan Custom API Key. Silakan upgrade plan.' }, { status: 403 });
+      }
+      
       encryptedAiApiKey = encrypt(data.aiApiKey);
     }
 
@@ -68,19 +81,7 @@ export async function POST(req: Request) {
     const chatbot = await prisma.chatbotSetting.findFirst({ where: { userId, businessProfileId: profile.id } });
 
     // Always preserve existing wahaSessionName or generate a new one
-    let sessionName = chatbot?.wahaSessionName;
-    if (!sessionName) {
-      const isCoreMode = process.env.WAHA_CORE_MODE !== 'false';
-      sessionName = 'default';
-      if (isCoreMode) {
-        const existingDefault = await prisma.chatbotSetting.findFirst({ where: { wahaSessionName: 'default' } });
-        if (existingDefault && existingDefault.userId !== userId) {
-          sessionName = `waha_plus_required_${userId}`;
-        }
-      } else {
-        sessionName = `waha_plus_${userId}`;
-      }
-    }
+    const sessionName = chatbot?.wahaSessionName || getActiveWahaSessionName(userId, profile.id);
 
     const chatbotData = {
       botName: data.botName,

@@ -74,11 +74,14 @@ export class AIService {
     }
   }
 
-  /**
-   * Sanitasi input sederhana sebelum masuk AI prompt
-   */
   static sanitizeInput(text: string): string {
     if (!text) return '';
-    return text.replace(/<[^>]*>?/gm, '').trim(); // Remove HTML tags
+    let cleaned = text.slice(0, 2000); // Batas aman pesan masuk
+    cleaned = cleaned.replace(/<[^>]*>?/gm, ''); // Hapus HTML
+    cleaned = cleaned.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, ''); // Hapus control chars
+    cleaned = cleaned.replace(/\n{4,}/g, '\n\n\n'); // Normalize whitespace
+    cleaned = cleaned.replace(/ {4,}/g, '   ');
+    cleaned = cleaned.replace(/(.)\1{20,}/g, '$1$1$1$1$1'); // Block spam text
+    return cleaned.trim();
   }
 }

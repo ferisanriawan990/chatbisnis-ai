@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { decrypt } from './crypto';
 
 import http from 'http';

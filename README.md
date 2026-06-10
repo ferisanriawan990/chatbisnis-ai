@@ -73,10 +73,10 @@ Bagi pengguna *Enterprise*, platform ini mendukung *routing* *Webhook* melalui *
 
 ## PERINGATAN KEAMANAN (CRITICAL)
 
-- **Jangan Pernah Menyimpan Secret di Repo**: File `.env`, QR Code (seperti `qr.html` atau file JS testing yang mengekspos WAHA IP/API Key), maupun `.DS_Store` dilarang keras di-*commit*.
-- **Rotasi Kunci WAHA**: Jika WAHA API key Anda pernah masuk ke dalam *commit* repository sebelum *cleanup* terakhir, Anda **WAJIB** merotasi/mengganti API Key tersebut langsung di sisi VPS WAHA server Anda.
-- **Hindari Commit QR Code**: Men-*generate* file statis dengan session sensitif sangat berbahaya. Gunakan selalu Secure Dashboard bawaan untuk integrasi QR.
-- **Enkripsi Kunci**: Semua API Keys tersimpan dalam format terenkripsi (Algoritma `AES-256-GCM`). Pastikan `ENCRYPTION_SECRET` sepanjang 32 karakter Anda dicadangkan di tempat yang sangat aman.
+- **Wajib Rotate WAHA API Key**: Jika WAHA API key Anda pernah masuk ke dalam *commit* repository (bocor), Anda **WAJIB** merotasi/mengganti API Key tersebut langsung di sisi VPS WAHA server Anda.
+- **Wajib Unlink WhatsApp Device**: Jika QR Code (`qr.html`, `.png`, dsb) pernah masuk repo, segera lakukan unlink (keluar perangkat) dari aplikasi WhatsApp di HP Anda.
+- **Wajib Set Env Production**: Sebelum melakukan deploy ke Vercel/VPS, seluruh variabel di `.env` WAJIB disiapkan di environment variables production. Jangan pernah menggunakan environment variables development/local.
+- **Enkripsi Kunci**: Semua API Keys tersimpan dalam format terenkripsi. Pastikan `ENCRYPTION_SECRET` dicadangkan di tempat yang aman.
 
 ---
 

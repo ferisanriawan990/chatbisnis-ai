@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { getActiveWahaSessionName } from '@/lib/waha-helpers';
 
 export async function GET() {
   try {
@@ -35,20 +36,7 @@ export async function GET() {
     });
 
     if (!chatbotSetting) {
-      const isCoreMode = process.env.WAHA_CORE_MODE !== 'false';
-      let uniqueSessionName = 'default';
-      
-      if (isCoreMode) {
-        const existingDefault = await prisma.chatbotSetting.findFirst({ where: { wahaSessionName: 'default' } });
-        if (existingDefault && existingDefault.userId !== userId) {
-          // If default is taken, and WAHA Plus is not explicitly set, we fail gracefully.
-          // We can't throw an HTTP error here easily without breaking the UI page load, 
-          // so we use a dummy session name that will fail on Start.
-          uniqueSessionName = `waha_plus_required_${userId}`;
-        }
-      } else {
-         uniqueSessionName = `waha_plus_${userId}`;
-      }
+      const uniqueSessionName = getActiveWahaSessionName(userId, businessProfile.id);
 
       chatbotSetting = await prisma.chatbotSetting.create({
         data: {

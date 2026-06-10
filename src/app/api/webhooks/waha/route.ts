@@ -1,8 +1,12 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { ChatbotEngine } from '@/lib/chatbot-engine';
 import { prisma } from '@/lib/prisma';
 import { WAHAService } from '@/lib/waha';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { rateLimit } from '@/lib/rate-limit';
+import { requireHeaderSecret, parseJsonSafe, getRequestIp } from '@/lib/security';
+import { getWahaCoreMode } from '@/lib/waha-helpers';
+
+export const maxDuration = 60; // Set max duration to 60 seconds for Vercel Hobby tier
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -90,30 +94,32 @@ function normalizePayload(rawBody: WahaIncomingBody): NormalizedWahaPayload {
 
 // ─── Route Handler ────────────────────────────────────────────────────────────
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     // Basic rate limiting for webhook
-    const ip = getClientIp(req);
+    const ip = getRequestIp(req);
     const rl = await rateLimit(`webhook:waha:${ip}`, 60, 60 * 1000); // 60 msgs per minute
     if (!rl.success) {
       return NextResponse.json({ error: 'Too Many Requests' }, { status: 429 });
     }
 
     // Security validation
-    const webhookSecret = process.env.WAHA_WEBHOOK_SECRET;
-    if (!webhookSecret) {
-      console.error('WAHA_WEBHOOK_SECRET is not configured.');
-      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+    if (!requireHeaderSecret(req, 'x-webhook-secret', process.env.WAHA_WEBHOOK_SECRET)) {
+      return NextResponse.json({ error: 'Unauthorized or missing secret' }, { status: 401 });
     }
 
-    const providedSecret = req.headers.get('x-webhook-secret');
-    if (providedSecret !== webhookSecret) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const wahaServerId = req.headers.get('x-waha-server-id');
+    const coreMode = getWahaCoreMode();
+    
+    // Require wahaServerId if coreMode is true (multi-server enabled)
+    if (coreMode && !wahaServerId) {
+      return NextResponse.json({ error: 'x-waha-server-id header is required in multi-server mode' }, { status: 400 });
     }
 
-    const wahaServerId = req.headers.get('x-waha-server-id') || undefined;
-
-    const body = (await req.json()) as WahaIncomingBody;
+    const body = await parseJsonSafe<WahaIncomingBody>(req, 5 * 1024 * 1024);
+    if (!body) {
+      return NextResponse.json({ error: 'Invalid or too large payload' }, { status: 400 });
+    }
     const norm = normalizePayload(body);
 
     if (norm.event !== 'message') {
@@ -142,7 +148,9 @@ export async function POST(req: Request) {
     const chatbotSetting = await prisma.chatbotSetting.findFirst({
       where: { 
         wahaSessionName: norm.sessionName,
-        ...(qUserId ? { userId: qUserId } : {}),
+        ...(wahaServerId ? { wahaServerId } : {}),
+        // Only fallback to userId in URL in non-production for debugging
+        ...(qUserId && process.env.NODE_ENV !== 'production' ? { userId: qUserId } : {}),
         isActive: true,
         user: {
           subscriptions: {
@@ -159,7 +167,7 @@ export async function POST(req: Request) {
 
     // Process using Chatbot Engine
     const result = await ChatbotEngine.processMessage({
-      wahaServerId: chatbotSetting.wahaServerId,
+      wahaServerId: chatbotSetting.wahaServerId ?? undefined,
       wahaSessionName: norm.sessionName,
       customerPhone: norm.customerPhone,
       customerName: norm.customerName,

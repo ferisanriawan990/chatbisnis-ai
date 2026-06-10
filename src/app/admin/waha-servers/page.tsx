@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { Server, Plus, Edit2, PlayCircle, Trash2, X } from 'lucide-react';
+import ConfirmModal from '@/components/ConfirmModal';
 
 export default function AdminWahaServersPage() {
   const [servers, setServers] = useState<any[]>([]) // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -14,6 +15,7 @@ export default function AdminWahaServersPage() {
     name: '', baseUrl: '', apiKey: '', maxSessions: 50, notes: '', isActive: true
   });
   const [testingId, setTestingId] = useState<string | null>(null);
+  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; serverId: string; name: string }>({ isOpen: false, serverId: '', name: '' });
 
   const fetchServers = async () => {
     try {
@@ -90,7 +92,6 @@ export default function AdminWahaServersPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Apakah Anda yakin ingin menghapus server WAHA ini?')) return;
     try {
       const res = await fetch(`/api/admin/waha-servers/${id}`, { method: 'DELETE' });
       const data = await res.json();
@@ -142,7 +143,7 @@ export default function AdminWahaServersPage() {
                 <button onClick={() => handleOpenModal(s)} className="text-slate-400 hover:text-indigo-600 transition-colors" title="Edit Server">
                   <Edit2 className="w-5 h-5" />
                 </button>
-                <button onClick={() => handleDelete(s.id)} className="text-slate-400 hover:text-red-600 transition-colors" title="Delete Server">
+                <button onClick={() => setDeleteModal({ isOpen: true, serverId: s.id, name: s.name })} className="text-slate-400 hover:text-red-600 transition-colors" title="Delete Server">
                   <Trash2 className="w-5 h-5" />
                 </button>
               </div>
@@ -230,6 +231,14 @@ export default function AdminWahaServersPage() {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ ...deleteModal, isOpen: false })}
+        onConfirm={() => handleDelete(deleteModal.serverId)}
+        title="Hapus WAHA Server"
+        message={`Apakah Anda yakin ingin menghapus server "${deleteModal.name}"?`}
+      />
     </div>
   );
 }

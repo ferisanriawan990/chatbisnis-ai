@@ -1,14 +1,13 @@
 import { NextResponse as Response } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { requireHeaderSecret } from '@/lib/security';
 
 export async function GET(req: Request) {
   try {
     const url = new URL(req.url);
     const sessionName = url.searchParams.get('session');
-    const apiKey = req.headers.get('x-internal-api-key');
-
-    if (apiKey !== process.env.INTERNAL_API_KEY) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!requireHeaderSecret(req, 'x-internal-api-key', process.env.INTERNAL_API_KEY)) {
+      return Response.json({ error: 'Unauthorized or missing secret' }, { status: 401 });
     }
 
     if (!sessionName) {

@@ -4,6 +4,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { Users, Search, X } from 'lucide-react';
+import ConfirmModal from '@/components/ConfirmModal';
 
 interface WhatsAppSessionStatus {
   status: string;
@@ -59,6 +60,12 @@ export default function AdminUsersPage() {
     expiredAt: '',
   });
 
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    userId: string;
+    currentRole: string;
+  }>({ isOpen: false, userId: '', currentRole: '' });
+
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
@@ -98,11 +105,16 @@ export default function AdminUsersPage() {
 
   const toggleRole = async (userId: string, currentRole: string) => {
     const newRole = currentRole === 'ADMIN' ? 'USER' : 'ADMIN';
-    if (
-      currentRole === 'ADMIN' &&
-      !confirm('Apakah Anda yakin ingin menurunkan role Admin ini?')
-    )
+
+    if (currentRole === 'ADMIN') {
+      setConfirmModal({ isOpen: true, userId, currentRole });
       return;
+    }
+    
+    await executeToggleRole(userId, newRole);
+  };
+
+  const executeToggleRole = async (userId: string, newRole: string) => {
 
     try {
       const res = await fetch(`/api/admin/users/${userId}`, {
@@ -348,6 +360,14 @@ export default function AdminUsersPage() {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+        onConfirm={() => executeToggleRole(confirmModal.userId, 'USER')}
+        title="Ubah Role Admin"
+        message="Apakah Anda yakin ingin menurunkan role Admin ini?"
+      />
     </div>
   );
 }

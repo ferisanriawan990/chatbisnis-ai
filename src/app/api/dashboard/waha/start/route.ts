@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { WAHAService } from '@/lib/waha';
 import { syncWahaServerSessionCount } from '@/lib/waha-session-sync';
+import { getWahaCoreMode, getActiveWahaSessionName } from '@/lib/waha-helpers';
 
 export async function POST() {
   try {
@@ -15,23 +16,46 @@ export async function POST() {
     const userId = (session.user as { id: string }).id;
     let chatbot = await prisma.chatbotSetting.findFirst({
       where: { userId },
-      include: { wahaServer: true },
+      include: { 
+        wahaServer: true, 
+        businessProfile: true,
+        user: { 
+          include: { 
+            subscriptions: { 
+              include: { plan: true }, 
+              where: { status: 'active' } 
+            } 
+          } 
+        }
+      },
     });
 
     if (!chatbot) {
       return NextResponse.json({ error: 'Chatbot setting tidak ditemukan' }, { status: 404 });
     }
 
+    const maxSessions = chatbot.user?.subscriptions?.[0]?.plan?.maxWhatsappSessions ?? 1;
+    const currentSessions = await prisma.whatsAppSession.count({
+      where: { userId, status: { not: 'disconnected' } }
+    });
+
+    if (currentSessions >= maxSessions) {
+      return NextResponse.json(
+        { error: `Batas maksimal WhatsApp session tercapai (${maxSessions}). Upgrade plan untuk menambah session.` },
+        { status: 403 }
+      );
+    }
+
+    const isCoreMode = getWahaCoreMode();
+    const sessionName = getActiveWahaSessionName(userId, chatbot.businessProfileId);
+
     let newlyAssignedServerId: string | null = null;
 
-    // Dynamic Server Assignment using transaction to ensure safety
     if (!chatbot.wahaServerId) {
       const assigned = await prisma.$transaction(async (tx) => {
         const servers = await tx.wahaServer.findMany({
           where: { isActive: true },
         });
-        const isCoreMode = process.env.WAHA_CORE_MODE !== 'false';
-        const sessionName = isCoreMode ? 'default' : `waha_plus_${userId}`;
 
         let availableServer = null;
 
@@ -39,11 +63,12 @@ export async function POST() {
           if (s.currentSessions >= s.maxSessions || !s.apiKeyEncrypted) continue;
 
           if (isCoreMode) {
-            const existingDefault = await tx.chatbotSetting.findFirst({
-              where: { wahaServerId: s.id, wahaSessionName: 'default' }
+            // Check if server is already occupied by ANY session not owned by user
+            const existingSession = await tx.whatsAppSession.findFirst({
+              where: { wahaServerId: s.id, status: { not: 'disconnected' } }
             });
-            if (existingDefault && existingDefault.userId !== userId) {
-              continue; // This server's core slot is taken, try next server
+            if (existingSession && existingSession.userId !== userId) {
+              continue;
             }
           }
           
@@ -58,20 +83,18 @@ export async function POST() {
           throw new Error('SERVER_FULL');
         }
 
-        // Increment server usage (will be synced accurately after)
         await tx.wahaServer.update({
           where: { id: availableServer.id },
           data: { currentSessions: { increment: 1 } },
         });
 
-        // Update chatbot setting with serverId and sessionName only
         const updatedChatbot = await tx.chatbotSetting.update({
           where: { id: chatbot!.id },
           data: {
             wahaServerId: availableServer.id,
             wahaSessionName: sessionName,
           },
-          include: { wahaServer: true },
+          include: { wahaServer: true, businessProfile: true, user: { include: { subscriptions: { include: { plan: true }, where: { status: 'active' } } } } },
         });
 
         return { server: availableServer, chatbot: updatedChatbot };
@@ -79,70 +102,36 @@ export async function POST() {
 
       chatbot = assigned.chatbot;
       newlyAssignedServerId = assigned.server.id;
-    }
-
-    const isCoreMode = process.env.WAHA_CORE_MODE !== 'false';
-    const needsDefaultUpdate = isCoreMode && (
-      chatbot.wahaSessionName !== 'default' || 
-      chatbot.wahaSessionName.startsWith('chatbisnis_') || 
-      chatbot.wahaSessionName.startsWith('session_')
-    );
-
-    if (needsDefaultUpdate) {
-      const existingDefault = await prisma.chatbotSetting.findFirst({ 
-        where: { 
-          wahaServerId: chatbot.wahaServerId,
-          wahaSessionName: 'default',
-          isActive: true
-        } 
-      });
-
-      if (existingDefault && existingDefault.userId !== userId) {
-        return NextResponse.json({ error: 'WAHA Core hanya mendukung 1 nomor WhatsApp. Session default sudah dipakai oleh chatbot lain. Nonaktifkan session lama atau upgrade ke WAHA Plus.' }, { status: 400 });
-      }
-      
-      try {
+    } else {
+      // If server is already assigned, just ensure session name is updated
+      if (chatbot.wahaSessionName !== sessionName) {
         chatbot = await prisma.chatbotSetting.update({
           where: { id: chatbot.id },
-          data: { wahaSessionName: 'default' },
-          include: { wahaServer: true },
+          data: { wahaSessionName: sessionName },
+          include: { wahaServer: true, businessProfile: true, user: { include: { subscriptions: { include: { plan: true }, where: { status: 'active' } } } } },
         });
-      } catch (err: unknown) {
-        const prismaErr = err as { code?: string };
-        if (prismaErr.code === 'P2002') {
-          return NextResponse.json({ error: 'WAHA Core hanya mendukung 1 nomor WhatsApp. Session default sudah dipakai oleh chatbot lain. Nonaktifkan session lama atau upgrade ke WAHA Plus.' }, { status: 400 });
-        }
-        throw err;
       }
     }
 
-    // Always read config from WahaServer relation
     const wahaServer = chatbot.wahaServer;
     if (!wahaServer || !wahaServer.isActive) {
-      return NextResponse.json(
-        { error: 'Server WAHA tidak tersedia atau tidak aktif.' },
-        { status: 503 },
-      );
+      return NextResponse.json({ error: 'Server WAHA tidak tersedia atau tidak aktif.' }, { status: 503 });
     }
 
     if (!wahaServer.apiKeyEncrypted) {
-      return NextResponse.json(
-        { error: 'Server WAHA tidak memiliki API Key yang dikonfigurasi.' },
-        { status: 500 },
-      );
+      return NextResponse.json({ error: 'Server WAHA tidak memiliki API Key yang dikonfigurasi.' }, { status: 500 });
     }
 
     const waha = WAHAService.fromEncrypted(wahaServer.baseUrl, wahaServer.apiKeyEncrypted);
 
     try {
-      await waha.startSession(chatbot.wahaSessionName);
+      await waha.startSession(sessionName);
     } catch (error) {
       const msg = (error as { message?: string })?.message || '';
 
       if (msg.includes('already started')) {
-        // Session already exists — ensure DB record exists
         const existingSession = await prisma.whatsAppSession.findFirst({
-          where: { wahaServerId: chatbot.wahaServerId, sessionName: chatbot.wahaSessionName }
+          where: { wahaServerId: chatbot.wahaServerId, sessionName }
         });
         if (existingSession) {
           await prisma.whatsAppSession.update({
@@ -156,7 +145,7 @@ export async function POST() {
               businessProfileId: chatbot.businessProfileId,
               chatbotSettingId: chatbot.id,
               wahaServerId: chatbot.wahaServerId!,
-              sessionName: chatbot.wahaSessionName,
+              sessionName: sessionName,
               status: 'connected',
             }
           });
@@ -164,33 +153,22 @@ export async function POST() {
         if (chatbot.wahaServerId) {
           await syncWahaServerSessionCount(chatbot.wahaServerId);
         }
-        return NextResponse.json({
-          success: true,
-          sessionName: chatbot.wahaSessionName,
-          alreadyStarted: true,
-        });
+        return NextResponse.json({ success: true, sessionName, alreadyStarted: true });
       }
 
-      // Rollback: remove server assignment but KEEP session name for debugging
       if (newlyAssignedServerId) {
-        await prisma.chatbotSetting
-          .update({
-            where: { id: chatbot.id },
-            data: { wahaServerId: null },
-          })
-          .catch((e: unknown) => {
-            const msg = e instanceof Error ? e.message : 'unknown';
-            console.error('Failed to rollback waha server assignment:', msg);
-          });
+        await prisma.chatbotSetting.update({
+          where: { id: chatbot.id },
+          data: { wahaServerId: null },
+        }).catch(() => {});
         await syncWahaServerSessionCount(newlyAssignedServerId).catch(() => {});
       }
 
       throw error;
     }
 
-    // Ensure session exists in DB
     const existingSession = await prisma.whatsAppSession.findFirst({
-      where: { wahaServerId: chatbot.wahaServerId, sessionName: chatbot.wahaSessionName }
+      where: { wahaServerId: chatbot.wahaServerId, sessionName }
     });
     
     if (existingSession) {
@@ -205,38 +183,31 @@ export async function POST() {
           businessProfileId: chatbot.businessProfileId,
           chatbotSettingId: chatbot.id,
           wahaServerId: chatbot.wahaServerId!,
-          sessionName: chatbot.wahaSessionName,
+          sessionName: sessionName,
           status: 'starting',
         }
       });
     }
 
-    // Sync accurate counter
     if (chatbot.wahaServerId) {
       await syncWahaServerSessionCount(chatbot.wahaServerId);
     }
 
-    return NextResponse.json({ success: true, sessionName: chatbot.wahaSessionName });
+    return NextResponse.json({ success: true, sessionName });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
 
     if (message === 'SERVER_FULL') {
       return NextResponse.json(
-        {
-          error:
-            'Maaf, semua server WhatsApp saat ini sedang penuh. Silakan coba lagi nanti atau hubungi Admin.',
-        },
-        { status: 503 },
+        { error: 'Maaf, semua server WhatsApp saat ini sedang penuh. Silakan coba lagi nanti atau hubungi Admin.' },
+        { status: 503 }
       );
     }
 
     if (message === 'WAHA_CORE_TAKEN') {
       return NextResponse.json(
-        {
-          error:
-            'WAHA Core hanya mendukung 1 nomor WhatsApp per server, dan server ini sudah digunakan oleh akun lain. Harap hubungi Admin atau upgrade ke WAHA Plus.',
-        },
-        { status: 400 },
+        { error: 'WAHA Core hanya mendukung 1 nomor WhatsApp per server, dan server ini sudah digunakan oleh akun lain. Harap hubungi Admin atau upgrade ke WAHA Plus.' },
+        { status: 400 }
       );
     }
 
