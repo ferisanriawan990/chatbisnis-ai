@@ -58,6 +58,8 @@ interface NormalizedWahaPayload {
   customerName: string;
   messageIn: string;
   remote: string;
+  hasMedia: boolean;
+  messageId: string;
 }
 
 // ─── Normalizer ───────────────────────────────────────────────────────────────
@@ -88,8 +90,18 @@ function normalizePayload(rawBody: WahaIncomingBody): NormalizedWahaPayload {
   const isGroup =
     Boolean(messagePayload.isGroup ?? rawBody.isGroup) || customerPhone.endsWith('@g.us');
   const remote = messagePayload.id?.remote || rawBody.payload?.id?.remote || '';
+  
+  // Cast id as any to handle WAHA's polymorphic id property (string or object)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const payloadId = (messagePayload.id as any);
+  const messageId = typeof payloadId === 'string' ? payloadId : (payloadId?._serialized || payloadId?.id || '');
+  
+  // Cast payload as any to check for hasMedia and type
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mpAny = messagePayload as any;
+  const hasMedia = Boolean(mpAny.hasMedia) || mpAny.type === 'image';
 
-  return { sessionName, event, fromMe, isGroup, customerPhone, customerName, messageIn, remote };
+  return { sessionName, event, fromMe, isGroup, customerPhone, customerName, messageIn, remote, hasMedia, messageId };
 }
 
 // ─── Route Handler ────────────────────────────────────────────────────────────
@@ -131,7 +143,7 @@ export async function POST(req: NextRequest) {
       norm.remote.includes('status@broadcast') ||
       norm.customerPhone.includes('status@broadcast') ||
       norm.isGroup ||
-      !norm.messageIn
+      (!norm.messageIn && !norm.hasMedia)
     ) {
       return NextResponse.json({ success: true, message: 'Ignored fromMe, broadcast, group, or empty' });
     }
@@ -167,13 +179,37 @@ export async function POST(req: NextRequest) {
     // Use the actual session name from DB if in core mode (since payload brings 'default')
     const actualSessionName = coreMode ? chatbotSetting.wahaSessionName! : norm.sessionName;
 
+    // Download image if media is present
+    let downloadedImageUrl: string | undefined;
+    if (norm.hasMedia && norm.messageId) {
+      try {
+        let wahaInstance: WAHAService | null = null;
+        if (chatbotSetting?.wahaServer?.apiKeyEncrypted) {
+          wahaInstance = WAHAService.fromEncrypted(chatbotSetting.wahaServer.baseUrl, chatbotSetting.wahaServer.apiKeyEncrypted);
+        } else if (chatbotSetting?.wahaApiKeyEncrypted && chatbotSetting?.wahaBaseUrl) {
+          wahaInstance = WAHAService.fromEncrypted(chatbotSetting.wahaBaseUrl, chatbotSetting.wahaApiKeyEncrypted);
+        }
+        
+        if (wahaInstance) {
+          const b64 = await wahaInstance.downloadMediaBase64(actualSessionName, norm.messageId);
+          if (b64) downloadedImageUrl = b64;
+        }
+      } catch (err) {
+        console.error('Failed to download image from WAHA:', err);
+      }
+    }
+
+    // If message is empty but has media, provide a default caption
+    const finalMessageIn = (!norm.messageIn && norm.hasMedia) ? "Tolong jelaskan gambar ini berdasarkan konteks bisnis kita." : norm.messageIn;
+
     // Process using Chatbot Engine
     const result = await ChatbotEngine.processMessage({
       wahaServerId: chatbotSetting.wahaServerId ?? undefined,
       wahaSessionName: actualSessionName,
       customerPhone: norm.customerPhone,
       customerName: norm.customerName,
-      messageIn: norm.messageIn,
+      messageIn: finalMessageIn,
+      imageUrl: downloadedImageUrl,
     });
 
     if (result && result.reply) {

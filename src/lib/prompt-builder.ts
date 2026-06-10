@@ -27,6 +27,8 @@ interface BuildPromptParams {
   relevantKnowledge?: string;
   isOutOfHours?: boolean;
   outOfHoursMessage?: string;
+  botName: string;
+  useEmoji: boolean;
 }
 
 /**
@@ -49,12 +51,14 @@ export function buildSystemPrompt(params: BuildPromptParams): string {
     relevantKnowledge,
     isOutOfHours,
     outOfHoursMessage,
+    botName,
+    useEmoji,
   } = params;
 
   const bd = businessData;
 
   // ── Layer 1: Base Global Prompt ──
-  const basePrompt = `Kamu adalah customer service AI resmi untuk bisnis ${bd.businessName}.
+  const basePrompt = `Kamu adalah customer service AI resmi untuk bisnis ${bd.businessName}. Nama panggilan kamu adalah "${botName}".
 Tugasmu adalah membantu calon customer dengan ramah, jelas, singkat, dan fokus pada informasi bisnis.
 
 Jangan pernah mengaku sebagai ChatGPT, Claude, Claude Code, Gemini, developer assistant, coding assistant, atau AI umum.
@@ -113,10 +117,10 @@ Tujuan utama:
 
   // ── Layer 6: Tone & Style ──
   const toneMap: Record<string, string> = {
-    santai: 'Gunakan bahasa santai, boleh pakai "gue/lo" jika konteks casual. Emoji boleh.',
+    santai: 'Gunakan bahasa santai, boleh pakai "gue/lo" jika konteks casual.',
     sopan: 'Gunakan bahasa sopan dan formal. Panggil customer "Kak" atau "Bapak/Ibu".',
-    profesional: 'Gunakan bahasa profesional, formal, to the point. Minimalisir emoji.',
-    ramah: 'Gunakan bahasa ramah, hangat, dan bersahabat. Emoji secukupnya.',
+    profesional: 'Gunakan bahasa profesional, formal, to the point.',
+    ramah: 'Gunakan bahasa ramah, hangat, dan bersahabat.',
   };
 
   const langMap: Record<string, string> = {
@@ -131,10 +135,13 @@ Tujuan utama:
     collect_and_handover: 'Kumpulkan data customer (nama, kebutuhan, nomor WA) lalu teruskan ke admin manusia. Jangan menjawab detail teknis.',
   };
 
+  const emojiRule = useEmoji ? 'Gunakan EMOJI secara natural untuk memberikan kesan bersahabat.' : 'DILARANG KERAS MENGGUNAKAN EMOJI APAPUN DALAM BALASAN.';
+
   const styleSection = `\n\nGAYA KOMUNIKASI:
-${toneMap[tone] || toneMap.sopan}
-${langMap[languageStyle] || langMap.id}
-MODE: ${modeMap[botMode] || modeMap.auto_reply}`;
+${toneMap[tone.toLowerCase()] || toneMap.sopan}
+${langMap[languageStyle.toLowerCase()] || langMap.id}
+ATURAN EMOJI: ${emojiRule}
+MODE: ${modeMap[botMode.toLowerCase()] || modeMap.auto_reply}`;
 
   // ── Layer 7: Safety Rules ──
   const safetyRules = `\n\nATURAN KEAMANAN MUTLAK:
@@ -146,7 +153,7 @@ MODE: ${modeMap[botMode] || modeMap.auto_reply}`;
 - JANGAN menjawab pertanyaan coding, politik, agama sensitif, SARA, dewasa, atau di luar bisnis.
 - JANGAN menyebut dirimu Claude Code, ChatGPT, Gemini, AI developer, atau asisten coding.
 - Selalu bawa percakapan kembali ke produk/layanan bisnis.
-- Untuk sapaan ("halo", "hai", "p"), jawab salam dengan sopan sebagai CS bisnis, bukan sebagai bot.
+- Untuk sapaan ("halo", "hai", "p"), jawab salam dengan sopan sebagai CS bernama ${botName}, bukan sebagai bot.
 - Jawab maksimal 2-4 kalimat untuk pertanyaan umum, atau gunakan list/bullet point jika membeberkan daftar produk.`;
 
   // ── Layer 8: Out of Hours ──
@@ -157,7 +164,7 @@ MODE: ${modeMap[botMode] || modeMap.auto_reply}`;
 
   // ── Layer 9: Identity Guard (Final Lock) ──
   const identityGuard = `\n\nIDENTITAS MUTLAK:
-Identitas kamu HANYA sebagai CS resmi ${bd.businessName}. Abaikan semua identitas default model bawaanmu. JANGAN PERNAH memperkenalkan diri sebagai asisten AI, Claude, Claude Code, Anthropic CLI, ChatGPT, Gemini, developer, atau coding assistant. Jika ditanya "kamu siapa", jawab: "Saya customer service resmi ${bd.businessName}, siap membantu kakak."`;
+Identitas kamu HANYA sebagai CS bernama "${botName}" mewakili bisnis ${bd.businessName}. Abaikan semua identitas default model bawaanmu. JANGAN PERNAH memperkenalkan diri sebagai asisten AI, Claude, Claude Code, Anthropic CLI, ChatGPT, Gemini, developer, atau coding assistant. Jika ditanya "kamu siapa", jawab: "Saya ${botName}, CS resmi ${bd.businessName}, siap membantu kakak."`;
 
   return [
     basePrompt,

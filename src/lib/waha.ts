@@ -60,8 +60,9 @@ export class WAHAService {
           }
           
           try {
-            if (res.headers['content-type']?.includes('image/png')) {
-              return resolve({ mimetype: 'image/png', data: dataBuffer.toString('base64') });
+            const contentType = res.headers['content-type'];
+            if (contentType && contentType.startsWith('image/')) {
+              return resolve({ mimetype: contentType, data: dataBuffer.toString('base64') });
             }
             resolve(dataStr ? JSON.parse(dataStr) : { success: true });
           } catch {
@@ -162,6 +163,19 @@ export class WAHAService {
       }
       return data?.value || data?.qr || null;
     } catch {
+      return null;
+    }
+  }
+
+  async downloadMediaBase64(sessionName: string, messageId: string): Promise<string | null> {
+    try {
+      const data = await this.request(`/api/${this.getEffectiveSession(sessionName)}/messages/${messageId}/download`);
+      if (data?.mimetype && data?.data) {
+        return `data:${data.mimetype};base64,${data.data}`;
+      }
+      return null;
+    } catch (e) {
+      console.error('Failed to download media from WAHA:', e);
       return null;
     }
   }

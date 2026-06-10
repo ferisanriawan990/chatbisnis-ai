@@ -143,18 +143,13 @@ export function buildProductAnswer(message: string, matchedItems: KnowledgeItem[
 
   const products = matchedItems.filter(i => i.productName);
 
-  // Jika produk tidak ditemukan padahal nanya produk
+  // Jika produk tidak ditemukan, biarkan AI yang menjawab berdasarkan context (business profile, dll)
   if (products.length === 0) {
-    if (intent !== 'daftar_stok') {
-      return "Untuk tipe/info itu saya belum menemukan datanya di sistem. Saya bantu teruskan ke admin ya kak.";
-    }
+    return null;
   }
 
   // Handle daftar_stok intent
   if (intent === 'daftar_stok') {
-    if (products.length === 0) {
-      return "Saat ini kami belum memiliki data produk di sistem.";
-    }
     let reply = `Ready kak, berikut daftar stok yang tersedia:\n\n`;
     const displayProducts = products.slice(0, 12);
     

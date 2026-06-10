@@ -5,37 +5,80 @@ import Link from 'next/link';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 export const BusinessProfileForm = ({ form, handleChange, isComplete }: any) => (
-  <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 relative overflow-hidden">
-    <div className="absolute top-0 right-0 p-4">
-      {isComplete ? <CheckCircle2 className="w-8 h-8 text-emerald-400 opacity-20" /> : <span className="text-4xl font-black text-slate-100">1</span>}
+  <section className="bg-white/80 backdrop-blur-xl p-8 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60 hover:shadow-xl hover:shadow-indigo-100/50 transition-all duration-500 relative overflow-hidden group">
+    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-indigo-100/50 to-transparent rounded-bl-full pointer-events-none transition-transform duration-500 group-hover:scale-110"></div>
+    <div className="absolute top-0 right-0 p-6 z-10">
+      {isComplete ? <CheckCircle2 className="w-10 h-10 text-emerald-400 drop-shadow-md" /> : <span className="text-5xl font-black text-slate-100 drop-shadow-sm">1</span>}
     </div>
-    <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2 relative z-10">
-      <Database className="w-5 h-5 text-indigo-500" /> Step 1: Profil Bisnis
+    <h2 className="text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-600 mb-6 flex items-center gap-3 relative z-10">
+      <div className="p-2.5 bg-indigo-50 rounded-xl">
+        <Database className="w-6 h-6 text-indigo-600" />
+      </div>
+      Step 1: Profil Bisnis
     </h2>
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10">
-      <div><label className="block text-sm font-medium text-slate-700 mb-1">Nama Bisnis *</label><input name="businessName" value={form.businessName} onChange={handleChange} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Cth: Warung Kopi Mantap" /></div>
-      <div><label className="block text-sm font-medium text-slate-700 mb-1">Bidang Usaha *</label><input name="businessIndustry" value={form.businessIndustry} onChange={handleChange} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Cth: F&B / Restoran" /></div>
-      <div className="md:col-span-2"><label className="block text-sm font-medium text-slate-700 mb-1">Deskripsi Singkat (Diberitahukan ke AI) *</label><textarea name="businessDescription" value={form.businessDescription} onChange={handleChange} rows={3} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Cth: Kami menjual kopi susu kekinian dengan harga terjangkau..."></textarea></div>
-      <div><label className="block text-sm font-medium text-slate-700 mb-1">Jam Operasional</label><input name="openingHours" value={form.openingHours} onChange={handleChange} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none" /></div>
-      <div><label className="block text-sm font-medium text-slate-700 mb-1">Nomor Admin (Opsional)</label><input name="adminPhone" value={form.adminPhone} onChange={handleChange} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none" /></div>
-      <div className="md:col-span-2"><label className="block text-sm font-medium text-slate-700 mb-1">Alamat Lengkap</label><input name="address" value={form.address} onChange={handleChange} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none" /></div>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 relative z-10">
+      <div>
+        <label className="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">Nama Bisnis <span className="text-red-500">*</span></label>
+        <input name="businessName" value={form.businessName} onChange={handleChange} className="w-full p-3.5 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all shadow-sm hover:border-indigo-300" placeholder="Cth: Warung Kopi Mantap" />
+      </div>
+      <div>
+        <label className="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">Bidang Usaha <span className="text-red-500">*</span></label>
+        <input name="businessIndustry" value={form.businessIndustry} onChange={handleChange} className="w-full p-3.5 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all shadow-sm hover:border-indigo-300" placeholder="Cth: F&B / Restoran" />
+      </div>
+      <div className="md:col-span-2">
+        <label className="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">Deskripsi Singkat (Diberitahukan ke AI) <span className="text-red-500">*</span></label>
+        <textarea name="businessDescription" value={form.businessDescription} onChange={handleChange} rows={3} className="w-full p-3.5 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all shadow-sm hover:border-indigo-300 resize-none" placeholder="Cth: Kami menjual kopi susu kekinian dengan harga terjangkau..."></textarea>
+      </div>
+      <div>
+        <label className="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">Jam Operasional</label>
+        <input name="openingHours" value={form.openingHours} onChange={handleChange} className="w-full p-3.5 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all shadow-sm hover:border-indigo-300" placeholder="Cth: 08:00 - 17:00" />
+      </div>
+      <div>
+        <label className="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">Nomor Admin (Opsional)</label>
+        <input name="adminPhone" value={form.adminPhone} onChange={handleChange} className="w-full p-3.5 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all shadow-sm hover:border-indigo-300" placeholder="Cth: 08123456789" />
+      </div>
+      <div className="md:col-span-2">
+        <label className="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">Alamat Lengkap</label>
+        <input name="address" value={form.address} onChange={handleChange} className="w-full p-3.5 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all shadow-sm hover:border-indigo-300" placeholder="Cth: Jl. Sudirman No. 1, Jakarta" />
+      </div>
 
-      <div className="md:col-span-2 mt-2">
-        <details className="group border border-slate-200 rounded-lg bg-slate-50">
-          <summary className="flex justify-between items-center font-medium cursor-pointer list-none p-3 text-slate-700">
-            <span>Tampilkan Pengaturan Lanjutan (Katalog, Area, dll)</span>
-            <span className="transition group-open:rotate-180">
-              <svg fill="none" height="24" shapeRendering="geometricPrecision" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" viewBox="0 0 24 24" width="24"><path d="M6 9l6 6 6-6"></path></svg>
+      <div className="md:col-span-2 mt-4">
+        <details className="group border border-slate-200 rounded-2xl bg-slate-50/50 shadow-sm overflow-hidden transition-all duration-300">
+          <summary className="flex justify-between items-center font-bold cursor-pointer list-none p-4 text-slate-700 hover:bg-slate-100/50 transition-colors">
+            <span className="flex items-center gap-2">Tampilkan Pengaturan Lanjutan <span className="text-xs bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full font-medium">Opsional</span></span>
+            <span className="transition-transform duration-300 group-open:rotate-180 bg-white p-1 rounded-full shadow-sm">
+              <svg fill="none" height="20" shapeRendering="geometricPrecision" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" width="20"><path d="M6 9l6 6 6-6"></path></svg>
             </span>
           </summary>
-          <div className="p-4 pt-0 border-t border-slate-200 mt-3 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="md:col-span-2"><label className="block text-sm font-medium text-slate-700 mb-1">Produk atau Layanan</label><textarea name="productsOrServices" value={form.productsOrServices || ''} onChange={handleChange} rows={2} className="w-full p-2.5 bg-white border border-slate-200 rounded-lg outline-none" placeholder="Detail produk/layanan yang disediakan..."></textarea></div>
-            <div className="md:col-span-2"><label className="block text-sm font-medium text-slate-700 mb-1">Informasi Harga</label><textarea name="pricingInfo" value={form.pricingInfo || ''} onChange={handleChange} rows={2} className="w-full p-2.5 bg-white border border-slate-200 rounded-lg outline-none" placeholder="Cth: Mulai dari Rp10.000..."></textarea></div>
-            <div><label className="block text-sm font-medium text-slate-700 mb-1">Metode Pembayaran</label><input name="paymentMethods" value={form.paymentMethods || ''} onChange={handleChange} className="w-full p-2.5 bg-white border border-slate-200 rounded-lg outline-none" placeholder="Cth: Transfer BCA, COD" /></div>
-            <div><label className="block text-sm font-medium text-slate-700 mb-1">Metode Pengiriman</label><input name="deliveryMethods" value={form.deliveryMethods || ''} onChange={handleChange} className="w-full p-2.5 bg-white border border-slate-200 rounded-lg outline-none" placeholder="Cth: Gojek, JNE, Kurir Toko" /></div>
-            <div><label className="block text-sm font-medium text-slate-700 mb-1">Area Layanan</label><input name="serviceArea" value={form.serviceArea || ''} onChange={handleChange} className="w-full p-2.5 bg-white border border-slate-200 rounded-lg outline-none" placeholder="Cth: Jakarta & Sekitarnya" /></div>
-            <div><label className="block text-sm font-medium text-slate-700 mb-1">Link Google Maps</label><input name="mapsUrl" value={form.mapsUrl || ''} onChange={handleChange} className="w-full p-2.5 bg-white border border-slate-200 rounded-lg outline-none" placeholder="Cth: https://maps.app.goo.gl/..." /></div>
-            <div className="md:col-span-2"><label className="block text-sm font-medium text-slate-700 mb-1">Link Katalog (PDF/Google Drive/Sheet)</label><input name="catalogUrl" value={form.catalogUrl || ''} onChange={handleChange} className="w-full p-2.5 bg-white border border-slate-200 rounded-lg outline-none" placeholder="Cth: https://docs.google.com/..." /></div>
+          <div className="p-5 pt-2 border-t border-slate-200/60 grid grid-cols-1 md:grid-cols-2 gap-5 bg-white/50">
+            <div className="md:col-span-2">
+              <label className="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">Ringkasan Produk/Layanan</label>
+              <textarea name="productsOrServices" value={form.productsOrServices || ''} onChange={handleChange} rows={2} className="w-full p-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none shadow-sm resize-none" placeholder="Detail produk/layanan yang disediakan..."></textarea>
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">Informasi Harga Standar</label>
+              <textarea name="pricingInfo" value={form.pricingInfo || ''} onChange={handleChange} rows={2} className="w-full p-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none shadow-sm resize-none" placeholder="Cth: Mulai dari Rp10.000..."></textarea>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">Metode Pembayaran</label>
+              <input name="paymentMethods" value={form.paymentMethods || ''} onChange={handleChange} className="w-full p-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none shadow-sm" placeholder="Cth: Transfer BCA, COD" />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">Metode Pengiriman</label>
+              <input name="deliveryMethods" value={form.deliveryMethods || ''} onChange={handleChange} className="w-full p-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none shadow-sm" placeholder="Cth: Gojek, JNE, Kurir Toko" />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">Area Layanan</label>
+              <input name="serviceArea" value={form.serviceArea || ''} onChange={handleChange} className="w-full p-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none shadow-sm" placeholder="Cth: Jakarta & Sekitarnya" />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">Link Google Maps</label>
+              <input name="mapsUrl" value={form.mapsUrl || ''} onChange={handleChange} className="w-full p-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none shadow-sm" placeholder="Cth: https://maps.app.goo.gl/..." />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">Link Katalog Utama (PDF/Website)</label>
+              <input name="catalogUrl" value={form.catalogUrl || ''} onChange={handleChange} className="w-full p-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none shadow-sm" placeholder="Cth: https://docs.google.com/..." />
+            </div>
           </div>
         </details>
       </div>
@@ -44,47 +87,89 @@ export const BusinessProfileForm = ({ form, handleChange, isComplete }: any) => 
 );
 
 export const AIStyleForm = ({ form, handleChange, activeModelDisplay }: any) => (
-  <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 relative overflow-hidden">
-    <div className="absolute top-0 right-0 p-4">
-       <span className="text-4xl font-black text-slate-100">2</span>
+  <section className="bg-white/80 backdrop-blur-xl p-8 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60 hover:shadow-xl hover:shadow-purple-100/50 transition-all duration-500 relative overflow-hidden group">
+    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-purple-100/50 to-transparent rounded-bl-full pointer-events-none transition-transform duration-500 group-hover:scale-110"></div>
+    <div className="absolute top-0 right-0 p-6 z-10">
+       <span className="text-5xl font-black text-slate-100 drop-shadow-sm">2</span>
     </div>
-    <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2 relative z-10">
-      <Bot className="w-5 h-5 text-purple-500" /> Step 2: Pengaturan Gaya AI
+    <h2 className="text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 mb-6 flex items-center gap-3 relative z-10">
+      <div className="p-2.5 bg-purple-50 rounded-xl">
+        <Bot className="w-6 h-6 text-purple-600" />
+      </div>
+      Step 2: Pengaturan Gaya AI
     </h2>
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10">
-      <div><label className="block text-sm font-medium text-slate-700 mb-1">Nama Bot</label><input name="botName" value={form.botName} onChange={handleChange} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none" /></div>
-      <div><label className="block text-sm font-medium text-slate-700 mb-1">Gaya Bahasa</label>
-        <select name="toneStyle" value={form.toneStyle} onChange={handleChange} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none">
-          <option value="Profesional">Profesional</option><option value="Ramah">Ramah</option><option value="Santai">Santai</option><option value="Sales / Soft Selling">Sales / Soft Selling</option>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 relative z-10">
+      <div>
+        <label className="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">Nama Bot <span className="text-red-500">*</span></label>
+        <input name="botName" value={form.botName} onChange={handleChange} className="w-full p-3.5 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 outline-none transition-all shadow-sm hover:border-purple-300" placeholder="Cth: Anya CS" />
+      </div>
+      <div>
+        <label className="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">Gaya Bahasa AI</label>
+        <select name="toneStyle" value={form.toneStyle} onChange={handleChange} className="w-full p-3.5 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 outline-none transition-all shadow-sm hover:border-purple-300 font-medium text-slate-700 appearance-none cursor-pointer">
+          <option value="Profesional">👔 Profesional & Formal</option>
+          <option value="Ramah">😊 Ramah & Hangat</option>
+          <option value="Santai">😎 Santai & Gaul (Gue/Lo)</option>
+          <option value="Sales / Soft Selling">🔥 Sales / Persuasif</option>
         </select>
       </div>
-      <div className="flex flex-col gap-2 mt-2">
-        <label className="block text-sm font-semibold text-slate-700 ml-1">Karakteristik Balasan</label>
-        <label className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-100 transition-colors">
-          <input type="checkbox" name="useEmoji" checked={form.useEmoji} onChange={handleChange} className="w-5 h-5 text-purple-600 rounded focus:ring-purple-500 cursor-pointer" />
-          <span className="text-sm font-medium text-slate-700">Gunakan Emoji 😊🚀</span>
+      
+      <div className="md:col-span-2 flex flex-col gap-3 mt-2">
+        <label className="block text-sm font-semibold text-slate-700 ml-1">Karakteristik & Perilaku Bot</label>
+        
+        <label className="flex items-center gap-4 p-4 bg-white border border-slate-200 rounded-2xl cursor-pointer hover:bg-purple-50/50 hover:border-purple-200 transition-all shadow-sm group">
+          <div className="relative flex items-center justify-center w-6 h-6">
+            <input type="checkbox" name="useEmoji" checked={form.useEmoji} onChange={handleChange} className="peer w-6 h-6 text-purple-600 bg-slate-100 border-slate-300 rounded focus:ring-purple-500 cursor-pointer transition-all" />
+          </div>
+          <div className="flex-1">
+            <span className="text-sm font-bold text-slate-800 group-hover:text-purple-700 transition-colors">Gunakan Emoji Secara Natural 🚀</span>
+            <p className="text-xs text-slate-500 mt-0.5">AI akan menggunakan emoji untuk membuat percakapan lebih hidup dan bersahabat.</p>
+          </div>
         </label>
-        <label className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-100 transition-colors">
-          <input type="checkbox" name="allowSelling" checked={form.allowSelling} onChange={handleChange} className="w-5 h-5 text-purple-600 rounded focus:ring-purple-500 cursor-pointer" />
-          <span className="text-sm font-medium text-slate-700">Izinkan AI Jualan/Terima Order</span>
+        
+        <label className="flex items-center gap-4 p-4 bg-white border border-slate-200 rounded-2xl cursor-pointer hover:bg-emerald-50/50 hover:border-emerald-200 transition-all shadow-sm group">
+          <div className="relative flex items-center justify-center w-6 h-6">
+            <input type="checkbox" name="allowSelling" checked={form.allowSelling} onChange={handleChange} className="peer w-6 h-6 text-emerald-600 bg-slate-100 border-slate-300 rounded focus:ring-emerald-500 cursor-pointer transition-all" />
+          </div>
+          <div className="flex-1">
+            <span className="text-sm font-bold text-slate-800 group-hover:text-emerald-700 transition-colors">Izinkan AI Berjualan & Terima Order 🛍️</span>
+            <p className="text-xs text-slate-500 mt-0.5">Jika aktif, AI boleh mengarahkan customer untuk bertransaksi. Jika mati, AI hanya memberi info.</p>
+          </div>
         </label>
-        <label className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-100 transition-colors">
-          <input type="checkbox" name="allowPromoOffer" checked={form.allowPromoOffer} onChange={handleChange} className="w-5 h-5 text-purple-600 rounded focus:ring-purple-500 cursor-pointer" />
-          <span className="text-sm font-medium text-slate-700">Izinkan AI Tawarkan Promo/Diskon</span>
+        
+        <label className="flex items-center gap-4 p-4 bg-white border border-slate-200 rounded-2xl cursor-pointer hover:bg-pink-50/50 hover:border-pink-200 transition-all shadow-sm group">
+          <div className="relative flex items-center justify-center w-6 h-6">
+            <input type="checkbox" name="allowPromoOffer" checked={form.allowPromoOffer} onChange={handleChange} className="peer w-6 h-6 text-pink-500 bg-slate-100 border-slate-300 rounded focus:ring-pink-500 cursor-pointer transition-all" />
+          </div>
+          <div className="flex-1">
+            <span className="text-sm font-bold text-slate-800 group-hover:text-pink-700 transition-colors">Izinkan AI Menawarkan Promo 🎁</span>
+            <p className="text-xs text-slate-500 mt-0.5">AI boleh proaktif menawarkan promo atau diskon (pastikan data promo ada di Knowledge Base).</p>
+          </div>
         </label>
       </div>
-      <div className="md:col-span-2 mt-4 p-5 bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl border border-purple-100/50 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
+      
+      <div className="md:col-span-2 mt-4 p-6 bg-gradient-to-r from-slate-900 via-purple-900 to-slate-900 rounded-2xl border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">
         <div>
-          <h3 className="text-sm font-bold text-purple-900">Model AI Aktif</h3>
-          <p className="text-xs text-purple-700 mt-1">Model bahasa ini dikelola secara terpusat oleh sistem.</p>
+          <h3 className="text-sm font-extrabold text-white flex items-center gap-2"><SparklesIcon className="w-4 h-4 text-amber-400" /> Mesin AI Aktif</h3>
+          <p className="text-xs text-slate-400 mt-1">Ditenagai oleh arsitektur LLM tingkat lanjut. Terkoneksi secara terpusat.</p>
         </div>
-        <div className="px-4 py-2 bg-white/80 backdrop-blur-sm border border-purple-200 rounded-xl text-sm font-extrabold text-purple-700 shadow-sm flex items-center gap-2">
+        <div className="px-5 py-2.5 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl text-sm font-black text-white shadow-inner flex items-center gap-3 tracking-wide">
+          <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
           {activeModelDisplay}
-          <span className="px-2 py-0.5 bg-slate-100 text-slate-500 text-[10px] rounded-full uppercase tracking-wider">Locked</span>
         </div>
       </div>
     </div>
   </section>
+);
+
+// Sparkles Icon helper
+const SparklesIcon = ({ className }: { className?: string }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z" />
+    <path d="M20 3v4" />
+    <path d="M22 5h-4" />
+    <path d="M4 17v2" />
+    <path d="M5 18H3" />
+  </svg>
 );
 
 export const WhatsAppConnectionCard = ({ wahaStatus, isComplete }: any) => (

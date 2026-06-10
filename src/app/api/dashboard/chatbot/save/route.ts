@@ -30,7 +30,7 @@ export async function POST(req: Request) {
       profile = await prisma.businessProfile.update({
         where: { id: profile.id },
         data: {
-          businessName: data.businessName,
+          businessName: data.businessName !== undefined ? data.businessName : profile.businessName,
           businessIndustry: data.businessIndustry,
           businessDescription: data.businessDescription || '',
           address: data.address || '',
@@ -45,7 +45,7 @@ export async function POST(req: Request) {
       profile = await prisma.businessProfile.create({
         data: {
           userId,
-          businessName: data.businessName,
+          businessName: data.businessName || 'Bisnis Baru',
           businessIndustry: data.businessIndustry,
           businessDescription: data.businessDescription || '',
           address: data.address || '',
@@ -129,34 +129,35 @@ export async function POST(req: Request) {
       await prisma.businessBotConfig.update({
         where: { userId },
         data: {
-          businessName: data.businessName,
-          businessDescription: data.businessDescription || '',
-          operationalHours: data.openingHours || '08:00 - 17:00',
-          address: data.address || '',
-          humanAdminContact: data.adminPhone || '',
-          tone: data.toneStyle,
-          languageStyle: data.language === 'en' ? 'id-en' : 'id',
-          productsOrServices: data.productsOrServices || '',
-          pricingInfo: data.pricingInfo || '',
-          paymentMethods: data.paymentMethods || '',
-          deliveryMethods: data.deliveryMethods || '',
-          serviceArea: data.serviceArea || '',
-          catalogUrl: data.catalogUrl || '',
-          mapsUrl: data.mapsUrl || '',
-          customFAQ: data.customFAQ || '',
-          ...(data.templateId && { templateId: data.templateId, isBotActive: true }),
+          businessName: data.businessName !== undefined ? data.businessName : botConfig.businessName,
+          businessDescription: data.businessDescription !== undefined ? data.businessDescription : botConfig.businessDescription,
+          operationalHours: data.openingHours !== undefined ? data.openingHours : botConfig.operationalHours,
+          address: data.address !== undefined ? data.address : botConfig.address,
+          humanAdminContact: data.adminPhone !== undefined ? data.adminPhone : botConfig.humanAdminContact,
+          tone: data.toneStyle !== undefined ? data.toneStyle : botConfig.tone,
+          languageStyle: data.language !== undefined ? (data.language === 'en' ? 'id-en' : 'id') : botConfig.languageStyle,
+          productsOrServices: data.productsOrServices !== undefined ? data.productsOrServices : botConfig.productsOrServices,
+          pricingInfo: data.pricingInfo !== undefined ? data.pricingInfo : botConfig.pricingInfo,
+          paymentMethods: data.paymentMethods !== undefined ? data.paymentMethods : botConfig.paymentMethods,
+          deliveryMethods: data.deliveryMethods !== undefined ? data.deliveryMethods : botConfig.deliveryMethods,
+          serviceArea: data.serviceArea !== undefined ? data.serviceArea : botConfig.serviceArea,
+          catalogUrl: data.catalogUrl !== undefined ? data.catalogUrl : botConfig.catalogUrl,
+          mapsUrl: data.mapsUrl !== undefined ? data.mapsUrl : botConfig.mapsUrl,
+          customFAQ: data.customFAQ !== undefined ? data.customFAQ : botConfig.customFAQ,
+          templateId: data.templateId || null,
+          isBotActive: true,
         }
       });
-    } else if (data.templateId) {
+    } else {
       await prisma.businessBotConfig.create({
         data: {
           userId,
-          templateId: data.templateId,
-          businessName: data.businessName,
-          businessDescription: data.businessDescription || '',
-          operationalHours: data.openingHours || '08:00 - 17:00',
-          address: data.address || '',
-          humanAdminContact: data.adminPhone || '',
+          templateId: data.templateId || null,
+          businessName: data.businessName || profile.businessName,
+          businessDescription: data.businessDescription || profile.businessDescription || '',
+          operationalHours: data.openingHours || profile.openingHours || '08:00 - 17:00',
+          address: data.address || profile.address || '',
+          humanAdminContact: data.adminPhone || profile.adminPhone || '',
           tone: data.toneStyle,
           languageStyle: data.language === 'en' ? 'id-en' : 'id',
           productsOrServices: data.productsOrServices || '',

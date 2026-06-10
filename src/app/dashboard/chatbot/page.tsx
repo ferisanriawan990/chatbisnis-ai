@@ -323,21 +323,27 @@ export default function ChatbotDashboard() {
           
           <AIStyleForm form={form} handleChange={handleChange} activeModelDisplay={activeModelDisplay} />
 
-          <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-4">
-              {stepsComplete.knowledge ? <CheckCircle2 className="w-8 h-8 text-emerald-400 opacity-20" /> : <span className="text-4xl font-black text-slate-100">3</span>}
+          <section className="bg-white/80 backdrop-blur-xl p-8 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60 hover:shadow-xl hover:shadow-blue-100/50 transition-all duration-500 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-blue-100/50 to-transparent rounded-bl-full pointer-events-none transition-transform duration-500 group-hover:scale-110"></div>
+            <div className="absolute top-0 right-0 p-6 z-10">
+              {stepsComplete.knowledge ? <CheckCircle2 className="w-10 h-10 text-emerald-400 drop-shadow-md" /> : <span className="text-5xl font-black text-slate-100 drop-shadow-sm">3</span>}
             </div>
-            <div className="flex justify-between items-center mb-4 relative z-10">
-              <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2"><Database className="w-5 h-5 text-blue-500" /> Step 3: Knowledge Base (Opsional)</h2>
-              <Link href="/api/dashboard/knowledge/template" className="text-blue-600 font-medium hover:underline flex items-center gap-1">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 relative z-10 gap-3">
+              <h2 className="text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-600 flex items-center gap-3">
+                <div className="p-2.5 bg-blue-50 rounded-xl">
+                  <Database className="w-6 h-6 text-blue-600" />
+                </div>
+                Step 3: Knowledge Base <span className="text-xs bg-slate-200 text-slate-600 px-2 py-1 rounded-full font-bold ml-2 text-black">Opsional</span>
+              </h2>
+              <Link href="/api/dashboard/knowledge/template" className="px-4 py-2 bg-blue-50 text-blue-600 font-bold hover:bg-blue-100 rounded-xl flex items-center gap-2 transition-colors border border-blue-100 shadow-sm text-sm">
                 <Download className="w-4 h-4" /> Template Excel
               </Link>
             </div>
             
-            <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100 mb-6 relative z-10">
-              <h3 className="font-semibold text-sm mb-2 text-slate-800">Template Bot Utama</h3>
-              <p className="text-xs text-slate-500 mb-3">Pilih Template Usaha yang akan menjadi dasar pengetahuan AI sebelum membaca Knowledge Base khusus.</p>
-              <select name="templateId" value={form.templateId || ''} onChange={handleChange} className="w-full p-2.5 bg-white border border-slate-200 rounded-lg outline-none text-sm">
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-2xl border border-blue-100/50 mb-6 relative z-10 shadow-sm">
+              <h3 className="font-extrabold text-sm mb-2 text-blue-900">Template Bot Utama</h3>
+              <p className="text-xs text-blue-700/80 mb-4 font-medium">Pilih Template Usaha yang akan menjadi dasar pengetahuan AI sebelum membaca Knowledge Base khusus.</p>
+              <select name="templateId" value={form.templateId || ''} onChange={handleChange} className="w-full p-3.5 bg-white border border-blue-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none text-sm font-semibold text-slate-700 shadow-sm appearance-none cursor-pointer">
                 <option value="">-- Pilih Template Usaha --</option>
                 {templates.map(t => (
                   <option key={t.id} value={t.id}>{t.name}</option>
@@ -345,115 +351,121 @@ export default function ChatbotDashboard() {
               </select>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 relative z-10 mb-8">
               {/* Card Upload File */}
-              <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 flex flex-col items-center justify-center text-center hover:bg-slate-100 transition-colors cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+              <div className="bg-white p-6 rounded-2xl border-2 border-dashed border-blue-200 flex flex-col items-center justify-center text-center hover:bg-blue-50/50 hover:border-blue-400 transition-all cursor-pointer shadow-sm group/upload" onClick={() => fileInputRef.current?.click()}>
                 <input type="file" ref={fileInputRef} className="hidden" accept=".xlsx,.xls,.csv,.pdf,.docx" onChange={handleUpload} disabled={uploading} />
-                <UploadCloud className={`w-10 h-10 text-blue-500 mb-3 ${uploading ? 'animate-bounce' : ''}`} />
-                <h3 className="font-semibold text-sm text-slate-800 mb-1">{uploading ? 'Sedang Memproses...' : 'Upload Dokumen Knowledge'}</h3>
-                <p className="text-xs text-slate-500">Mendukung Excel, CSV, PDF, DOCX (Max 10MB). File panjang akan otomatis dipecah.</p>
+                <div className={`p-4 bg-blue-50 rounded-full mb-4 group-hover/upload:scale-110 transition-transform ${uploading ? 'animate-bounce' : ''}`}>
+                  <UploadCloud className="w-8 h-8 text-blue-600" />
+                </div>
+                <h3 className="font-extrabold text-sm text-slate-800 mb-2">{uploading ? 'Sedang Memproses...' : 'Upload Dokumen Knowledge'}</h3>
+                <p className="text-xs text-slate-500 font-medium px-4">Excel, CSV, PDF, DOCX (Max 10MB). File panjang akan otomatis dipecah.</p>
               </div>
 
               {/* Card Input Manual */}
-              <div className="bg-slate-50 p-5 rounded-xl border border-slate-200">
-                <h3 className="font-semibold text-sm mb-3 text-slate-800">Atau Tambah Data Satuan</h3>
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                <h3 className="font-extrabold text-sm mb-4 text-slate-800 flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-indigo-500"></div> Tambah Data Satuan
+                </h3>
                 <select 
                   value={manualForm.type} 
                   onChange={(e) => setManualForm(p => ({ ...p, type: e.target.value }))}
-                  className="w-full mb-3 p-2 text-sm border border-slate-300 rounded outline-none focus:border-blue-500"
+                  className="w-full mb-4 p-3 text-sm font-semibold text-slate-700 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 appearance-none cursor-pointer"
                 >
-                  <option value="qa">Tanya Jawab (Q&A)</option>
-                  <option value="product">Data Produk</option>
-                  <option value="google_sheet">Import Google Sheet (Sekali Tarik)</option>
+                  <option value="qa">💬 Tanya Jawab (Q&A)</option>
+                  <option value="product">📦 Data Produk</option>
+                  <option value="google_sheet">📊 Import Google Sheet (Sekali Tarik)</option>
                 </select>
                 
                 {manualForm.type === 'qa' ? (
-                  <div className="space-y-2">
-                    <input placeholder="Pertanyaan (Cth: Jam operasional?)" className="w-full p-2 text-sm border border-slate-300 rounded outline-none focus:border-blue-500" value={manualForm.question} onChange={e => setManualForm(p => ({ ...p, question: e.target.value }))} />
-                    <textarea placeholder="Jawaban (Cth: Buka jam 8 pagi)" className="w-full p-2 text-sm border border-slate-300 rounded outline-none focus:border-blue-500" value={manualForm.answer} onChange={e => setManualForm(p => ({ ...p, answer: e.target.value }))}></textarea>
-                    <button onClick={handleManualSubmit} className="mt-2 w-full bg-blue-600 text-white py-2 rounded text-sm font-semibold hover:bg-blue-700 transition">Tambah Q&A</button>
+                  <div className="space-y-3">
+                    <input placeholder="Pertanyaan (Cth: Jam operasional?)" className="w-full p-3 text-sm font-medium border border-slate-200 rounded-xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 bg-slate-50 focus:bg-white transition-all" value={manualForm.question} onChange={e => setManualForm(p => ({ ...p, question: e.target.value }))} />
+                    <textarea placeholder="Jawaban (Cth: Buka jam 8 pagi)" rows={2} className="w-full p-3 text-sm font-medium border border-slate-200 rounded-xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 bg-slate-50 focus:bg-white transition-all resize-none" value={manualForm.answer} onChange={e => setManualForm(p => ({ ...p, answer: e.target.value }))}></textarea>
+                    <button onClick={handleManualSubmit} className="mt-2 w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-xl text-sm font-bold shadow-md shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/40 hover:-translate-y-0.5 transition-all">Tambah Q&A</button>
                   </div>
                 ) : manualForm.type === 'product' ? (
-                  <div className="space-y-2 grid grid-cols-2 gap-2">
-                    <input placeholder="Nama Produk" className="col-span-2 p-2 text-sm border border-slate-300 rounded outline-none focus:border-blue-500" value={manualForm.productName} onChange={e => setManualForm(p => ({ ...p, productName: e.target.value }))} />
-                    <input placeholder="Kategori" className="p-2 text-sm border border-slate-300 rounded outline-none focus:border-blue-500" value={manualForm.productCategory} onChange={e => setManualForm(p => ({ ...p, productCategory: e.target.value }))} />
-                    <input type="number" placeholder="Harga" className="p-2 text-sm border border-slate-300 rounded outline-none focus:border-blue-500" value={manualForm.price || ''} onChange={e => setManualForm(p => ({ ...p, price: Number(e.target.value) }))} />
-                    <textarea placeholder="Deskripsi/Spesifikasi singkat..." className="col-span-2 p-2 text-sm border border-slate-300 rounded outline-none focus:border-blue-500" value={manualForm.description} onChange={e => setManualForm(p => ({ ...p, description: e.target.value }))}></textarea>
-                    <button onClick={handleManualSubmit} className="mt-2 col-span-2 w-full bg-blue-600 text-white py-2 rounded text-sm font-semibold hover:bg-blue-700 transition">Tambah Produk</button>
+                  <div className="space-y-3 grid grid-cols-2 gap-x-3 gap-y-0">
+                    <input placeholder="Nama Produk" className="col-span-2 mb-3 p-3 text-sm font-medium border border-slate-200 rounded-xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 bg-slate-50 focus:bg-white transition-all" value={manualForm.productName} onChange={e => setManualForm(p => ({ ...p, productName: e.target.value }))} />
+                    <input placeholder="Kategori" className="mb-3 p-3 text-sm font-medium border border-slate-200 rounded-xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 bg-slate-50 focus:bg-white transition-all" value={manualForm.productCategory} onChange={e => setManualForm(p => ({ ...p, productCategory: e.target.value }))} />
+                    <input type="number" placeholder="Harga" className="mb-3 p-3 text-sm font-medium border border-slate-200 rounded-xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 bg-slate-50 focus:bg-white transition-all" value={manualForm.price || ''} onChange={e => setManualForm(p => ({ ...p, price: Number(e.target.value) }))} />
+                    <textarea placeholder="Deskripsi/Spesifikasi singkat..." rows={2} className="col-span-2 mb-3 p-3 text-sm font-medium border border-slate-200 rounded-xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 bg-slate-50 focus:bg-white transition-all resize-none" value={manualForm.description} onChange={e => setManualForm(p => ({ ...p, description: e.target.value }))}></textarea>
+                    <button onClick={handleManualSubmit} className="col-span-2 w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-xl text-sm font-bold shadow-md shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/40 hover:-translate-y-0.5 transition-all">Tambah Produk</button>
                   </div>
                 ) : (
-                  <div className="space-y-2">
-                    <input placeholder="Link Google Sheet Publik" className="w-full p-2 text-sm border border-slate-300 rounded outline-none focus:border-emerald-500" value={googleSheetUrl} onChange={e => setGoogleSheetUrl(e.target.value)} />
-                    <div className="flex items-start gap-2 bg-amber-50 p-2 rounded border border-amber-200">
-                      <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
-                      <p className="text-xs text-amber-800">Jika data di Sheet berubah, klik &quot;Sync Ulang&quot; pada tabel di bawah.</p>
+                  <div className="space-y-3">
+                    <input placeholder="Link Google Sheet Publik" className="w-full mb-3 p-3 text-sm font-medium border border-slate-200 rounded-xl outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 bg-slate-50 focus:bg-white transition-all" value={googleSheetUrl} onChange={e => setGoogleSheetUrl(e.target.value)} />
+                    <div className="flex items-start gap-3 bg-amber-50/80 p-3 rounded-xl border border-amber-200/60 mb-3">
+                      <AlertCircle className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" />
+                      <p className="text-[11px] font-medium text-amber-800/90 leading-relaxed">Jika data di Sheet berubah di masa depan, klik tombol &quot;Sync Ulang&quot; pada tabel di bawah untuk memperbarui data ke AI.</p>
                     </div>
-                    <button onClick={handleGoogleSheetSubmit} className="mt-2 w-full bg-emerald-600 text-white py-2 rounded text-sm font-semibold hover:bg-emerald-700 transition">Mulai Import Data</button>
+                    <button onClick={handleGoogleSheetSubmit} className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white py-3 rounded-xl text-sm font-bold shadow-md shadow-emerald-500/20 hover:shadow-lg hover:shadow-emerald-500/40 hover:-translate-y-0.5 transition-all">Mulai Import Data</button>
                   </div>
                 )}
               </div>
             </div>
 
-            <div className="overflow-x-auto relative z-10">
-              <table className="w-full text-sm text-left text-slate-600">
-                <thead className="text-xs text-slate-500 uppercase bg-slate-50">
-                  <tr>
-                    <th className="px-4 py-3 rounded-tl-lg">Nama / Sumber</th>
-                    <th className="px-4 py-3">Tipe</th>
-                    <th className="px-4 py-3">Items</th>
-                    <th className="px-4 py-3 rounded-tr-lg text-right">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {knowledgeSources.length === 0 ? (
-                    <tr><td colSpan={4} className="text-center py-4 text-slate-400">Belum ada data knowledge</td></tr>
-                  ) : (
-                    knowledgeSources.map(s => (
-                      <React.Fragment key={s.id}>
-                        <tr className="border-b border-slate-100">
-                          <td className="px-4 py-3 font-medium">
-                            {s.title}
-                            {s.status === 'failed' && (
-                              <p className="text-xs text-red-500 mt-1">Gagal Sinkronisasi: {s.errorMessage || 'Terjadi kesalahan'}</p>
-                            )}
-                          </td>
-                          <td className="px-4 py-3"><span className="bg-slate-100 text-slate-700 px-2 py-1 rounded text-xs uppercase">{s.type}</span></td>
-                          <td className="px-4 py-3">{s.itemCount}</td>
-                          <td className="px-4 py-3 text-right">
-                            {s.type === 'google_sheet' && s.googleSheetUrl && (
-                              <button onClick={() => handleSyncGoogleSheet(s.id, s.googleSheetUrl)} disabled={syncingId === s.id} className="text-emerald-600 hover:text-emerald-800 mr-3 text-xs font-semibold disabled:opacity-50">
-                                {syncingId === s.id ? 'Syncing...' : 'Sync Ulang'}
-                              </button>
-                            )}
-                            <button onClick={() => handleDeleteKnowledge(s.id)} className="text-red-500 hover:text-red-700"><Trash2 className="w-4 h-4 inline" /></button>
-                          </td>
-                        </tr>
-                        {s.knowledgeItems && s.knowledgeItems.length > 0 && (
-                          <tr className="border-b border-slate-200 bg-slate-50">
-                            <td colSpan={4} className="px-4 py-3">
-                              <p className="text-xs font-bold text-slate-500 mb-2">Preview 5 Data Teratas:</p>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                                {s.knowledgeItems.map((item: any) => (
-                                  <div key={item.id} className="text-xs bg-white p-2 border border-slate-200 rounded">
-                                    <span className="font-semibold text-slate-700 block truncate">
-                                      {item.productName || item.question || 'Tanpa Nama'}
-                                    </span>
-                                    <span className="text-slate-500 line-clamp-1">
-                                      {item.price ? `Rp ${item.price.toLocaleString('id-ID')} - ` : ''}
-                                      {item.answer || item.description || ''}
-                                    </span>
-                                  </div>
-                                ))}
-                              </div>
+            <div className="overflow-hidden bg-white border border-slate-200 rounded-2xl relative z-10 shadow-sm">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm text-left text-slate-600">
+                  <thead className="text-[11px] font-extrabold text-slate-500 uppercase bg-slate-50/80 border-b border-slate-200 tracking-wider">
+                    <tr>
+                      <th className="px-5 py-4">Nama / Sumber Data</th>
+                      <th className="px-5 py-4">Tipe</th>
+                      <th className="px-5 py-4">Jumlah Item</th>
+                      <th className="px-5 py-4 text-right">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {knowledgeSources.length === 0 ? (
+                      <tr><td colSpan={4} className="text-center py-10 text-slate-400 font-medium">Belum ada data knowledge base. <br/><span className="text-xs">AI akan membalas menggunakan Profil Bisnis di atas.</span></td></tr>
+                    ) : (
+                      knowledgeSources.map(s => (
+                        <React.Fragment key={s.id}>
+                          <tr className="hover:bg-slate-50/50 transition-colors">
+                            <td className="px-5 py-4 font-bold text-slate-800">
+                              {s.title}
+                              {s.status === 'failed' && (
+                                <p className="text-[10px] text-red-500 mt-1 font-medium bg-red-50 inline-block px-2 py-0.5 rounded-full">Gagal Sinkronisasi: {s.errorMessage || 'Terjadi kesalahan'}</p>
+                              )}
+                            </td>
+                            <td className="px-5 py-4"><span className="bg-slate-100 border border-slate-200 text-slate-700 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide shadow-sm">{s.type}</span></td>
+                            <td className="px-5 py-4 font-semibold">{s.itemCount}</td>
+                            <td className="px-5 py-4 text-right">
+                              {s.type === 'google_sheet' && s.googleSheetUrl && (
+                                <button onClick={() => handleSyncGoogleSheet(s.id, s.googleSheetUrl)} disabled={syncingId === s.id} className="text-emerald-600 hover:text-white hover:bg-emerald-500 mr-3 text-xs font-bold px-3 py-1.5 rounded-lg border border-emerald-200 hover:border-emerald-500 transition-all disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-emerald-600 shadow-sm">
+                                  {syncingId === s.id ? 'Syncing...' : 'Sync Ulang'}
+                                </button>
+                              )}
+                              <button onClick={() => handleDeleteKnowledge(s.id)} className="text-red-500 hover:text-white hover:bg-red-500 p-1.5 rounded-lg transition-all border border-transparent hover:border-red-600 shadow-sm hover:shadow-red-500/20"><Trash2 className="w-4 h-4 inline" /></button>
                             </td>
                           </tr>
-                        )}
-                      </React.Fragment>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                          {s.knowledgeItems && s.knowledgeItems.length > 0 && (
+                            <tr className="bg-slate-50/80 border-t-0">
+                              <td colSpan={4} className="px-5 py-4">
+                                <p className="text-[10px] font-extrabold text-slate-400 mb-3 uppercase tracking-wider">Preview 5 Data Teratas:</p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                                  {s.knowledgeItems.map((item: any) => (
+                                    <div key={item.id} className="bg-white p-3 border border-slate-200 rounded-xl shadow-sm hover:shadow-md hover:border-blue-200 transition-all">
+                                      <span className="font-bold text-[13px] text-slate-800 block truncate mb-1">
+                                        {item.productName || item.question || 'Tanpa Nama'}
+                                      </span>
+                                      <span className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                                        {item.price ? <span className="text-emerald-600 font-bold bg-emerald-50 px-1 rounded mr-1">Rp {item.price.toLocaleString('id-ID')}</span> : ''}
+                                        {item.answer || item.description || ''}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </section>
 

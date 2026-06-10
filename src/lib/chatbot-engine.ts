@@ -12,6 +12,7 @@ export interface ChatbotEngineParams {
   customerPhone: string;
   customerName?: string;
   messageIn: string;
+  imageUrl?: string;
   isTest?: boolean;
 }
 
@@ -61,9 +62,26 @@ export class ChatbotEngine {
 
     // Deterministic reply has been removed to ensure all responses follow AI settings.
 
+    // 6. Retrieve Chat History
+    const chatHistoryLogs = await prisma.chatLog.findMany({
+      where: {
+        chatbotSettingId: chatbotSetting.id,
+        customerPhone: params.customerPhone,
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 6, // Ambil 6 pesan terakhir
+    });
+    
+    // Format history: pesan user menjadi 'user', balasan AI menjadi 'assistant'
+    const chatHistory: { role: string; content: string }[] = [];
+    chatHistoryLogs.reverse().forEach(log => {
+      if (log.messageIn) chatHistory.push({ role: 'user', content: log.messageIn });
+      if (log.messageOut) chatHistory.push({ role: 'assistant', content: log.messageOut });
+    });
+
     // 7. Build Prompt & Call AI
     const systemPrompt = this.buildPrompt(chatbotSetting, botConfig, profile, matchedItems);
-    const { replyMessage, tokenUsage, usedCatalogUrl, promptSource, aiModelUsed } = await this.callAI(chatbotSetting, activePlan, systemPrompt, sanitizedMessageIn, isTest);
+    const { replyMessage, tokenUsage, usedCatalogUrl, promptSource, aiModelUsed } = await this.callAI(chatbotSetting, activePlan, systemPrompt, sanitizedMessageIn, isTest, chatHistory, params.imageUrl);
 
     // 8. Record Usage & Log
     if (!isTest) {
@@ -248,14 +266,16 @@ export class ChatbotEngine {
         mapsUrl: botConfig?.mapsUrl,
       },
       customFAQ,
-      tone: botConfig?.tone || chatbotSetting.toneStyle,
-      languageStyle: botConfig?.languageStyle || chatbotSetting.language,
+      tone: botConfig?.tone || chatbotSetting.toneStyle || 'Profesional',
+      languageStyle: botConfig?.languageStyle || chatbotSetting.language || 'id',
       botMode: botConfig?.botMode || 'auto_reply',
       relevantKnowledge,
+      botName: chatbotSetting.botName || 'AI Assistant',
+      useEmoji: chatbotSetting.useEmoji ?? true,
     });
   }
 
-  private static async callAI(chatbotSetting: any, activePlan: any, systemPrompt: string, messageIn: string, isTest: boolean) {
+  private static async callAI(chatbotSetting: any, activePlan: any, systemPrompt: string, messageIn: string, isTest: boolean, chatHistory: { role: string; content: string }[] = [], imageUrl?: string) {
     let aiApiKey = chatbotSetting.aiApiKeyEncrypted ? decrypt(chatbotSetting.aiApiKeyEncrypted) : '';
     let aiModel = chatbotSetting.aiModel || 'gpt-4o-mini';
 
@@ -285,6 +305,8 @@ export class ChatbotEngine {
       const aiResult = await AIService.generateReply({
         systemPrompt: finalSystemPrompt,
         userMessage: messageIn,
+        imageUrl,
+        chatHistory,
         provider: chatbotSetting.aiProvider,
         model: aiModel,
         apiKey: aiApiKey,

@@ -1,6 +1,8 @@
 interface GenerateConfig {
   systemPrompt: string;
   userMessage: string;
+  imageUrl?: string;
+  chatHistory?: { role: string; content: string }[];
   provider: string;
   model: string;
   apiKey: string;
@@ -44,7 +46,16 @@ export class AIService {
           model: config.model || 'gpt-4o-mini',
           messages: [
             { role: 'system', content: config.systemPrompt },
-            { role: 'user', content: config.userMessage },
+            ...(config.chatHistory || []),
+            { 
+              role: 'user', 
+              content: config.imageUrl 
+                ? [
+                    { type: 'text', text: config.userMessage || 'Tolong jelaskan gambar ini berdasarkan konteks bisnis kita.' },
+                    { type: 'image_url', image_url: { url: config.imageUrl } }
+                  ]
+                : config.userMessage 
+            },
           ],
           max_tokens: config.maxTokens || 1500,
           temperature: 0.7,
