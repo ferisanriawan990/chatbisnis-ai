@@ -15,6 +15,9 @@ interface BusinessData {
   humanAdminContact?: string | null;
   catalogUrl?: string | null;
   mapsUrl?: string | null;
+  websiteUrl?: string | null;
+  instagramUrl?: string | null;
+  marketplaceUrl?: string | null;
 }
 
 interface BuildPromptParams {
@@ -95,6 +98,9 @@ Tujuan utama:
   if (bd.paymentMethods) dataLines.push(`- Metode Pembayaran: ${bd.paymentMethods}`);
   if (bd.deliveryMethods) dataLines.push(`- Metode Pengiriman: ${bd.deliveryMethods}`);
   if (bd.humanAdminContact) dataLines.push(`- Kontak Admin: ${bd.humanAdminContact}`);
+  if (bd.websiteUrl) dataLines.push(`- Website: ${bd.websiteUrl}`);
+  if (bd.instagramUrl) dataLines.push(`- Instagram: ${bd.instagramUrl}`);
+  if (bd.marketplaceUrl) dataLines.push(`- Link Marketplace: ${bd.marketplaceUrl}`);
   if (bd.mapsUrl) dataLines.push(`- Google Maps: ${bd.mapsUrl}`);
   if (bd.productsOrServices) dataLines.push(`- Produk/Layanan: ${bd.productsOrServices}`);
   if (bd.pricingInfo) dataLines.push(`- Info Harga: ${bd.pricingInfo}`);
