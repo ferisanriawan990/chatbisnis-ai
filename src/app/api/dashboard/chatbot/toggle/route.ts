@@ -31,9 +31,7 @@ export async function POST() {
       const knowledgeCount = await prisma.knowledgeItem.count({
         where: { userId, isActive: true },
       });
-      if (knowledgeCount === 0) {
-        missing.push('Minimal harus ada 1 Data Knowledge aktif');
-      }
+      // Knowledge base is now optional, as bots can function using just Templates and Business Profiles.
 
       const waSession = await prisma.whatsAppSession.findFirst({
         where: { userId, chatbotSettingId: chatbot.id },

@@ -201,7 +201,12 @@ export async function parseExcel(buffer: Buffer): Promise<ParsedItem[]> {
 
 export async function parseCsv(buffer: Buffer): Promise<ParsedItem[]> {
   try {
-    const text = buffer.toString('utf-8');
+    const rawText = buffer.toString('utf-8');
+    // Remove lines that are entirely empty or only contain commas/whitespace
+    const lines = rawText.split('\n');
+    const validLines = lines.filter(line => line.replace(/,/g, '').trim().length > 0);
+    const text = validLines.join('\n');
+
     return new Promise((resolve, reject) => {
       Papa.parse(text, {
         header: true,

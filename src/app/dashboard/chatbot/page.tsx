@@ -260,7 +260,7 @@ export default function ChatbotDashboard() {
 
   const stepsComplete = {
     profile: !!form.businessName,
-    knowledge: knowledgeSources.length > 0,
+    knowledge: true, // Knowledge base is now optional
     waha: wahaStatus === 'connected'
   };
 
@@ -302,7 +302,7 @@ export default function ChatbotDashboard() {
               {stepsComplete.knowledge ? <CheckCircle2 className="w-8 h-8 text-emerald-400 opacity-20" /> : <span className="text-4xl font-black text-slate-100">3</span>}
             </div>
             <div className="flex justify-between items-center mb-4 relative z-10">
-              <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2"><Database className="w-5 h-5 text-blue-500" /> Step 3: Knowledge Base *</h2>
+              <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2"><Database className="w-5 h-5 text-blue-500" /> Step 3: Knowledge Base (Opsional)</h2>
               <Link href="/api/dashboard/knowledge/template" className="text-blue-600 font-medium hover:underline flex items-center gap-1">
                 <Download className="w-4 h-4" /> Template Excel
               </Link>
