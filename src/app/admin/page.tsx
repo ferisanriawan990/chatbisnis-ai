@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Users, MessageSquare, Database, Server } from 'lucide-react';
+import { Users, MessageSquare, Database, Server, Activity, Zap, UserCheck, AlertTriangle } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function AdminOverview() {
@@ -28,60 +28,37 @@ export default function AdminOverview() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div>Memuat data overview...</div>;
+  if (loading) return <div className="flex items-center justify-center h-64"><span className="animate-pulse text-indigo-600 font-medium text-lg">Memuat data overview...</span></div>;
+
+  const cards = [
+    { label: 'Total Users', value: stats.totalUsers, icon: Users, color: 'blue', bg: 'bg-blue-50', text: 'text-blue-600' },
+    { label: 'Bot Aktif', value: stats.activeUsers, icon: UserCheck, color: 'emerald', bg: 'bg-emerald-50', text: 'text-emerald-600' },
+    { label: 'Chat Hari Ini', value: stats.totalChatsToday, icon: MessageSquare, color: 'indigo', bg: 'bg-indigo-50', text: 'text-indigo-600' },
+    { label: 'Chat Bulan Ini', value: stats.totalChatsThisMonth, icon: Activity, color: 'purple', bg: 'bg-purple-50', text: 'text-purple-600' },
+    { label: 'Total Leads', value: stats.totalLeads, icon: Database, color: 'cyan', bg: 'bg-cyan-50', text: 'text-cyan-600' },
+    { label: 'WAHA Connected', value: stats.activeWahaSessions, icon: Server, color: 'emerald', bg: 'bg-emerald-50', text: 'text-emerald-600' },
+    { label: 'WAHA Failed', value: stats.failedWahaSessions, icon: AlertTriangle, color: 'amber', bg: 'bg-amber-50', text: 'text-amber-600' },
+    { label: 'AI Tokens (Bulan Ini)', value: stats.totalAiUsage.toLocaleString(), icon: Zap, color: 'violet', bg: 'bg-violet-50', text: 'text-violet-600' },
+  ];
 
   return (
     <div>
       <h1 className="text-2xl font-bold text-slate-900 mb-6">Overview</h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-          <div className="flex items-center gap-4">
-            <div className="bg-blue-100 p-3 rounded-lg text-blue-600">
-              <Users className="w-6 h-6" />
-            </div>
-            <div>
-              <p className="text-sm text-slate-500 font-medium">Total Users</p>
-              <h3 className="text-2xl font-bold text-slate-900">{stats.totalUsers}</h3>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-          <div className="flex items-center gap-4">
-            <div className="bg-emerald-100 p-3 rounded-lg text-emerald-600">
-              <MessageSquare className="w-6 h-6" />
-            </div>
-            <div>
-              <p className="text-sm text-slate-500 font-medium">Chats Today</p>
-              <h3 className="text-2xl font-bold text-slate-900">{stats.totalChatsToday}</h3>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        {cards.map((card) => (
+          <div key={card.label} className="bg-white p-5 rounded-xl shadow-sm border border-slate-100 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+            <div className="flex items-center gap-4">
+              <div className={`${card.bg} p-3 rounded-xl ${card.text}`}>
+                <card.icon className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-sm text-slate-500 font-medium">{card.label}</p>
+                <h3 className="text-2xl font-bold text-slate-900">{card.value}</h3>
+              </div>
             </div>
           </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-          <div className="flex items-center gap-4">
-            <div className="bg-purple-100 p-3 rounded-lg text-purple-600">
-              <Database className="w-6 h-6" />
-            </div>
-            <div>
-              <p className="text-sm text-slate-500 font-medium">Total Leads</p>
-              <h3 className="text-2xl font-bold text-slate-900">{stats.totalLeads}</h3>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-          <div className="flex items-center gap-4">
-            <div className="bg-amber-100 p-3 rounded-lg text-amber-600">
-              <Server className="w-6 h-6" />
-            </div>
-            <div>
-              <p className="text-sm text-slate-500 font-medium">Active WAHA Sessions</p>
-              <h3 className="text-2xl font-bold text-slate-900">{stats.activeWahaSessions}</h3>
-            </div>
-          </div>
-        </div>
+        ))}
       </div>
     </div>
   );

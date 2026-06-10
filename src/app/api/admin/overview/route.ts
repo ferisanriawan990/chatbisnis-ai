@@ -9,11 +9,13 @@ export async function GET() {
 
     const [
       totalUsers,
+      activeUsers,
       totalLeads,
       activeWahaSessions,
       failedWahaSessions,
     ] = await Promise.all([
       prisma.user.count(),
+      prisma.chatbotSetting.count({ where: { isActive: true } }),
       prisma.lead.count(),
       prisma.whatsAppSession.count({ where: { status: 'connected' } }),
       prisma.whatsAppSession.count({ where: { status: 'failed' } }),
@@ -36,7 +38,7 @@ export async function GET() {
 
     return NextResponse.json({
       totalUsers,
-      activeUsers: totalUsers, // Simplify for now
+      activeUsers,
       totalChatsToday: chatsToday,
       totalChatsThisMonth: chatsThisMonth,
       totalLeads,

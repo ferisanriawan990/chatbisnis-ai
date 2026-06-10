@@ -169,14 +169,12 @@ export default function DashboardBillingPage() {
                     </li>
                   )}
                 </ul>
-                <a
-                  href="https://wa.me/+6281234567890"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full py-3 rounded-xl font-medium border border-indigo-300 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition-colors text-center text-sm"
+                <button
+                  disabled
+                  className="w-full py-3 rounded-xl font-medium border border-indigo-300 text-indigo-700 bg-indigo-50 cursor-not-allowed text-center text-sm"
                 >
                   Hubungi Admin untuk Upgrade
-                </a>
+                </button>
               </div>
             ))
           )}
