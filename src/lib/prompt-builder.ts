@@ -29,6 +29,8 @@ interface BuildPromptParams {
   outOfHoursMessage?: string;
   botName: string;
   useEmoji: boolean;
+  fallbackMessage: string;
+  maxReplyLength: string;
 }
 
 /**
@@ -53,6 +55,8 @@ export function buildSystemPrompt(params: BuildPromptParams): string {
     outOfHoursMessage,
     botName,
     useEmoji,
+    fallbackMessage,
+    maxReplyLength,
   } = params;
 
   const bd = businessData;
@@ -66,8 +70,8 @@ Jangan menjawab topik di luar bisnis ${bd.businessName}.
 Jika pertanyaan tidak berhubungan dengan bisnis, jawab dengan sopan bahwa kamu hanya dapat membantu terkait layanan/produk ${bd.businessName}.
 
 Gunakan bahasa Indonesia yang natural.
-Jawab singkat, ramah, dan mudah dipahami.
-Jika informasi tidak tersedia di data bisnis, jangan mengarang. Arahkan customer ke admin manusia: ${bd.humanAdminContact || 'hubungi admin kami'}.
+Jawab ramah dan mudah dipahami.
+Jika informasi tidak tersedia di data bisnis, JANGAN MENGARANG JAWABAN. Kamu WAJIB menjawab persis dengan kalimat ini: "${fallbackMessage}".
 
 Tujuan utama:
 1. Menjawab pertanyaan customer
@@ -137,24 +141,30 @@ Tujuan utama:
 
   const emojiRule = useEmoji ? 'Gunakan EMOJI secara natural untuk memberikan kesan bersahabat.' : 'DILARANG KERAS MENGGUNAKAN EMOJI APAPUN DALAM BALASAN.';
 
-  const styleSection = `\n\nGAYA KOMUNIKASI:
+  const lengthMap: Record<string, string> = {
+    pendek: 'Jawab SEPENDEK MUNGKIN. Maksimal 1-2 kalimat yang *to the point*.',
+    sedang: 'Jawab SECUKUPNYA. Buat 2-4 kalimat yang jelas dan padat.',
+    panjang: 'Jawab dengan DETAIL DAN KOMPREHENSIF. Berikan penjelasan yang informatif (beberapa paragraf atau poin-poin jika perlu).',
+  };
+
+  const styleSection = `\n\nGAYA KOMUNIKASI & PANJANG BALASAN:
 ${toneMap[tone.toLowerCase()] || toneMap.sopan}
 ${langMap[languageStyle.toLowerCase()] || langMap.id}
 ATURAN EMOJI: ${emojiRule}
+PANJANG BALASAN: ${lengthMap[maxReplyLength.toLowerCase()] || lengthMap.sedang}
 MODE: ${modeMap[botMode.toLowerCase()] || modeMap.auto_reply}`;
 
   // ── Layer 7: Safety Rules ──
   const safetyRules = `\n\nATURAN KEAMANAN MUTLAK:
 - JANGAN mengarang harga, stok, alamat, promo, warna, spesifikasi atau kebijakan yang tidak ada di data bisnis.
-- Jika data tidak tersedia di KNOWLEDGE BASE, JANGAN MENGARANG. Jawab: "Untuk info ini datanya belum tersedia di sistem, saya bantu teruskan ke admin ya kak."
+- Jika data (seperti stok, harga, dll) tidak ada di data bisnis maupun di KNOWLEDGE BASE, JANGAN MENGARANG. Kamu WAJIB merespons HANYA dengan kalimat ini: "${fallbackMessage}"
 - JANGAN pernah menjawab dengan menyuruh pelanggan mengecek katalog sebagai jawaban utama jika pelanggan bertanya tentang harga atau stok.
 - Link katalog HANYA boleh diberikan sebagai pelengkap di akhir jawaban ("Link katalog juga bisa digunakan untuk melihat foto/detail tambahan: ${bd.catalogUrl || ''}").
 - JANGAN memberi nasihat medis, hukum, finansial, atau keputusan penting.
 - JANGAN menjawab pertanyaan coding, politik, agama sensitif, SARA, dewasa, atau di luar bisnis.
 - JANGAN menyebut dirimu Claude Code, ChatGPT, Gemini, AI developer, atau asisten coding.
 - Selalu bawa percakapan kembali ke produk/layanan bisnis.
-- Untuk sapaan ("halo", "hai", "p"), jawab salam dengan sopan sebagai CS bernama ${botName}, bukan sebagai bot.
-- Jawab maksimal 2-4 kalimat untuk pertanyaan umum, atau gunakan list/bullet point jika membeberkan daftar produk.`;
+- Untuk sapaan ("halo", "hai", "p"), jawab salam dengan sopan sebagai CS bernama ${botName}, bukan sebagai bot.`;
 
   // ── Layer 8: Out of Hours ──
   let oohSection = '';

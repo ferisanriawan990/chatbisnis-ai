@@ -272,6 +272,8 @@ export class ChatbotEngine {
       relevantKnowledge,
       botName: chatbotSetting.botName || 'AI Assistant',
       useEmoji: chatbotSetting.useEmoji ?? true,
+      fallbackMessage: chatbotSetting.fallbackMessage || 'Mohon maaf, saya tidak mengerti.',
+      maxReplyLength: chatbotSetting.maxReplyLength || 'sedang',
     });
   }
 
