@@ -60,6 +60,7 @@ interface NormalizedWahaPayload {
   remote: string;
   hasMedia: boolean;
   messageId: string;
+  mediaUrl?: string;
 }
 
 // ─── Normalizer ───────────────────────────────────────────────────────────────
@@ -106,7 +107,9 @@ function normalizePayload(rawBody: WahaIncomingBody): NormalizedWahaPayload {
     Boolean(mpAny.message?.documentMessage) ||
     Boolean(mpAny.message?.audioMessage);
 
-  return { sessionName, event, fromMe, isGroup, customerPhone, customerName, messageIn, remote, hasMedia, messageId };
+  const mediaUrl = mpAny.media?.url || (rawBody.payload as any)?.media?.url || (rawBody as any).media?.url || '';
+
+  return { sessionName, event, fromMe, isGroup, customerPhone, customerName, messageIn, remote, hasMedia, messageId, mediaUrl };
 }
 
 // ─── Route Handler ────────────────────────────────────────────────────────────
@@ -196,7 +199,13 @@ export async function POST(req: NextRequest) {
         }
         
         if (wahaInstance) {
-          const b64 = await wahaInstance.downloadMediaBase64(actualSessionName, norm.messageId);
+          let b64: string | null = null;
+          if (norm.mediaUrl) {
+            b64 = await wahaInstance.downloadMediaByUrl(norm.mediaUrl);
+          }
+          if (!b64) {
+            b64 = await wahaInstance.downloadMediaBase64(actualSessionName, norm.messageId);
+          }
           if (b64) downloadedImageUrl = b64;
         }
       } catch (err) {

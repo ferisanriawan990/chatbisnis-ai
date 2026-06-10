@@ -180,6 +180,21 @@ export class WAHAService {
     }
   }
 
+  async downloadMediaByUrl(urlStr: string): Promise<string | null> {
+    try {
+      const urlObj = new URL(urlStr);
+      const pathname = urlObj.pathname + urlObj.search;
+      const data = await this.request(pathname);
+      if (data?.mimetype && data?.data) {
+        return `data:${data.mimetype};base64,${data.data}`;
+      }
+      return null;
+    } catch (e) {
+      console.error('Failed to download media by URL:', e);
+      return null;
+    }
+  }
+
   async sendMessage(sessionName: string, phone: string, text: string) {
     return this.request(`/api/sendText`, {
       method: 'POST',
