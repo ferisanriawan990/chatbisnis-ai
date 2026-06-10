@@ -59,17 +59,7 @@ export class ChatbotEngine {
     const matchedItems = await searchKnowledgeItems(sanitizedMessageIn, profile.id);
     const knowledgeMatchCount = matchedItems.length;
 
-    // 6. Try Deterministic Reply
-    const deterministicReply = buildProductAnswer(sanitizedMessageIn, matchedItems);
-    if (deterministicReply) {
-      if (!isTest) {
-        await this.sendLog({ ...params, chatbotSetting, messageOut: deterministicReply, intent, knowledgeMatchCount, aiUsed: 'deterministic', promptSource: 'deterministic' });
-      }
-      return { 
-        reply: deterministicReply, 
-        metadata: { intent, knowledgeMatchCount, promptSource: 'deterministic', usedCatalogUrl: false, usedDeterministicReply: true } 
-      };
-    }
+    // Deterministic reply has been removed to ensure all responses follow AI settings.
 
     // 7. Build Prompt & Call AI
     const systemPrompt = this.buildPrompt(chatbotSetting, botConfig, profile, matchedItems);
