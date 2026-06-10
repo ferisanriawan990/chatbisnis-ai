@@ -184,9 +184,9 @@ export async function POST(req: NextRequest) {
     // Use the actual session name from DB if in core mode (since payload brings 'default')
     const actualSessionName = coreMode ? chatbotSetting.wahaSessionName! : norm.sessionName;
 
-    // Download image if media is present
+    // Download image if media is present and vision is allowed
     let downloadedImageUrl: string | undefined;
-    if (norm.hasMedia && norm.messageId) {
+    if (norm.hasMedia && norm.messageId && chatbotSetting.allowVision) {
       try {
         let wahaInstance: WAHAService | null = null;
         if (chatbotSetting?.wahaServer?.apiKeyEncrypted) {
@@ -204,8 +204,22 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // If message is empty but has media, provide a default caption
-    const finalMessageIn = (!norm.messageIn && norm.hasMedia) ? "Tolong jelaskan gambar ini berdasarkan konteks bisnis kita." : norm.messageIn;
+    // If message is empty but has media:
+    // - If vision is allowed, provide a default caption to ask AI to explain it.
+    // - If vision is not allowed, tell the user the bot can't read images.
+    let finalMessageIn = norm.messageIn;
+    if (!norm.messageIn && norm.hasMedia) {
+      if (chatbotSetting.allowVision) {
+        finalMessageIn = "Tolong jelaskan gambar ini berdasarkan konteks bisnis kita.";
+      } else {
+        // Stop processing and reply directly that image is not supported
+        if (chatbotSetting?.wahaServer?.apiKeyEncrypted) {
+          const waha = WAHAService.fromEncrypted(chatbotSetting.wahaServer.baseUrl, chatbotSetting.wahaServer.apiKeyEncrypted);
+          await waha.sendMessage(actualSessionName, norm.customerPhone, "Maaf, saat ini saya belum bisa melihat atau merespons gambar/foto. Silakan jelaskan dengan teks saja ya.");
+        }
+        return NextResponse.json({ success: true, message: 'Image ignored (allowVision false)' });
+      }
+    }
 
     // Process using Chatbot Engine
     const result = await ChatbotEngine.processMessage({

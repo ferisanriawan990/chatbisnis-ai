@@ -145,6 +145,16 @@ export const AIStyleForm = ({ form, handleChange, activeModelDisplay }: any) => 
             <p className="text-xs text-slate-500 mt-0.5">AI boleh proaktif menawarkan promo atau diskon (pastikan data promo ada di Knowledge Base).</p>
           </div>
         </label>
+        
+        <label className="flex items-center gap-4 p-4 bg-white border border-slate-200 rounded-2xl cursor-pointer hover:bg-blue-50/50 hover:border-blue-200 transition-all shadow-sm group">
+          <div className="relative flex items-center justify-center w-6 h-6">
+            <input type="checkbox" name="allowVision" checked={form.allowVision} onChange={handleChange} className="peer w-6 h-6 text-blue-600 bg-slate-100 border-slate-300 rounded focus:ring-blue-500 cursor-pointer transition-all" />
+          </div>
+          <div className="flex-1">
+            <span className="text-sm font-bold text-slate-800 group-hover:text-blue-700 transition-colors">Izinkan Bot Membaca Gambar (AI Vision) 👁️</span>
+            <p className="text-xs text-slate-500 mt-0.5">AI akan melihat dan membalas berdasarkan foto yang dikirim. Peringatan: Menggunakan lebih banyak token AI.</p>
+          </div>
+        </label>
       </div>
       
       <div className="md:col-span-2 mt-4 p-6 bg-gradient-to-r from-slate-900 via-purple-900 to-slate-900 rounded-2xl border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">

@@ -106,6 +106,7 @@ model ChatbotSetting {
   maxReplyLength        String   @default("sedang")
   allowSelling          Boolean  @default(true)
   allowPromoOffer       Boolean  @default(true)
+  allowVision           Boolean  @default(false)
   fallbackMessage       String   @db.Text
   handoverMessage       String   @db.Text
   handoverKeywords      String   @db.Text

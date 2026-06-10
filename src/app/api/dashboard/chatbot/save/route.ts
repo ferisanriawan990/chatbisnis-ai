@@ -93,6 +93,7 @@ export async function POST(req: Request) {
       maxReplyLength: data.maxReplyLength,
       allowSelling: data.allowSelling,
       allowPromoOffer: data.allowPromoOffer,
+      allowVision: data.allowVision,
       fallbackMessage: data.fallbackMessage,
       handoverMessage: data.handoverMessage,
       handoverKeywords: data.handoverKeywords,

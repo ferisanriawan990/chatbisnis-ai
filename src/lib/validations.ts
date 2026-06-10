@@ -42,6 +42,7 @@ export const chatbotSettingSchema = z.object({
   maxReplyLength: z.enum(['pendek', 'sedang', 'panjang']).default('sedang'),
   allowSelling: z.boolean().default(true),
   allowPromoOffer: z.boolean().default(true),
+  allowVision: z.boolean().default(false),
   fallbackMessage: z.string().max(1000).default('Mohon maaf, saya tidak mengerti.'),
   handoverMessage: z.string().max(1000).default('Baik, saya akan menyambungkan Anda dengan admin kami.'),
   handoverKeywords: z.string().max(500).default('admin, cs, manusia'),
