@@ -70,7 +70,7 @@ export class ChatbotEngine {
         customerPhone: params.customerPhone,
       },
       orderBy: { createdAt: 'desc' },
-      take: chatbotSetting.historyMessageCount || 6, // Menggunakan batas dinamis (Prisma)
+      take: (chatbotSetting as any).historyMessageCount || 6, // Menggunakan batas dinamis (Prisma)
     });
     
     // Format history: pesan user menjadi 'user', balasan AI menjadi 'assistant'
