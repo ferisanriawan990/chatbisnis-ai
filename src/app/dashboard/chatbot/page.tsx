@@ -52,6 +52,7 @@ export default function ChatbotDashboard() {
           setForm({
             ...json.businessProfile,
             ...json.chatbotSetting,
+            aiApiKey: json.chatbotSetting.aiApiKeyEncrypted ? '••••••••' : '',
             actionWebhookUrl: json.chatbotSetting.actionWebhookUrl || '',
             templateId: json.botConfig?.templateId || '',
             productsOrServices: json.botConfig?.productsOrServices || '',
