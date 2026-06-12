@@ -394,9 +394,11 @@ JANGAN gunakan format markdown seperti ![gambar](url). WAJIB gunakan format kuru
       }
 
       return { replyMessage: finalReply, tokenUsage: totalTokens, usedCatalogUrl: Boolean(chatbotSetting.catalogUrl && finalReply.includes(chatbotSetting.catalogUrl)), promptSource: 'ai', aiModelUsed: aiModel };
-    } catch (error) {
+    } catch (error: any) {
       console.error('AI Error:', error);
-      return { replyMessage: chatbotSetting.fallbackMessage, tokenUsage: 0, usedCatalogUrl: false, promptSource: 'error', aiModelUsed: aiModel };
+      const errMsg = error.message || String(error);
+      const debugFallback = `${chatbotSetting.fallbackMessage}\n\n[Sistem Internal: AI Error -> ${errMsg}]`;
+      return { replyMessage: debugFallback, tokenUsage: 0, usedCatalogUrl: false, promptSource: 'error', aiModelUsed: aiModel };
     }
   }
 
