@@ -31,11 +31,7 @@ export class AIService {
         throw new AIServiceError('API Key tidak ditemukan.');
       }
 
-      let baseUrl = process.env.AI_BASE_URL || 'https://ai.flaz.id/v1';
-      if (config.provider === 'OpenAI') {
-        baseUrl = 'https://api.openai.com/v1';
-      }
-      
+      const baseUrl = process.env.AI_BASE_URL || 'https://ai.flaz.id/v1';
       const url = `${baseUrl.replace(/\/$/, '')}/chat/completions`;
 
       const signal = AbortSignal.timeout(30000); // 30s timeout

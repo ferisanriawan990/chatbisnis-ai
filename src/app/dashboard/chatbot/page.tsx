@@ -7,12 +7,6 @@ import toast, { Toaster } from 'react-hot-toast';
 import Link from 'next/link';
 import { BusinessProfileForm, AIStyleForm, WhatsAppConnectionCard, AdvancedRulesPanel, ChatbotPreview, AiIntegrationPanel } from './components';
 
-const AI_MODELS = {
-  'Flaz Cloud': ['gpt-4o-mini', 'gpt-4o', 'gemini-1.5-flash', 'gemini-1.5-pro', 'claude-3-haiku-20240307', 'claude-3-5-sonnet-20240620'],
-  'OpenAI': ['gpt-4o-mini', 'gpt-4o', 'gpt-3.5-turbo'],
-  'Anthropic': ['claude-3-haiku-20240307', 'claude-3-5-sonnet-20240620', 'claude-3-opus-20240229'],
-};
-
 export default function ChatbotDashboard() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -126,13 +120,6 @@ export default function ChatbotDashboard() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
-    
-    if (name === 'aiProvider') {
-      const defaultModel = AI_MODELS[value as keyof typeof AI_MODELS]?.[0] || 'gpt-4o-mini';
-      setForm(prev => ({ ...prev, aiProvider: value, aiModel: defaultModel }));
-      return;
-    }
-
     setForm(prev => ({ ...prev, [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value }));
   };
 

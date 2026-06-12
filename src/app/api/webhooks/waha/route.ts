@@ -189,17 +189,18 @@ export async function POST(req: NextRequest) {
     // Use the actual session name from DB if in core mode (since payload brings 'default')
     const actualSessionName = coreMode ? chatbotSetting.wahaSessionName! : norm.sessionName;
 
+    // Instantiate WAHA Service for sending early replies if needed
+    let wahaInstance: WAHAService | null = null;
+    if (chatbotSetting?.wahaServer?.apiKeyEncrypted) {
+      wahaInstance = WAHAService.fromEncrypted(chatbotSetting.wahaServer.baseUrl, chatbotSetting.wahaServer.apiKeyEncrypted);
+    } else if (chatbotSetting?.wahaApiKeyEncrypted && chatbotSetting?.wahaBaseUrl) {
+      wahaInstance = WAHAService.fromEncrypted(chatbotSetting.wahaBaseUrl, chatbotSetting.wahaApiKeyEncrypted);
+    }
+
     // Download image if media is present and vision is allowed
     let downloadedImageUrl: string | undefined;
     if (norm.hasMedia && norm.messageId && chatbotSetting.allowVision) {
       try {
-        let wahaInstance: WAHAService | null = null;
-        if (chatbotSetting?.wahaServer?.apiKeyEncrypted) {
-          wahaInstance = WAHAService.fromEncrypted(chatbotSetting.wahaServer.baseUrl, chatbotSetting.wahaServer.apiKeyEncrypted);
-        } else if (chatbotSetting?.wahaApiKeyEncrypted && chatbotSetting?.wahaBaseUrl) {
-          wahaInstance = WAHAService.fromEncrypted(chatbotSetting.wahaBaseUrl, chatbotSetting.wahaApiKeyEncrypted);
-        }
-        
         if (wahaInstance) {
           let b64: string | null = null;
           if (norm.mediaUrl) {
@@ -215,18 +216,22 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // If message is empty but has media:
-    // - If vision is allowed, provide a default caption to ask AI to explain it.
-    // - If vision is not allowed, tell the user the bot can't read images.
     let finalMessageIn = norm.messageIn;
-    if (!norm.messageIn && norm.hasMedia) {
+    if (norm.hasMedia) {
       if (chatbotSetting.allowVision) {
-        finalMessageIn = "Tolong jelaskan gambar ini berdasarkan konteks bisnis kita.";
+        if (!downloadedImageUrl) {
+          if (wahaInstance) {
+            await wahaInstance.sendMessage(actualSessionName, norm.customerPhone, "Maaf, gambar belum bisa saya baca. Mohon kirim ulang gambarnya atau jelaskan lewat teks.");
+          }
+          return NextResponse.json({ success: true, message: 'Image download failed, notified user' });
+        }
+        if (!norm.messageIn) {
+          finalMessageIn = "Tolong jelaskan gambar ini berdasarkan konteks bisnis kita.";
+        }
       } else {
         // Stop processing and reply directly that image is not supported
-        if (chatbotSetting?.wahaServer?.apiKeyEncrypted) {
-          const waha = WAHAService.fromEncrypted(chatbotSetting.wahaServer.baseUrl, chatbotSetting.wahaServer.apiKeyEncrypted);
-          await waha.sendMessage(actualSessionName, norm.customerPhone, "Maaf, saat ini saya belum bisa melihat atau merespons gambar/foto. Silakan jelaskan dengan teks saja ya.");
+        if (wahaInstance) {
+          await wahaInstance.sendMessage(actualSessionName, norm.customerPhone, "Maaf, saat ini saya belum bisa melihat atau merespons gambar/foto. Silakan jelaskan dengan teks saja ya.");
         }
         return NextResponse.json({ success: true, message: 'Image ignored (allowVision false)' });
       }

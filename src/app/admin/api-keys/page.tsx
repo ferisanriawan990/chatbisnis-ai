@@ -160,7 +160,7 @@ export default function AdminApiKeysPage() {
           <Key className="w-6 h-6 text-indigo-600" />
           Global API Keys
         </h1>
-        <p className="text-slate-500 mt-1">Kelola API key global untuk layanan eksternal (Flaz AI, OpenAI, dll).</p>
+        <p className="text-slate-500 mt-1">Kelola API key global untuk layanan AI Flaz Cloud.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -179,15 +179,15 @@ export default function AdminApiKeysPage() {
                 onChange={e => setGlobalModel(e.target.value)}
                 className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
               >
-                <option value="gpt-4o-mini">GPT-4o Mini (OpenAI / Flaz)</option>
-                <option value="gpt-4o">GPT-4o (OpenAI / Flaz)</option>
-                <option value="claude-3-haiku-20240307">Claude 3 Haiku (Anthropic / Flaz)</option>
-                <option value="claude-3-5-sonnet-20240620">Claude 3.5 Sonnet (Anthropic / Flaz)</option>
-                <option value="gemini/gemini-1.5-flash">Gemini 1.5 Flash (Google / Flaz)</option>
-                <option value="gemini/gemini-1.5-pro">Gemini 1.5 Pro (Google / Flaz)</option>
-                <option value="gemini/gemini-2.5-flash-lite">Gemini 2.5 Flash Lite (Google / Flaz)</option>
-                <option value="llama-3.1-8b-instruct">Llama 3.1 8B (Meta / Flaz)</option>
-                <option value="llama-3.1-70b-instruct">Llama 3.1 70B (Meta / Flaz)</option>
+                <option value="gpt-4o-mini">GPT-4o Mini</option>
+                <option value="gpt-4o">GPT-4o</option>
+                <option value="claude-3-haiku-20240307">Claude 3 Haiku</option>
+                <option value="claude-3-5-sonnet-20240620">Claude 3.5 Sonnet</option>
+                <option value="gemini/gemini-1.5-flash">Gemini 1.5 Flash</option>
+                <option value="gemini/gemini-1.5-pro">Gemini 1.5 Pro</option>
+                <option value="gemini/gemini-2.5-flash-lite">Gemini 2.5 Flash Lite</option>
+                <option value="llama-3.1-8b-instruct">Llama 3.1 8B</option>
+                <option value="llama-3.1-70b-instruct">Llama 3.1 70B</option>
               </select>
             </div>
             <button 
@@ -213,12 +213,10 @@ export default function AdminApiKeysPage() {
               <label className="block text-sm font-medium mb-1">Secret Value</label>
               <input required type="password" value={formData.value} onChange={e => setFormData({...formData, value: e.target.value})} className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-500" placeholder="sk-..." />
             </div>
-            <div>
+            <div className="hidden">
               <label className="block text-sm font-medium mb-1">Provider</label>
               <select value={formData.provider} onChange={e => setFormData({...formData, provider: e.target.value})} className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-500">
                 <option value="flaz">Flaz Cloud</option>
-                <option value="openai">OpenAI</option>
-                <option value="anthropic">Anthropic</option>
               </select>
             </div>
             <div>

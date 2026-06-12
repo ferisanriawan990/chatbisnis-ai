@@ -369,19 +369,7 @@ export class ChatbotEngine {
     const defaultModel = chatbotSetting.aiModel || 'gpt-4o-mini';
     const credentials: AICredential[] = [];
 
-    if (chatbotSetting.aiApiKeyEncrypted) {
-      try {
-        credentials.push({
-          apiKey: decrypt(chatbotSetting.aiApiKeyEncrypted),
-          provider: chatbotSetting.aiProvider || 'Flaz Cloud',
-          model: defaultModel,
-          source: 'custom',
-        });
-      } catch (error) {
-        console.error('Failed to decrypt custom AI credential:', error);
-      }
-    }
-
+    // 1. Global Key (Highest Priority)
     const globalCredentials = await prisma.secretCredential.findMany({
       where: { key: { in: ['FLAZ_API_KEY_GLOBAL', 'GLOBAL_AI_MODEL'] } },
     });
@@ -413,6 +401,26 @@ export class ChatbotEngine {
       }
     }
 
+    // 2. Custom User Key (Only if it's Flaz Cloud format)
+    if (chatbotSetting.aiApiKeyEncrypted) {
+      try {
+        const customKey = decrypt(chatbotSetting.aiApiKeyEncrypted);
+        if (customKey.startsWith('sk-flaz-') && !credentials.some((credential) => credential.apiKey === customKey)) {
+          credentials.push({
+            apiKey: customKey,
+            provider: 'Flaz Cloud',
+            model: defaultModel,
+            source: 'custom',
+          });
+        } else if (!customKey.startsWith('sk-flaz-')) {
+          console.warn('Custom API Key diabaikan karena tidak berformat sk-flaz-');
+        }
+      } catch (error) {
+        console.error('Failed to decrypt custom AI credential:', error);
+      }
+    }
+
+    // 3. Environment Key
     const environmentApiKey = process.env.AI_API_KEY?.trim();
     if (environmentApiKey && !credentials.some((credential) => credential.apiKey === environmentApiKey)) {
       credentials.push({

@@ -47,9 +47,13 @@ export const chatbotSettingSchema = z.object({
   handoverMessage: z.string().max(1000).default('Baik, saya akan menyambungkan Anda dengan admin kami.'),
   handoverKeywords: z.string().max(500).default('admin, cs, manusia'),
   outOfHoursMessage: z.string().max(1000).default('Mohon maaf, saat ini kami sedang di luar jam operasional.'),
-  aiProvider: z.string().max(100).default('Flaz Cloud'),
+  aiProvider: z.literal('Flaz Cloud').default('Flaz Cloud'),
   aiModel: z.string().max(100).default('gpt-4o-mini'),
-  aiApiKey: z.string().max(500).optional().or(z.literal('')).or(z.literal('••••••••')),
+  aiApiKey: z.string().max(500).optional().or(z.literal('')).or(z.literal('••••••••'))
+    .refine((val) => {
+      if (!val || val === '' || val === '••••••••') return true;
+      return val.startsWith('sk-flaz-');
+    }, { message: 'Custom API Key wajib diawali dengan sk-flaz-' }),
   dailyChatLimit: z.coerce.number().int().min(1).max(100000).default(1000),
   monthlyChatLimit: z.coerce.number().int().min(1).max(10000000).default(30000),
   historyMessageCount: z.coerce.number().int().min(2).max(50).default(6),
