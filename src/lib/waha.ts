@@ -231,10 +231,9 @@ export class WAHAService {
       if (res.ok) {
         const buffer = Buffer.from(await res.arrayBuffer());
         const base64 = buffer.toString('base64');
-        const fetchedMime = res.headers.get('content-type');
-        if (fetchedMime) mimetype = fetchedMime;
-        // Use base64 data to ensure 100% reliability
-        filePayload = { mimetype, filename: `image.${ext}`, data: base64 };
+        const fetchedMime = res.headers.get('content-type') || mimetype;
+        // Use full data URI string as WAHA accepts it universally
+        filePayload = `data:${fetchedMime};base64,${base64}`;
       }
     } catch (e) {
       console.error('Failed to pre-download image for WAHA:', e);

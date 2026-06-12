@@ -253,7 +253,14 @@ export const ChatbotPreview = ({ chatLogs }: any) => (
             <span>{new Date(log.createdAt).toLocaleString()}</span>
           </div>
           <p className="mb-2"><span className="font-semibold text-blue-600">User:</span> {log.messageIn}</p>
-          <p className="pl-4 border-l-2 border-emerald-400 bg-white p-2 rounded-lg shadow-sm"><span className="font-semibold text-emerald-600">AI:</span> {log.messageOut}</p>
+          <div className="pl-4 border-l-2 border-emerald-400 bg-white p-2 rounded-lg shadow-sm">
+            <span className="font-semibold text-emerald-600">AI:</span> {log.messageOut}
+            {log.messageOut?.includes('[SEND_IMAGE') || log.promptSource?.includes('SEND_IMAGE') ? (
+              <div className="mt-2 text-xs font-bold text-emerald-500 bg-emerald-50 p-2 rounded border border-emerald-100">
+                📸 [Media Gambar Terdeteksi & Dikirim ke WhatsApp]
+              </div>
+            ) : null}
+          </div>
         </div>
       ))}
       <Link href="/dashboard/chat-logs" className="block text-center mt-6 text-sm font-bold text-blue-600 hover:text-blue-800 transition-colors">

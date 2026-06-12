@@ -332,10 +332,11 @@ export class ChatbotEngine {
       finalSystemPrompt += `\n\nAKSI EKSTERNAL:\nJika kamu butuh mengecek data dinamis ke sistem pihak ketiga (seperti cek stok real-time, buat invoice, dll), balas pesan ini HANYA dengan output JSON berformat: {"tool_call": true, "action": "nama_aksi", "params": {"key": "value"}}. Jangan tambahkan teks lain. Sistem akan memproses dan mengembalikan data kepadamu.`;
     }
     
-    finalSystemPrompt += `\n\nPENGIRIMAN GAMBAR PRODUK:
-Jika pengguna secara spesifik meminta gambar produk, dan produk tersebut memiliki 'URL Gambar Tersedia' di Knowledge Base, kamu HARUS melampirkan gambar tersebut dengan menggunakan tag ini di dalam balasanmu:
+    finalSystemPrompt += `\n\nPENGIRIMAN GAMBAR PRODUK (SANGAT PENTING):
+Jika pengguna bertanya, meminta, atau membahas produk/layanan yang memiliki data "URL Gambar Tersedia", KAMU WAJIB MENYELIPKAN TAG GAMBAR INI di akhir atau di tengah balasanmu:
 [SEND_IMAGE: <url_gambar> | <caption_singkat>]
-Contoh: [SEND_IMAGE: https://imgur.com/xyz.jpg | Ini adalah gambar produk sepatu Nike]`;
+CONTOH BENAR: [SEND_IMAGE: https://imgur.com/xyz.jpg | Ini adalah gambar sepatu]
+JANGAN gunakan format markdown seperti ![gambar](url). WAJIB gunakan format kurung siku [SEND_IMAGE: url | caption] persis seperti contoh. Jika kamu tidak menggunakan format ini, gambar tidak akan terkirim!`;
 
     try {
       const aiResult = await AIService.generateReply({
