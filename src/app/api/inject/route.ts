@@ -1,14 +1,12 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { decrypt } from '@/lib/crypto';
 
 export async function GET() {
   try {
-    const globalKey = await prisma.secretCredential.findUnique({ where: { key: 'FLAZ_API_KEY_GLOBAL' } });
-    if (!globalKey) return NextResponse.json({ error: 'Not found' });
-    
-    const decryptedKey = decrypt(globalKey.encryptedValue);
-    return NextResponse.json({ success: true, key: decryptedKey });
+    return NextResponse.json({ 
+      success: true, 
+      FLAZ: process.env.FLAZ_CLOUD_API_KEY ? process.env.FLAZ_CLOUD_API_KEY.slice(0, 5) + '...' + process.env.FLAZ_CLOUD_API_KEY.slice(-4) : null,
+      OPENAI: process.env.OPENAI_API_KEY ? 'exists' : null
+    });
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
