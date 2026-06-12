@@ -255,17 +255,22 @@ export async function POST(req: NextRequest) {
 
       if (waha) {
         // 1. Send Images if any
+        let mediaError = '';
         if (mediaToSend && mediaToSend.length > 0) {
           for (const media of mediaToSend) {
-            await waha.sendImage(usedSessionName, norm.customerPhone, media.url, media.caption).catch((err) => {
+            try {
+              await waha.sendImage(usedSessionName, norm.customerPhone, media.url, media.caption);
+            } catch (err: any) {
               console.error('Failed to send image via WAHA:', err);
-            });
+              mediaError += `\n[Sistem: Gagal kirim gambar ke WAHA. Error: ${err.message || String(err)}]`;
+            }
           }
         }
         
         // 2. Send the text reply
         if (reply && reply.trim() !== '') {
-          await waha.sendMessage(usedSessionName, norm.customerPhone, reply).catch((err) => {
+          const finalReplyToSend = reply + mediaError;
+          await waha.sendMessage(usedSessionName, norm.customerPhone, finalReplyToSend).catch((err) => {
             console.error('Failed to send reply via WAHA:', err);
           });
         }
