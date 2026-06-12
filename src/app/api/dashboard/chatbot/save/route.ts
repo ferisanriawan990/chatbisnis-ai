@@ -59,7 +59,7 @@ export async function POST(req: Request) {
     }
 
     // Encrypt keys if provided (and not masked)
-    let encryptedAiApiKey: string | undefined = undefined;
+    let encryptedAiApiKey: string | null | undefined = undefined;
     if (data.aiApiKey && data.aiApiKey !== '••••••••' && data.aiApiKey.length > 0) {
       const subscription = await prisma.subscription.findFirst({
         where: { userId, status: 'active' },
@@ -74,6 +74,9 @@ export async function POST(req: Request) {
       }
       
       encryptedAiApiKey = encrypt(data.aiApiKey);
+    } else if (data.aiApiKey === '') {
+      // An explicitly empty field means the user wants to use the global key.
+      encryptedAiApiKey = null;
     }
 
     

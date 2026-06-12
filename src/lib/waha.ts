@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { decrypt } from './crypto';
+import { validatePublicHttpsUrl } from './security';
 
 import http from 'http';
 import https from 'https';
@@ -10,6 +11,18 @@ export interface WAHAConfig {
 }
 
 export type WAHASessionStatus = 'disconnected' | 'starting' | 'qr' | 'connected' | 'failed';
+
+export interface WAHAMediaSendResult {
+  mode: 'image' | 'link-preview';
+  response: any;
+}
+
+class WAHAApiError extends Error {
+  constructor(public readonly status: number | undefined, message: string) {
+    super(message);
+    this.name = 'WAHAApiError';
+  }
+}
 
 export class WAHAService {
   private baseUrl: string;
@@ -56,7 +69,7 @@ export class WAHAService {
             } catch {
               // ignore
             }
-            return reject(new Error(`WAHA API error ${res.statusCode}: ${errorDetail}`));
+            return reject(new WAHAApiError(res.statusCode, `WAHA API error ${res.statusCode}: ${errorDetail}`));
           }
           
           try {
@@ -212,7 +225,32 @@ export class WAHAService {
     });
   }
 
-  async sendImage(sessionName: string, phone: string, imageUrl: string, caption?: string) {
+  private async sendImageLinkPreview(sessionName: string, phone: string, imageUrl: string, caption?: string) {
+    return this.request('/api/sendText', {
+      method: 'POST',
+      body: JSON.stringify({
+        session: this.getEffectiveSession(sessionName),
+        chatId: phone.includes('@') ? phone : `${phone}@c.us`,
+        text: [caption, imageUrl].filter(Boolean).join('\n'),
+        linkPreview: true,
+        linkPreviewHighQuality: true,
+      }),
+    });
+  }
+
+  private isPlusOnlyMediaError(error: unknown): boolean {
+    return error instanceof WAHAApiError
+      && error.status === 422
+      && /only in Plus version/i.test(error.message);
+  }
+
+  async sendImage(sessionName: string, phone: string, imageUrl: string, caption?: string, fallbackUrl?: string): Promise<WAHAMediaSendResult> {
+    if (!validatePublicHttpsUrl(imageUrl)) {
+      throw new Error('URL gambar harus berupa URL HTTPS publik.');
+    }
+
+    const safeFallbackUrl = validatePublicHttpsUrl(fallbackUrl || '') ? fallbackUrl! : imageUrl;
+
     let ext = 'jpeg';
     const parsedExt = imageUrl.split('.').pop()?.split('?')[0]?.toLowerCase();
     if (parsedExt && parsedExt.length <= 4 && /^[a-z0-9]+$/.test(parsedExt)) {
@@ -224,30 +262,66 @@ export class WAHAService {
     else if (ext === 'webp') mimetype = 'image/webp';
     else if (ext === 'gif') mimetype = 'image/gif';
 
-    let filePayload: any = { mimetype, filename: `image.${ext}`, url: imageUrl };
-    try {
-      // Force download the image on our backend first because WAHA's fetch mechanism can sometimes fail.
-      const res = await fetch(imageUrl);
-      if (res.ok) {
-        const buffer = Buffer.from(await res.arrayBuffer());
-        const base64 = buffer.toString('base64');
-        const fetchedMime = res.headers.get('content-type') || mimetype;
-        // Use base64 data property inside file object to ensure 100% WAHA compatibility
-        filePayload = { mimetype: fetchedMime, filename: `image.${ext}`, data: base64 };
-      }
-    } catch (e) {
-      console.error('Failed to pre-download image for WAHA:', e);
-    }
+    const urlPayload = { mimetype, filename: `image.${ext}`, url: imageUrl };
 
-    return this.request(`/api/sendImage`, {
-      method: 'POST',
-      body: JSON.stringify({
-        session: this.getEffectiveSession(sessionName),
-        chatId: phone.includes('@') ? phone : `${phone}@c.us`,
-        file: filePayload,
-        caption: caption || '',
-      }),
-    });
+    try {
+      const response = await this.request('/api/sendImage', {
+        method: 'POST',
+        body: JSON.stringify({
+          session: this.getEffectiveSession(sessionName),
+          chatId: phone.includes('@') ? phone : `${phone}@c.us`,
+          file: urlPayload,
+          caption: caption || '',
+        }),
+      });
+      return { mode: 'image', response };
+    } catch (error) {
+      if (this.isPlusOnlyMediaError(error)) {
+        const response = await this.sendImageLinkPreview(sessionName, phone, safeFallbackUrl, caption);
+        return { mode: 'link-preview', response };
+      }
+
+      // Some WAHA installations cannot fetch remote files, so retry with base64.
+      const res = await fetch(imageUrl, { signal: AbortSignal.timeout(15000) });
+      if (!res.ok) throw error;
+
+      const contentType = res.headers.get('content-type')?.toLowerCase() || '';
+      const contentLength = Number(res.headers.get('content-length') || 0);
+      if (!contentType.startsWith('image/')) {
+        throw new Error('URL tidak mengembalikan file gambar.');
+      }
+      if (contentLength > 10 * 1024 * 1024) {
+        throw new Error('Ukuran gambar melebihi 10 MB.');
+      }
+
+      const buffer = Buffer.from(await res.arrayBuffer());
+      if (buffer.length > 10 * 1024 * 1024) {
+        throw new Error('Ukuran gambar melebihi 10 MB.');
+      }
+
+      try {
+        const response = await this.request('/api/sendImage', {
+          method: 'POST',
+          body: JSON.stringify({
+            session: this.getEffectiveSession(sessionName),
+            chatId: phone.includes('@') ? phone : `${phone}@c.us`,
+            file: {
+              mimetype: contentType || mimetype,
+              filename: `image.${ext}`,
+              data: buffer.toString('base64'),
+            },
+            caption: caption || '',
+          }),
+        });
+        return { mode: 'image', response };
+      } catch (retryError) {
+        if (this.isPlusOnlyMediaError(retryError)) {
+          const response = await this.sendImageLinkPreview(sessionName, phone, safeFallbackUrl, caption);
+          return { mode: 'link-preview', response };
+        }
+        throw retryError;
+      }
+    }
   }
 
   /**

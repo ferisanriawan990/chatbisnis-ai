@@ -5,6 +5,7 @@ import { decrypt } from './crypto';
 import { AIService } from './ai';
 import { buildSystemPrompt } from './prompt-builder';
 import { searchKnowledgeItems, buildProductAnswer, detectCustomerIntent } from './knowledge-search';
+import { validatePublicHttpsUrl } from './security';
 
 export interface ChatbotEngineParams {
   wahaServerId?: string;
@@ -19,7 +20,27 @@ export interface ChatbotEngineParams {
 export interface ChatbotEngineResult {
   reply: string;
   metadata?: any;
-  mediaToSend?: { url: string; caption: string }[];
+  mediaToSend?: { url: string; caption: string; fallbackUrl?: string }[];
+}
+
+interface AICredential {
+  apiKey: string;
+  provider: string;
+  model: string;
+  source: 'custom' | 'global' | 'environment';
+}
+
+function customerRequestsImage(message: string): boolean {
+  return /\b(gambar|foto|image|photo|picture|pic)\b/i.test(message);
+}
+
+function isPublicImageUrl(value: string | null | undefined): value is string {
+  return Boolean(value && validatePublicHttpsUrl(value));
+}
+
+function getKnowledgeShareUrl(itemId: string): string {
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://chatbisnis-ai.vercel.app').replace(/\/$/, '');
+  return `${appUrl}/share/knowledge/${encodeURIComponent(itemId)}`;
 }
 
 export class ChatbotEngine {
@@ -86,13 +107,49 @@ export class ChatbotEngine {
 
     // Extract image tags: [SEND_IMAGE: url | caption]
     let finalReply = replyMessage;
-    const mediaToSend: { url: string; caption: string }[] = [];
+    const mediaToSend: { url: string; caption: string; fallbackUrl?: string }[] = [];
     const imageRegex = /\[SEND_IMAGE:\s*([^|\]]+?)(?:\s*\|\s*([^\]]+))?\]/g;
     let match;
     while ((match = imageRegex.exec(finalReply)) !== null) {
-      mediaToSend.push({ url: match[1].trim(), caption: (match[2] || '').trim() });
+      const url = match[1].trim();
+      const knowledgeItem = matchedItems.find((item) => item.imageUrl === url);
+      mediaToSend.push({
+        url,
+        caption: (match[2] || '').trim(),
+        fallbackUrl: knowledgeItem ? getKnowledgeShareUrl(knowledgeItem.id) : undefined,
+      });
     }
     finalReply = finalReply.replace(imageRegex, '').trim();
+
+    // Do not rely solely on the model to emit SEND_IMAGE. If the customer
+    // explicitly asks for a picture, attach images from matched KB items.
+    if (customerRequestsImage(sanitizedMessageIn)) {
+      const knownUrls = new Set(mediaToSend.map((media) => media.url));
+      for (const item of matchedItems) {
+        if (!isPublicImageUrl(item.imageUrl) || knownUrls.has(item.imageUrl)) continue;
+        mediaToSend.push({
+          url: item.imageUrl,
+          caption: item.productName ? `Gambar ${item.productName}` : 'Gambar produk',
+          fallbackUrl: getKnowledgeShareUrl(item.id),
+        });
+        knownUrls.add(item.imageUrl);
+        if (mediaToSend.length >= 3) break;
+      }
+    }
+
+    let effectivePromptSource = promptSource;
+    let usedDeterministicReply = false;
+    if (promptSource === 'error' && mediaToSend.length > 0) {
+      const productNames = matchedItems
+        .filter((item) => isPublicImageUrl(item.imageUrl) && item.productName)
+        .slice(0, mediaToSend.length)
+        .map((item) => item.productName);
+      finalReply = productNames.length > 0
+        ? `Berikut gambar ${productNames.join(', ')}.`
+        : 'Berikut gambar produk yang diminta.';
+      effectivePromptSource = 'knowledge_image';
+      usedDeterministicReply = true;
+    }
 
     // 8. Record Usage & Log
     if (!isTest) {
@@ -100,13 +157,13 @@ export class ChatbotEngine {
         where: { id: access.usageId! },
         data: { aiTokens: { increment: tokenUsage }, aiChats: { increment: 1 } }
       });
-      await this.sendLog({ ...params, chatbotSetting, messageOut: finalReply, tokenUsage, intent, promptSource, knowledgeMatchCount, usedCatalogUrl, aiUsed: aiModelUsed });
+      await this.sendLog({ ...params, chatbotSetting, messageOut: finalReply, tokenUsage, intent, promptSource: effectivePromptSource, knowledgeMatchCount, usedCatalogUrl, aiUsed: aiModelUsed });
     }
 
     return { 
       reply: finalReply, 
       mediaToSend,
-      metadata: { intent, knowledgeMatchCount, promptSource, usedCatalogUrl, tokenUsage, usedDeterministicReply: false } 
+      metadata: { intent, knowledgeMatchCount, promptSource: effectivePromptSource, usedCatalogUrl, tokenUsage, usedDeterministicReply }
     };
   }
 
@@ -309,19 +366,65 @@ export class ChatbotEngine {
   }
 
   private static async callAI(chatbotSetting: any, activePlan: any, systemPrompt: string, messageIn: string, isTest: boolean, chatHistory: { role: string; content: string }[] = [], imageUrl?: string) {
-    let aiApiKey = chatbotSetting.aiApiKeyEncrypted ? decrypt(chatbotSetting.aiApiKeyEncrypted) : '';
-    let aiModel = chatbotSetting.aiModel || 'gpt-4o-mini';
+    const defaultModel = chatbotSetting.aiModel || 'gpt-4o-mini';
+    const credentials: AICredential[] = [];
 
-    const globalKey = await prisma.secretCredential.findUnique({ where: { key: 'FLAZ_API_KEY_GLOBAL' } });
-    // Use Global Key ONLY if user doesn't have a custom key, AND the global key is active
-    if (!aiApiKey && globalKey?.isActive) {
-      aiApiKey = decrypt(globalKey.encryptedValue);
-      const globalModel = await prisma.secretCredential.findUnique({ where: { key: 'GLOBAL_AI_MODEL' } });
-      if (globalModel?.isActive) aiModel = decrypt(globalModel.encryptedValue);
+    if (chatbotSetting.aiApiKeyEncrypted) {
+      try {
+        credentials.push({
+          apiKey: decrypt(chatbotSetting.aiApiKeyEncrypted),
+          provider: chatbotSetting.aiProvider || 'Flaz Cloud',
+          model: defaultModel,
+          source: 'custom',
+        });
+      } catch (error) {
+        console.error('Failed to decrypt custom AI credential:', error);
+      }
     }
 
-    if (!aiApiKey) {
-      return { replyMessage: chatbotSetting.fallbackMessage, tokenUsage: 0, usedCatalogUrl: false, promptSource: 'error', aiModelUsed: aiModel };
+    const globalCredentials = await prisma.secretCredential.findMany({
+      where: { key: { in: ['FLAZ_API_KEY_GLOBAL', 'GLOBAL_AI_MODEL'] } },
+    });
+    const globalKey = globalCredentials.find((credential) => credential.key === 'FLAZ_API_KEY_GLOBAL');
+    const globalModelCredential = globalCredentials.find((credential) => credential.key === 'GLOBAL_AI_MODEL');
+    let globalModel = defaultModel;
+
+    if (globalKey?.isActive) {
+      try {
+        const globalApiKey = decrypt(globalKey.encryptedValue);
+        if (globalModelCredential?.isActive) {
+          try {
+            globalModel = decrypt(globalModelCredential.encryptedValue);
+          } catch (error) {
+            console.error('Failed to decrypt global AI model:', error);
+          }
+        }
+
+        if (!credentials.some((credential) => credential.apiKey === globalApiKey)) {
+          credentials.push({
+            apiKey: globalApiKey,
+            provider: 'Flaz Cloud',
+            model: globalModel,
+            source: 'global',
+          });
+        }
+      } catch (error) {
+        console.error('Failed to decrypt global AI credential:', error);
+      }
+    }
+
+    const environmentApiKey = process.env.AI_API_KEY?.trim();
+    if (environmentApiKey && !credentials.some((credential) => credential.apiKey === environmentApiKey)) {
+      credentials.push({
+        apiKey: environmentApiKey,
+        provider: 'Flaz Cloud',
+        model: globalModel,
+        source: 'environment',
+      });
+    }
+
+    if (credentials.length === 0) {
+      return { replyMessage: chatbotSetting.fallbackMessage, tokenUsage: 0, usedCatalogUrl: false, promptSource: 'error', aiModelUsed: defaultModel };
     }
 
     const allowSelling = chatbotSetting.allowSelling ?? false;
@@ -345,16 +448,33 @@ CONTOH BENAR: [SEND_IMAGE: https://imgur.com/xyz.jpg | Ini adalah gambar sepatu]
 JANGAN gunakan format markdown seperti ![gambar](url). WAJIB gunakan format kurung siku [SEND_IMAGE: url | caption] persis seperti contoh. Jika kamu tidak menggunakan format ini, gambar tidak akan terkirim!`;
 
     try {
-      const aiResult = await AIService.generateReply({
+      const maxTokens = chatbotSetting.maxReplyLength === 'pendek' ? 150 : chatbotSetting.maxReplyLength === 'panjang' ? 800 : 450;
+      const generateWithCredential = (credential: AICredential, userMessage: string, history = chatHistory, requestImageUrl = imageUrl) => AIService.generateReply({
         systemPrompt: finalSystemPrompt,
-        userMessage: messageIn,
-        imageUrl,
-        chatHistory,
-        provider: chatbotSetting.aiProvider,
-        model: aiModel,
-        apiKey: aiApiKey,
-        maxTokens: chatbotSetting.maxReplyLength === 'pendek' ? 150 : chatbotSetting.maxReplyLength === 'panjang' ? 800 : 450,
+        userMessage,
+        imageUrl: requestImageUrl,
+        chatHistory: history,
+        provider: credential.provider,
+        model: credential.model,
+        apiKey: credential.apiKey,
+        maxTokens,
       });
+
+      let activeCredential = credentials[0];
+      let aiResult = null;
+      for (let index = 0; index < credentials.length; index += 1) {
+        activeCredential = credentials[index];
+        try {
+          aiResult = await generateWithCredential(activeCredential, messageIn);
+          break;
+        } catch (error) {
+          const hasNextCredential = index < credentials.length - 1;
+          if (!AIService.isAuthenticationError(error) || !hasNextCredential) throw error;
+          console.warn(`AI credential source "${activeCredential.source}" was rejected; trying the next configured credential.`);
+        }
+      }
+
+      if (!aiResult) throw new Error('Tidak ada credential AI yang dapat digunakan.');
 
       let finalReply = aiResult.reply;
       let totalTokens = aiResult.tokenUsage || 0;
@@ -380,15 +500,7 @@ JANGAN gunakan format markdown seperti ![gambar](url). WAJIB gunakan format kuru
               const updatedHistory = [...chatHistory, { role: 'user', content: messageIn }, { role: 'assistant', content: finalReply }];
               const followUpUserMsg = `[SYSTEM RESPONSE FROM ACTION ${toolData.action}]:\n${webhookResultString}\n\nBerikan jawaban akhir kepada pelanggan berdasarkan data tersebut.`;
 
-              const followUpResult = await AIService.generateReply({
-                systemPrompt: finalSystemPrompt,
-                userMessage: followUpUserMsg,
-                chatHistory: updatedHistory,
-                provider: chatbotSetting.aiProvider,
-                model: aiModel,
-                apiKey: aiApiKey,
-                maxTokens: chatbotSetting.maxReplyLength === 'pendek' ? 150 : chatbotSetting.maxReplyLength === 'panjang' ? 800 : 450,
-              });
+              const followUpResult = await generateWithCredential(activeCredential, followUpUserMsg, updatedHistory, undefined);
 
               finalReply = followUpResult.reply;
               totalTokens += followUpResult.tokenUsage || 0;
@@ -399,12 +511,10 @@ JANGAN gunakan format markdown seperti ![gambar](url). WAJIB gunakan format kuru
         }
       }
 
-      return { replyMessage: finalReply, tokenUsage: totalTokens, usedCatalogUrl: Boolean(chatbotSetting.catalogUrl && finalReply.includes(chatbotSetting.catalogUrl)), promptSource: 'ai', aiModelUsed: aiModel };
-    } catch (error: any) {
+      return { replyMessage: finalReply, tokenUsage: totalTokens, usedCatalogUrl: Boolean(chatbotSetting.catalogUrl && finalReply.includes(chatbotSetting.catalogUrl)), promptSource: 'ai', aiModelUsed: activeCredential.model };
+    } catch (error: unknown) {
       console.error('AI Error:', error);
-      const errMsg = error.message || String(error);
-      const debugFallback = `${chatbotSetting.fallbackMessage}\n\n[Sistem Internal: AI Error -> ${errMsg}]`;
-      return { replyMessage: debugFallback, tokenUsage: 0, usedCatalogUrl: false, promptSource: 'error', aiModelUsed: aiModel };
+      return { replyMessage: chatbotSetting.fallbackMessage, tokenUsage: 0, usedCatalogUrl: false, promptSource: 'error', aiModelUsed: credentials[0].model };
     }
   }
 

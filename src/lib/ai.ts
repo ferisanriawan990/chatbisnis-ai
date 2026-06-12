@@ -14,6 +14,13 @@ interface GenerateResult {
   tokenUsage: number;
 }
 
+export class AIServiceError extends Error {
+  constructor(message: string, public readonly status?: number) {
+    super(message);
+    this.name = 'AIServiceError';
+  }
+}
+
 export class AIService {
   /**
    * Panggil LLM provider (Flaz Cloud / OpenAI-compatible endpoint)
@@ -21,7 +28,7 @@ export class AIService {
   static async generateReply(config: GenerateConfig): Promise<GenerateResult> {
     try {
       if (!config.apiKey) {
-        throw new Error('API Key tidak ditemukan.');
+        throw new AIServiceError('API Key tidak ditemukan.');
       }
 
       let baseUrl = process.env.AI_BASE_URL || 'https://ai.flaz.id/v1';
@@ -66,14 +73,8 @@ export class AIService {
       });
 
       if (!res.ok) {
-        const errText = await res.text().catch(() => 'No response body');
-        console.error('AI API Error Status:', res.status, errText);
-        let parsedErr = 'Gagal menghubungi AI provider.';
-        try {
-          const jsonErr = JSON.parse(errText);
-          parsedErr = jsonErr.error?.message || jsonErr.message || parsedErr;
-        } catch { /* ignore */ }
-        throw new Error(`[API Status ${res.status}] ${parsedErr}`);
+        console.error('AI API Error Status:', res.status);
+        throw new AIServiceError(`AI provider mengembalikan status ${res.status}.`, res.status);
       }
 
       const data = await res.json();
@@ -81,15 +82,21 @@ export class AIService {
       const tokenUsage = data.usage?.total_tokens || 0;
 
       return { reply, tokenUsage };
-    } catch (error: any) {
-      if (error.name === 'AbortError' || error.name === 'TimeoutError') {
+    } catch (error: unknown) {
+      if (error instanceof AIServiceError) throw error;
+
+      if (error instanceof Error && (error.name === 'AbortError' || error.name === 'TimeoutError')) {
         console.error('AI Generation Timeout (30s limit)');
-        throw new Error('Waktu respon AI habis (timeout).');
+        throw new AIServiceError('Waktu respon AI habis (timeout).');
       }
-      console.error('AI Generation Error:', error.message);
-      // Transparently pass the error so the webhook can relay it
-      throw new Error(error.message || 'Kesalahan internal sistem AI.');
+      const message = error instanceof Error ? error.message : 'Kesalahan internal sistem AI.';
+      console.error('AI Generation Error:', message);
+      throw new AIServiceError(message);
     }
+  }
+
+  static isAuthenticationError(error: unknown): boolean {
+    return error instanceof AIServiceError && (error.status === 401 || error.status === 403);
   }
 
   static sanitizeInput(text: string): string {

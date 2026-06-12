@@ -256,21 +256,27 @@ export async function POST(req: NextRequest) {
 
       if (waha) {
         // 1. Send Images if any
-        let mediaError = '';
+        let mediaDeliveryFailed = false;
+        let usedLinkPreviewFallback = false;
         if (mediaToSend && mediaToSend.length > 0) {
           for (const media of mediaToSend) {
             try {
-              await waha.sendImage(usedSessionName, norm.customerPhone, media.url, media.caption);
-            } catch (err: any) {
+              const mediaResult = await waha.sendImage(usedSessionName, norm.customerPhone, media.url, media.caption, media.fallbackUrl);
+              if (mediaResult.mode === 'link-preview') usedLinkPreviewFallback = true;
+            } catch (err: unknown) {
               console.error('Failed to send image via WAHA:', err);
-              mediaError += `\n[Sistem: Gagal kirim gambar ke WAHA. Error: ${err.message || String(err)}]`;
+              mediaDeliveryFailed = true;
             }
           }
         }
         
         // 2. Send the text reply
-        if (reply && reply.trim() !== '') {
-          const finalReplyToSend = reply + mediaError;
+        const linkPreviewAlreadyContainsReply = usedLinkPreviewFallback
+          && result.metadata?.promptSource === 'knowledge_image';
+        if (reply && reply.trim() !== '' && !linkPreviewAlreadyContainsReply) {
+          const finalReplyToSend = mediaDeliveryFailed
+            ? `${reply}\n\nMaaf, gambar belum dapat dikirim saat ini.`
+            : reply;
           await waha.sendMessage(usedSessionName, norm.customerPhone, finalReplyToSend).catch((err) => {
             console.error('Failed to send reply via WAHA:', err);
           });

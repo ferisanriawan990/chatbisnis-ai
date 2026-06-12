@@ -235,34 +235,52 @@ export const AdvancedRulesPanel = ({ form, handleChange }: any) => (
   </section>
 );
 
-export const AiIntegrationPanel = ({ form, handleChange }: any) => (
-  <section className="bg-white/80 backdrop-blur-xl p-8 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60 hover:shadow-xl hover:shadow-blue-100/50 transition-all duration-500 relative overflow-hidden group mt-8">
-    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-blue-100/50 to-transparent rounded-bl-full pointer-events-none transition-transform duration-500 group-hover:scale-110"></div>
-    <h2 className="text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 mb-6 flex items-center gap-3 relative z-10">
-      <div className="p-2.5 bg-blue-50 rounded-xl">
-        <Bot className="w-6 h-6 text-blue-600" />
-      </div>
-      Integrasi AI & API Key
-    </h2>
-    <div className="space-y-5 relative z-10">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <div>
-          <label className="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">AI Provider</label>
-          <select name="aiProvider" value={form.aiProvider} onChange={handleChange} className="w-full p-3.5 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all shadow-sm cursor-pointer">
-            <option value="Flaz Cloud">Flaz Cloud (Recommended)</option>
-            <option value="OpenAI">OpenAI</option>
-            <option value="Anthropic">Anthropic</option>
-          </select>
+const AI_MODELS = {
+  'Flaz Cloud': ['gpt-4o-mini', 'gpt-4o', 'gemini-1.5-flash', 'gemini-1.5-pro', 'claude-3-haiku-20240307', 'claude-3-5-sonnet-20240620'],
+  'OpenAI': ['gpt-4o-mini', 'gpt-4o', 'gpt-3.5-turbo'],
+  'Anthropic': ['claude-3-haiku-20240307', 'claude-3-5-sonnet-20240620', 'claude-3-opus-20240229'],
+};
+
+export const AiIntegrationPanel = ({ form, handleChange }: any) => {
+  const models = AI_MODELS[form.aiProvider as keyof typeof AI_MODELS] || AI_MODELS['Flaz Cloud'];
+
+  return (
+    <section className="bg-white/80 backdrop-blur-xl p-8 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60 hover:shadow-xl hover:shadow-blue-100/50 transition-all duration-500 relative overflow-hidden group mt-8">
+      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-blue-100/50 to-transparent rounded-bl-full pointer-events-none transition-transform duration-500 group-hover:scale-110"></div>
+      <h2 className="text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 mb-6 flex items-center gap-3 relative z-10">
+        <div className="p-2.5 bg-blue-50 rounded-xl">
+          <Bot className="w-6 h-6 text-blue-600" />
         </div>
-        <div>
-          <label className="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">Custom API Key</label>
-          <input type="password" name="aiApiKey" value={form.aiApiKey} onChange={handleChange} placeholder="sk-..." className="w-full p-3.5 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all shadow-sm" />
-          <p className="text-xs text-slate-500 mt-2 ml-1">Kosongkan jika ingin menggunakan Global API Key dari sistem.</p>
+        Integrasi AI & API Key
+      </h2>
+      <div className="space-y-5 relative z-10">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">AI Provider</label>
+            <select name="aiProvider" value={form.aiProvider} onChange={handleChange} className="w-full p-3.5 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all shadow-sm cursor-pointer">
+              <option value="Flaz Cloud">Flaz Cloud (Recommended)</option>
+              <option value="OpenAI">OpenAI</option>
+              <option value="Anthropic">Anthropic</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">AI Model</label>
+            <select name="aiModel" value={form.aiModel} onChange={handleChange} className="w-full p-3.5 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all shadow-sm cursor-pointer">
+              {models.map((model) => (
+                <option key={model} value={model}>{model}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">Custom API Key</label>
+            <input type="password" name="aiApiKey" value={form.aiApiKey} onChange={handleChange} placeholder="sk-..." className="w-full p-3.5 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all shadow-sm" />
+            <p className="text-xs text-slate-500 mt-2 ml-1">Kosongkan jika menggunakan Global Key.</p>
+          </div>
         </div>
       </div>
-    </div>
-  </section>
-);
+    </section>
+  );
+};
 
 export const ChatbotPreview = ({ chatLogs }: any) => (
   <section className="bg-white/80 backdrop-blur-xl p-8 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60 relative overflow-hidden mt-8">
