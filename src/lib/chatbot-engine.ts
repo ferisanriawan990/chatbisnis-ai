@@ -120,7 +120,7 @@ export class ChatbotEngine {
       where: {
         ...whereClause,
         user: {
-          email: { not: 'admin@chatbisnis.id' }
+          email: { contains: '@' }
         }
       },
       include: {
