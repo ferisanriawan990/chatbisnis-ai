@@ -52,8 +52,8 @@ export const chatbotSettingSchema = z.object({
   aiApiKey: z.string().max(500).optional().or(z.literal('')).or(z.literal('••••••••'))
     .refine((val) => {
       if (!val || val === '' || val === '••••••••') return true;
-      return val.startsWith('sk-flaz-');
-    }, { message: 'Custom API Key wajib diawali dengan sk-flaz-' }),
+      return val.startsWith('sk-');
+    }, { message: 'Custom API Key wajib diawali dengan sk-' }),
   dailyChatLimit: z.coerce.number().int().min(1).max(100000).default(1000),
   monthlyChatLimit: z.coerce.number().int().min(1).max(10000000).default(30000),
   historyMessageCount: z.coerce.number().int().min(2).max(50).default(6),

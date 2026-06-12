@@ -405,15 +405,15 @@ export class ChatbotEngine {
     if (chatbotSetting.aiApiKeyEncrypted) {
       try {
         const customKey = decrypt(chatbotSetting.aiApiKeyEncrypted);
-        if (customKey.startsWith('sk-flaz-') && !credentials.some((credential) => credential.apiKey === customKey)) {
+        if (customKey.startsWith('sk-') && !credentials.some((credential) => credential.apiKey === customKey)) {
           credentials.push({
             apiKey: customKey,
             provider: 'Flaz Cloud',
             model: defaultModel,
             source: 'custom',
           });
-        } else if (!customKey.startsWith('sk-flaz-')) {
-          console.warn('Custom API Key diabaikan karena tidak berformat sk-flaz-');
+        } else if (!customKey.startsWith('sk-')) {
+          console.warn('Custom API Key diabaikan karena tidak berformat sk-');
         }
       } catch (error) {
         console.error('Failed to decrypt custom AI credential:', error);

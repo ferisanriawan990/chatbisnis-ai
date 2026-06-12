@@ -55,8 +55,8 @@ export async function POST(req: Request) {
     }
 
     if (parsed.data.key === 'FLAZ_API_KEY_GLOBAL' || parsed.data.provider.toLowerCase() === 'flaz') {
-      if (!parsed.data.value.startsWith('sk-flaz-')) {
-        return NextResponse.json({ error: 'API Key Flaz Cloud harus diawali dengan sk-flaz-' }, { status: 400 });
+      if (!parsed.data.value.startsWith('sk-')) {
+        return NextResponse.json({ error: 'API Key Flaz Cloud harus diawali dengan sk-' }, { status: 400 });
       }
     }
 
