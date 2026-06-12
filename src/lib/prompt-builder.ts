@@ -58,7 +58,6 @@ export function buildSystemPrompt(params: BuildPromptParams): string {
     outOfHoursMessage,
     botName,
     useEmoji,
-    fallbackMessage,
     maxReplyLength,
   } = params;
 

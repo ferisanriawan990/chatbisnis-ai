@@ -60,8 +60,14 @@ export class WAHAService {
           }
           
           try {
-            const contentType = res.headers['content-type'];
-            if (contentType && contentType.startsWith('image/')) {
+            const contentType = res.headers['content-type']?.toLowerCase();
+            if (
+              contentType && 
+              (contentType.startsWith('image/') || 
+               contentType.startsWith('audio/') || 
+               contentType.startsWith('video/') || 
+               contentType === 'application/pdf')
+            ) {
               return resolve({ mimetype: contentType, data: dataBuffer.toString('base64') });
             }
             resolve(dataStr ? JSON.parse(dataStr) : { success: true });
@@ -202,6 +208,18 @@ export class WAHAService {
         session: this.getEffectiveSession(sessionName),
         chatId: phone.includes('@') ? phone : `${phone}@c.us`,
         text,
+      }),
+    });
+  }
+
+  async sendImage(sessionName: string, phone: string, imageUrl: string, caption?: string) {
+    return this.request(`/api/sendImage`, {
+      method: 'POST',
+      body: JSON.stringify({
+        session: this.getEffectiveSession(sessionName),
+        chatId: phone.includes('@') ? phone : `${phone}@c.us`,
+        file: { url: imageUrl },
+        caption: caption || '',
       }),
     });
   }

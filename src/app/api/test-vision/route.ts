@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { decrypt } from '@/lib/crypto';
 import { AIService } from '@/lib/ai';
 
-export async function GET(req: Request) {
+export async function GET() {
   try {
     const globalKey = await prisma.secretCredential.findUnique({ where: { key: 'FLAZ_API_KEY_GLOBAL' } });
     if (!globalKey) return NextResponse.json({ error: 'No API key' });
@@ -19,7 +19,8 @@ export async function GET(req: Request) {
     });
 
     return NextResponse.json({ success: true, reply: result.reply });
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message, stack: err.stack });
+  } catch (err: unknown) {
+    const error = err instanceof Error ? err : new Error(String(err));
+    return NextResponse.json({ success: false, error: error.message, stack: error.stack });
   }
 }

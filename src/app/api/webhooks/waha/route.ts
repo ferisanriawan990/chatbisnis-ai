@@ -107,6 +107,7 @@ function normalizePayload(rawBody: WahaIncomingBody): NormalizedWahaPayload {
     Boolean(mpAny.message?.documentMessage) ||
     Boolean(mpAny.message?.audioMessage);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mediaUrl = mpAny.media?.url || (rawBody.payload as any)?.media?.url || (rawBody as any).media?.url || '';
 
   return { sessionName, event, fromMe, isGroup, customerPhone, customerName, messageIn, remote, hasMedia, messageId, mediaUrl };
@@ -240,23 +241,36 @@ export async function POST(req: NextRequest) {
       imageUrl: downloadedImageUrl,
     });
 
-    if (result && result.reply) {
+    if (result) {
+      const { reply, mediaToSend } = result;
+      let waha: WAHAService | null = null;
+      let usedSessionName = actualSessionName;
 
       if (chatbotSetting?.wahaServer?.apiKeyEncrypted) {
-        const wahaServer = chatbotSetting.wahaServer;
-        const waha = WAHAService.fromEncrypted(wahaServer.baseUrl, wahaServer.apiKeyEncrypted || '');
-        await waha.sendMessage(actualSessionName, norm.customerPhone, result.reply).catch(() => {
-          console.error('Failed to send reply via WAHA. Check server connection.');
-        });
+        waha = WAHAService.fromEncrypted(chatbotSetting.wahaServer.baseUrl, chatbotSetting.wahaServer.apiKeyEncrypted || '');
       } else if (chatbotSetting?.wahaApiKeyEncrypted && chatbotSetting?.wahaBaseUrl) {
-        const waha = WAHAService.fromEncrypted(chatbotSetting.wahaBaseUrl, chatbotSetting.wahaApiKeyEncrypted || '');
-        await waha.sendMessage(norm.sessionName, norm.customerPhone, result.reply).catch(() => {
-          console.error('Failed to send reply via Legacy WAHA. Check server connection.');
-        });
+        waha = WAHAService.fromEncrypted(chatbotSetting.wahaBaseUrl, chatbotSetting.wahaApiKeyEncrypted || '');
+        usedSessionName = norm.sessionName;
+      }
+
+      if (waha) {
+        // 1. Send Images if any
+        if (mediaToSend && mediaToSend.length > 0) {
+          for (const media of mediaToSend) {
+            await waha.sendImage(usedSessionName, norm.customerPhone, media.url, media.caption).catch((err) => {
+              console.error('Failed to send image via WAHA:', err);
+            });
+          }
+        }
+        
+        // 2. Send the text reply
+        if (reply && reply.trim() !== '') {
+          await waha.sendMessage(usedSessionName, norm.customerPhone, reply).catch((err) => {
+            console.error('Failed to send reply via WAHA:', err);
+          });
+        }
       } else {
-        console.error(
-          `WAHA reply skipped: No configured server for session=${norm.sessionName}`,
-        );
+        console.error(`WAHA reply skipped: No configured server for session=${norm.sessionName}`);
       }
     }
 

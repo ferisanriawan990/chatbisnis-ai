@@ -28,8 +28,7 @@ export class AIService {
       const baseUrl = process.env.AI_BASE_URL || 'https://ai.flaz.id/v1';
       const url = `${baseUrl.replace(/\/$/, '')}/chat/completions`;
 
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+      const signal = AbortSignal.timeout(30000); // 30s timeout
 
       console.log('--- AI_SERVICE_CALL ---');
       console.log('Using Model:', config.model || 'gpt-4o-mini');
@@ -37,7 +36,7 @@ export class AIService {
 
       const res = await fetch(url, {
         method: 'POST',
-        signal: controller.signal,
+        signal,
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${config.apiKey}`,
@@ -63,8 +62,6 @@ export class AIService {
         // Add timeout via AbortController if supported in edge/node, or just rely on platform defaults
       });
 
-      clearTimeout(timeoutId);
-
       if (!res.ok) {
         console.error('AI API Error Status:', res.status);
         throw new Error('Gagal menghubungi AI provider.');
@@ -76,7 +73,7 @@ export class AIService {
 
       return { reply, tokenUsage };
     } catch (error) {
-      if ((error as Error).name === 'AbortError') {
+      if ((error as Error).name === 'AbortError' || (error as Error).name === 'TimeoutError') {
         console.error('AI Generation Timeout (30s limit)');
         throw new Error('Waktu respon AI habis (timeout).');
       }

@@ -116,6 +116,9 @@ model ChatbotSetting {
   aiApiKeyEncrypted     String?
   dailyChatLimit        Int      @default(1000)
   monthlyChatLimit      Int      @default(30000)
+  historyMessageCount   Int      @default(6)
+  knowledgeCharLimit    Int      @default(3500)
+  actionWebhookUrl      String?
   wahaBaseUrl           String?
   wahaApiKeyEncrypted   String?
   wahaServerId          String?
@@ -171,6 +174,7 @@ model KnowledgeItem {
   price             Float?
   stockStatus       String?
   description       String?  @db.Text
+  imageUrl          String?  @db.Text
   metadataJson      String?  @db.Text
   searchableText    String   @db.Text
   isActive          Boolean  @default(true)

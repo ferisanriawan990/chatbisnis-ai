@@ -32,6 +32,12 @@ export default function LeadsPage() {
   const [editForm, setEditForm] = useState({ status: '', notes: '' });
   const [saving, setSaving] = useState(false);
 
+  // Broadcast state
+  const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
+  const [isBroadcastModalOpen, setIsBroadcastModalOpen] = useState(false);
+  const [broadcastMessage, setBroadcastMessage] = useState('');
+  const [broadcasting, setBroadcasting] = useState(false);
+
   const fetchLeads = useCallback(async () => {
     setLoading(true);
     try {
@@ -97,6 +103,41 @@ export default function LeadsPage() {
     }
   };
 
+  const toggleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) setSelectedLeads(leads.map(l => l.id));
+    else setSelectedLeads([]);
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedLeads(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  const handleBroadcast = async () => {
+    if (selectedLeads.length === 0 || !broadcastMessage.trim()) return;
+    setBroadcasting(true);
+    toast.loading('Mengirim pesan...', { id: 'broadcast' });
+    try {
+      const res = await fetch('/api/dashboard/leads/broadcast', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ leadIds: selectedLeads, messageText: broadcastMessage })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success(`Berhasil mengirim ${data.successCount} pesan. Gagal: ${data.failCount}`, { id: 'broadcast' });
+        setIsBroadcastModalOpen(false);
+        setBroadcastMessage('');
+        setSelectedLeads([]);
+      } else {
+        toast.error(data.error || 'Gagal mengirim pesan', { id: 'broadcast' });
+      }
+    } catch {
+      toast.error('Jaringan bermasalah', { id: 'broadcast' });
+    } finally {
+      setBroadcasting(false);
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto space-y-6 pb-20">
       <Toaster position="top-right" />
@@ -138,11 +179,28 @@ export default function LeadsPage() {
         </div>
       </div>
 
+      {selectedLeads.length > 0 && (
+        <div className="flex justify-between items-center bg-blue-50 p-4 rounded-xl shadow-sm border border-blue-100 animate-in fade-in slide-in-from-bottom-2">
+          <div className="text-sm font-bold text-blue-800">
+            {selectedLeads.length} pelanggan dipilih
+          </div>
+          <button 
+            onClick={() => setIsBroadcastModalOpen(true)}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold transition-all shadow-md flex items-center gap-2"
+          >
+            Kirim Broadcast / Follow-up
+          </button>
+        </div>
+      )}
+
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left text-slate-600">
             <thead className="text-xs text-slate-500 uppercase bg-slate-50">
               <tr>
+                <th className="px-6 py-4 w-10">
+                  <input type="checkbox" onChange={toggleSelectAll} checked={leads.length > 0 && selectedLeads.length === leads.length} className="w-4 h-4 text-blue-600 rounded cursor-pointer" />
+                </th>
                 <th className="px-6 py-4 font-semibold">Pelanggan</th>
                 <th className="px-6 py-4 font-semibold">Minat & Budget</th>
                 <th className="px-6 py-4 font-semibold">Alamat</th>
@@ -154,10 +212,13 @@ export default function LeadsPage() {
               {loading ? (
                 <tr><td colSpan={5} className="text-center py-10 animate-pulse">Memuat data...</td></tr>
               ) : leads.length === 0 ? (
-                <tr><td colSpan={5} className="text-center py-10 text-slate-500">Tidak ada lead ditemukan.</td></tr>
+                <tr><td colSpan={6} className="text-center py-10 text-slate-500">Tidak ada lead ditemukan.</td></tr>
               ) : (
                 leads.map((lead) => (
-                  <tr key={lead.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                  <tr key={lead.id} className={`border-b border-slate-100 hover:bg-slate-50 transition-colors ${selectedLeads.includes(lead.id) ? 'bg-blue-50/50' : ''}`}>
+                    <td className="px-6 py-4">
+                      <input type="checkbox" checked={selectedLeads.includes(lead.id)} onChange={() => toggleSelect(lead.id)} className="w-4 h-4 text-blue-600 rounded cursor-pointer" />
+                    </td>
                     <td className="px-6 py-4">
                       <p className="font-semibold text-slate-800">{lead.customerName || 'Tanpa Nama'}</p>
                       <p className="text-xs text-slate-500">{lead.customerPhone}</p>
@@ -245,6 +306,28 @@ export default function LeadsPage() {
           >
             <ChevronRight className="w-5 h-5" />
           </button>
+        </div>
+      )}
+
+      {isBroadcastModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-in fade-in">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-xl animate-in zoom-in-95">
+            <h3 className="text-xl font-bold text-slate-800 mb-2">Kirim Pesan Broadcast</h3>
+            <p className="text-sm text-slate-500 mb-4">Pesan akan dikirim ke <span className="font-bold text-slate-700">{selectedLeads.length}</span> pelanggan. Gunakan tag <code className="bg-slate-100 px-1.5 py-0.5 rounded text-blue-600 font-bold">{"{{name}}"}</code> untuk menyebut nama pelanggan secara otomatis.</p>
+            <textarea 
+              rows={5}
+              value={broadcastMessage}
+              onChange={(e) => setBroadcastMessage(e.target.value)}
+              className="w-full p-4 border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none resize-none mb-4 text-sm font-medium text-slate-700 shadow-sm"
+              placeholder="Halo {{name}}, kami ada promo spesial hari ini khusus untuk Kakak! Balas pesan ini jika berminat ya..."
+            ></textarea>
+            <div className="flex justify-end gap-3 mt-2">
+              <button onClick={() => setIsBroadcastModalOpen(false)} className="px-5 py-2.5 text-slate-600 font-bold hover:bg-slate-100 rounded-xl transition-all">Batal</button>
+              <button onClick={handleBroadcast} disabled={broadcasting || !broadcastMessage.trim()} className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl hover:shadow-lg disabled:opacity-50 transition-all shadow-sm">
+                {broadcasting ? 'Mengirim...' : 'Kirim Sekarang'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

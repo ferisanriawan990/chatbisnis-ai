@@ -52,6 +52,9 @@ export const chatbotSettingSchema = z.object({
   aiApiKey: z.string().max(500).optional().or(z.literal('')).or(z.literal('••••••••')),
   dailyChatLimit: z.coerce.number().int().min(1).max(100000).default(1000),
   monthlyChatLimit: z.coerce.number().int().min(1).max(10000000).default(30000),
+  historyMessageCount: z.coerce.number().int().min(2).max(50).default(6),
+  knowledgeCharLimit: z.coerce.number().int().min(1000).max(20000).default(3500),
+  actionWebhookUrl: z.string().url().optional().or(z.literal('')).nullable(),
   n8nWebhookUrl: z.string().url().optional().or(z.literal('')).nullable(),
   templateId: z.string().optional().nullable(),
   // Advanced bot config fields
@@ -80,6 +83,7 @@ export const manualKnowledgeSchema = z.object({
   price: z.coerce.number().min(0).optional(),
   stockStatus: z.string().max(50).optional(),
   description: z.string().max(5000).optional(),
+  imageUrl: z.string().url().optional().or(z.literal('')).nullable(),
 }).superRefine((data, ctx) => {
   if (data.type === 'qa') {
     if (!data.question?.trim()) {

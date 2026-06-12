@@ -17,7 +17,7 @@ export default function ChatbotDashboard() {
   const [knowledgeSources, setKnowledgeSources] = useState<any[]>([]); // eslint-disable-line @typescript-eslint/no-explicit-any
   const [chatLogs, setChatLogs] = useState<any[]>([]); // eslint-disable-line @typescript-eslint/no-explicit-any
   const [wahaStatus, setWahaStatus] = useState('disconnected');
-  const [manualForm, setManualForm] = useState({ type: 'qa', question: '', answer: '', productName: '', productCategory: '', price: 0, stockStatus: 'Tersedia', description: '' });
+  const [manualForm, setManualForm] = useState({ type: 'qa', question: '', answer: '', productName: '', productCategory: '', price: 0, stockStatus: 'Tersedia', description: '', imageUrl: '' });
   const [googleSheetUrl, setGoogleSheetUrl] = useState('');
   const [syncingId, setSyncingId] = useState<string | null>(null);
   const [templates, setTemplates] = useState<any[]>([]); // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -28,6 +28,7 @@ export default function ChatbotDashboard() {
     fallbackMessage: '', handoverMessage: '', handoverKeywords: '', outOfHoursMessage: '',
     aiProvider: 'Flaz Cloud', aiModel: 'gpt-4o-mini', aiApiKey: '',
     dailyChatLimit: 1000, monthlyChatLimit: 30000,
+    historyMessageCount: 6, knowledgeCharLimit: 3500, actionWebhookUrl: '',
     isActive: false,
     templateId: '',
     productsOrServices: '', pricingInfo: '', paymentMethods: '', deliveryMethods: '', serviceArea: '', catalogUrl: '', mapsUrl: '', customFAQ: '',
@@ -51,6 +52,7 @@ export default function ChatbotDashboard() {
           setForm({
             ...json.businessProfile,
             ...json.chatbotSetting,
+            actionWebhookUrl: json.chatbotSetting.actionWebhookUrl || '',
             templateId: json.botConfig?.templateId || '',
             productsOrServices: json.botConfig?.productsOrServices || '',
             pricingInfo: json.botConfig?.pricingInfo || '',
@@ -187,6 +189,7 @@ export default function ChatbotDashboard() {
         payload.price = Number(manualForm.price);
         payload.stockStatus = manualForm.stockStatus;
         payload.description = manualForm.description;
+        payload.imageUrl = manualForm.imageUrl;
       }
       const res = await fetch('/api/dashboard/knowledge/manual', {
         method: 'POST',
@@ -197,7 +200,7 @@ export default function ChatbotDashboard() {
         toast.success('Disimpan!', { id: 'manual' });
         const { source } = await res.json();
         setKnowledgeSources(prev => [source, ...prev]);
-        setManualForm({ type: 'qa', question: '', answer: '', productName: '', productCategory: '', price: 0, stockStatus: 'Tersedia', description: '' });
+        setManualForm({ type: manualForm.type, question: '', answer: '', productName: '', productCategory: '', price: 0, stockStatus: 'Tersedia', description: '', imageUrl: '' });
       } else {
         const err = await res.json();
         toast.error(err.error || 'Gagal menyimpan', { id: 'manual' });
@@ -389,6 +392,7 @@ export default function ChatbotDashboard() {
                     <input placeholder="Kategori" className="mb-3 p-3 text-sm font-medium border border-slate-200 rounded-xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 bg-slate-50 focus:bg-white transition-all" value={manualForm.productCategory} onChange={e => setManualForm(p => ({ ...p, productCategory: e.target.value }))} />
                     <input type="number" placeholder="Harga" className="mb-3 p-3 text-sm font-medium border border-slate-200 rounded-xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 bg-slate-50 focus:bg-white transition-all" value={manualForm.price || ''} onChange={e => setManualForm(p => ({ ...p, price: Number(e.target.value) }))} />
                     <textarea placeholder="Deskripsi/Spesifikasi singkat..." rows={2} className="col-span-2 mb-3 p-3 text-sm font-medium border border-slate-200 rounded-xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 bg-slate-50 focus:bg-white transition-all resize-none" value={manualForm.description} onChange={e => setManualForm(p => ({ ...p, description: e.target.value }))}></textarea>
+                    <input placeholder="URL Gambar Produk (Opsional, dari Imgur/Google Drive)" className="col-span-2 mb-3 p-3 text-sm font-medium border border-slate-200 rounded-xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 bg-slate-50 focus:bg-white transition-all" value={manualForm.imageUrl} onChange={e => setManualForm(p => ({ ...p, imageUrl: e.target.value }))} />
                     <button onClick={handleManualSubmit} className="col-span-2 w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-xl text-sm font-bold shadow-md shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/40 hover:-translate-y-0.5 transition-all">Tambah Produk</button>
                   </div>
                 ) : (
@@ -449,6 +453,7 @@ export default function ChatbotDashboard() {
                                     <div key={item.id} className="bg-white p-3 border border-slate-200 rounded-xl shadow-sm hover:shadow-md hover:border-blue-200 transition-all">
                                       <span className="font-bold text-[13px] text-slate-800 block truncate mb-1">
                                         {item.productName || item.question || 'Tanpa Nama'}
+                                        {item.imageUrl && <span className="ml-1 px-1 bg-blue-100 text-blue-600 rounded text-[9px] uppercase font-bold">Image</span>}
                                       </span>
                                       <span className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
                                         {item.price ? <span className="text-emerald-600 font-bold bg-emerald-50 px-1 rounded mr-1">Rp {item.price.toLocaleString('id-ID')}</span> : ''}

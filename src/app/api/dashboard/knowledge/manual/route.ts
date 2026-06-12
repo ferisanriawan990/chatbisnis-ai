@@ -88,8 +88,9 @@ export async function POST(req: Request) {
         price: data.price,
         stockStatus: data.stockStatus,
         description: data.description,
+        imageUrl: (data as any).imageUrl,
         searchableText,
-      },
+      } as any,
     });
 
     return NextResponse.json({ success: true, source });

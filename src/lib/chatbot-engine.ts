@@ -19,6 +19,7 @@ export interface ChatbotEngineParams {
 export interface ChatbotEngineResult {
   reply: string;
   metadata?: any;
+  mediaToSend?: { url: string; caption: string }[];
 }
 
 export class ChatbotEngine {
@@ -69,7 +70,7 @@ export class ChatbotEngine {
         customerPhone: params.customerPhone,
       },
       orderBy: { createdAt: 'desc' },
-      take: 6, // Ambil 6 pesan terakhir
+      take: chatbotSetting.historyMessageCount || 6, // Menggunakan batas dinamis (Prisma)
     });
     
     // Format history: pesan user menjadi 'user', balasan AI menjadi 'assistant'
@@ -83,17 +84,28 @@ export class ChatbotEngine {
     const systemPrompt = this.buildPrompt(chatbotSetting, botConfig, profile, matchedItems);
     const { replyMessage, tokenUsage, usedCatalogUrl, promptSource, aiModelUsed } = await this.callAI(chatbotSetting, activePlan, systemPrompt, sanitizedMessageIn, isTest, chatHistory, params.imageUrl);
 
+    // Extract image tags: [SEND_IMAGE: url | caption]
+    let finalReply = replyMessage;
+    const mediaToSend: { url: string; caption: string }[] = [];
+    const imageRegex = /\[SEND_IMAGE:\s*([^|\]]+?)(?:\s*\|\s*([^\]]+))?\]/g;
+    let match;
+    while ((match = imageRegex.exec(finalReply)) !== null) {
+      mediaToSend.push({ url: match[1].trim(), caption: (match[2] || '').trim() });
+    }
+    finalReply = finalReply.replace(imageRegex, '').trim();
+
     // 8. Record Usage & Log
     if (!isTest) {
       await prisma.usageCounter.update({
         where: { id: access.usageId! },
         data: { aiTokens: { increment: tokenUsage }, aiChats: { increment: 1 } }
       });
-      await this.sendLog({ ...params, chatbotSetting, messageOut: replyMessage, tokenUsage, intent, promptSource, knowledgeMatchCount, usedCatalogUrl, aiUsed: aiModelUsed });
+      await this.sendLog({ ...params, chatbotSetting, messageOut: finalReply, tokenUsage, intent, promptSource, knowledgeMatchCount, usedCatalogUrl, aiUsed: aiModelUsed });
     }
 
     return { 
-      reply: replyMessage, 
+      reply: finalReply, 
+      mediaToSend,
       metadata: { intent, knowledgeMatchCount, promptSource, usedCatalogUrl, tokenUsage, usedDeterministicReply: false } 
     };
   }
@@ -245,10 +257,14 @@ export class ChatbotEngine {
   private static buildPrompt(chatbotSetting: any, botConfig: any, profile: any, matchedItems: any[]) {
     let relevantKnowledge = '';
     let charCount = 0;
+    const limit = chatbotSetting.knowledgeCharLimit || 3500;
     for (const item of matchedItems) {
-      if (charCount > 3500) break;
-      relevantKnowledge += `- ${item.searchableText}\n`;
-      charCount += item.searchableText.length;
+      if (charCount > limit) break;
+      let text = `- ${item.searchableText}`;
+      if (item.imageUrl) text += `\n  URL Gambar Tersedia: ${item.imageUrl}`;
+      text += '\n';
+      relevantKnowledge += text;
+      charCount += text.length;
     }
 
     let customFAQ: Array<{ q: string; a: string }> = [];
@@ -312,6 +328,14 @@ export class ChatbotEngine {
     if (!allowPromoOffer) {
       finalSystemPrompt += '\n\nDILARANG keras memberikan promosi, diskon, atau janji penawaran yang tidak tertulis eksplisit.';
     }
+    if (chatbotSetting.actionWebhookUrl) {
+      finalSystemPrompt += `\n\nAKSI EKSTERNAL:\nJika kamu butuh mengecek data dinamis ke sistem pihak ketiga (seperti cek stok real-time, buat invoice, dll), balas pesan ini HANYA dengan output JSON berformat: {"tool_call": true, "action": "nama_aksi", "params": {"key": "value"}}. Jangan tambahkan teks lain. Sistem akan memproses dan mengembalikan data kepadamu.`;
+    }
+    
+    finalSystemPrompt += `\n\nPENGIRIMAN GAMBAR PRODUK:
+Jika pengguna secara spesifik meminta gambar produk, dan produk tersebut memiliki 'URL Gambar Tersedia' di Knowledge Base, kamu HARUS melampirkan gambar tersebut dengan menggunakan tag ini di dalam balasanmu:
+[SEND_IMAGE: <url_gambar> | <caption_singkat>]
+Contoh: [SEND_IMAGE: https://imgur.com/xyz.jpg | Ini adalah gambar produk sepatu Nike]`;
 
     try {
       const aiResult = await AIService.generateReply({
@@ -325,7 +349,50 @@ export class ChatbotEngine {
         maxTokens: chatbotSetting.maxReplyLength === 'pendek' ? 150 : chatbotSetting.maxReplyLength === 'panjang' ? 800 : 450,
       });
 
-      return { replyMessage: aiResult.reply, tokenUsage: aiResult.tokenUsage || 0, usedCatalogUrl: Boolean(chatbotSetting.catalogUrl && aiResult.reply.includes(chatbotSetting.catalogUrl)), promptSource: 'ai', aiModelUsed: aiModel };
+      let finalReply = aiResult.reply;
+      let totalTokens = aiResult.tokenUsage || 0;
+
+      // Tool Call Execution Loop
+      if (chatbotSetting.actionWebhookUrl && finalReply.includes('"tool_call":')) {
+        try {
+          const jsonMatch = finalReply.match(/\{[\s\S]*"tool_call"[\s\S]*\}/);
+          if (jsonMatch) {
+            const toolData = JSON.parse(jsonMatch[0]);
+            if (toolData.tool_call === true) {
+              console.log('--- EXECUTING TOOL CALL ---', toolData);
+              const webhookRes = await fetch(chatbotSetting.actionWebhookUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: toolData.action, params: toolData.params, customerMessage: messageIn })
+              });
+              let webhookResultString = 'Gagal memanggil sistem eksternal.';
+              if (webhookRes.ok) {
+                webhookResultString = JSON.stringify(await webhookRes.json());
+              }
+
+              const updatedHistory = [...chatHistory, { role: 'user', content: messageIn }, { role: 'assistant', content: finalReply }];
+              const followUpUserMsg = `[SYSTEM RESPONSE FROM ACTION ${toolData.action}]:\n${webhookResultString}\n\nBerikan jawaban akhir kepada pelanggan berdasarkan data tersebut.`;
+
+              const followUpResult = await AIService.generateReply({
+                systemPrompt: finalSystemPrompt,
+                userMessage: followUpUserMsg,
+                chatHistory: updatedHistory,
+                provider: chatbotSetting.aiProvider,
+                model: aiModel,
+                apiKey: aiApiKey,
+                maxTokens: chatbotSetting.maxReplyLength === 'pendek' ? 150 : chatbotSetting.maxReplyLength === 'panjang' ? 800 : 450,
+              });
+
+              finalReply = followUpResult.reply;
+              totalTokens += followUpResult.tokenUsage || 0;
+            }
+          }
+        } catch (e) {
+          console.error("Tool call error", e);
+        }
+      }
+
+      return { replyMessage: finalReply, tokenUsage: totalTokens, usedCatalogUrl: Boolean(chatbotSetting.catalogUrl && finalReply.includes(chatbotSetting.catalogUrl)), promptSource: 'ai', aiModelUsed: aiModel };
     } catch (error) {
       console.error('AI Error:', error);
       return { replyMessage: chatbotSetting.fallbackMessage, tokenUsage: 0, usedCatalogUrl: false, promptSource: 'error', aiModelUsed: aiModel };

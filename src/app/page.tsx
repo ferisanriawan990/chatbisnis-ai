@@ -1,7 +1,25 @@
+"use client";
+
 import Link from 'next/link';
 import { Bot, Zap, MessageCircle, TrendingUp, ShieldCheck } from 'lucide-react';
+import { motion, Variants } from 'framer-motion';
 
 export default function Home() {
+  const fadeInUp: Variants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } }
+  };
+
+  const staggerContainer: Variants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.2
+      }
+    }
+  };
+
   return (
     <div className="min-h-screen bg-white">
       {/* Navbar */}
@@ -25,96 +43,131 @@ export default function Home() {
       </header>
 
       {/* Hero Section */}
-      <section className="pt-32 pb-20 px-4 bg-gradient-to-b from-blue-50/50 to-white">
-        <div className="max-w-5xl mx-auto text-center space-y-8">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-sm font-medium mb-4">
+      <section className="pt-32 pb-20 px-4 bg-gradient-to-b from-blue-50/50 to-white overflow-hidden">
+        <motion.div 
+          className="max-w-5xl mx-auto text-center space-y-8"
+          initial="hidden"
+          animate="visible"
+          variants={staggerContainer}
+        >
+          <motion.div variants={fadeInUp} className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-sm font-medium mb-4">
             <Zap className="w-4 h-4" /> Asisten WhatsApp AI untuk UMKM
-          </div>
-          <h1 className="text-4xl md:text-6xl font-extrabold text-slate-900 tracking-tight leading-tight">
+          </motion.div>
+          <motion.h1 variants={fadeInUp} className="text-4xl md:text-6xl font-extrabold text-slate-900 tracking-tight leading-tight">
             Ubah Pengunjung WhatsApp<br className="hidden md:block"/> Menjadi Pembeli dengan AI
-          </h1>
-          <p className="text-lg md:text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed">
+          </motion.h1>
+          <motion.p variants={fadeInUp} className="text-lg md:text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed">
             Tidak perlu lagi begadang membalas chat pelanggan. ChatBisnis AI merespon 24/7, menjawab pertanyaan produk, dan menangkap prospek secara otomatis. Tanpa coding, tanpa ribet setting server.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+          </motion.p>
+          <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
             <Link href="/register" className="px-8 py-4 bg-blue-600 text-white text-lg font-bold rounded-full hover:bg-blue-700 hover:shadow-2xl hover:shadow-blue-500/30 hover:-translate-y-1 transition-all w-full sm:w-auto">
               Mulai Sekarang (Gratis)
             </Link>
             <Link href="/contact" className="px-8 py-4 bg-white/80 backdrop-blur-sm text-slate-700 border border-slate-200 text-lg font-bold rounded-full hover:bg-slate-50 hover:shadow-lg hover:-translate-y-1 transition-all w-full sm:w-auto">
               Hubungi Sales
             </Link>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       </section>
 
       {/* Problem Section */}
       <section className="py-20 bg-slate-50 px-4">
         <div className="max-w-5xl mx-auto text-center space-y-12">
-          <h2 className="text-3xl font-bold text-slate-900">Masalah UMKM Saat Ini</h2>
-          <div className="grid md:grid-cols-3 gap-8 text-left">
-            <div className="bg-white/60 backdrop-blur-md p-8 rounded-3xl shadow-sm border border-slate-200/60 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+          <motion.h2 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-3xl font-bold text-slate-900"
+          >
+            Masalah UMKM Saat Ini
+          </motion.h2>
+          <motion.div 
+            className="grid md:grid-cols-3 gap-8 text-left"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={staggerContainer}
+          >
+            <motion.div variants={fadeInUp} className="bg-white/60 backdrop-blur-md p-8 rounded-3xl shadow-sm border border-slate-200/60 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
               <div className="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center mb-6 shadow-inner"><span className="text-2xl">😴</span></div>
               <h3 className="text-xl font-bold mb-3 text-slate-800">Pesan Menumpuk</h3>
               <p className="text-slate-600 leading-relaxed">Banyak chat masuk di luar jam kerja yang tidak terbalas cepat, membuat pembeli kabur ke kompetitor.</p>
-            </div>
-            <div className="bg-white/60 backdrop-blur-md p-8 rounded-3xl shadow-sm border border-slate-200/60 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+            </motion.div>
+            <motion.div variants={fadeInUp} className="bg-white/60 backdrop-blur-md p-8 rounded-3xl shadow-sm border border-slate-200/60 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
               <div className="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center mb-6 shadow-inner"><span className="text-2xl">💰</span></div>
               <h3 className="text-xl font-bold mb-3 text-slate-800">Kehilangan Prospek</h3>
               <p className="text-slate-600 leading-relaxed">Pelanggan yang tanya-tanya seringkali terlupakan untuk di-follow up sehingga gagal closing.</p>
-            </div>
-            <div className="bg-white/60 backdrop-blur-md p-8 rounded-3xl shadow-sm border border-slate-200/60 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+            </motion.div>
+            <motion.div variants={fadeInUp} className="bg-white/60 backdrop-blur-md p-8 rounded-3xl shadow-sm border border-slate-200/60 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
               <div className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center mb-6 shadow-inner"><span className="text-2xl">🤯</span></div>
               <h3 className="text-xl font-bold mb-3 text-slate-800">Terlalu Teknis</h3>
               <p className="text-slate-600 leading-relaxed">Sistem API WhatsApp dan AI sangat rumit. Mengurus server dan integrasi memusingkan orang awam.</p>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </div>
       </section>
 
       {/* Features */}
-      <section id="fitur" className="py-24 px-4">
+      <section id="fitur" className="py-24 px-4 overflow-hidden">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-16">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
             <h2 className="text-3xl font-bold text-slate-900 mb-4">Solusi Cerdas dari ChatBisnis AI</h2>
             <p className="text-lg text-slate-600">Semua yang Anda butuhkan untuk mengotomatiskan layanan pelanggan.</p>
-          </div>
+          </motion.div>
           <div className="grid md:grid-cols-2 gap-12">
-            <div className="space-y-8">
-              <div className="flex gap-4">
+            <motion.div 
+              className="space-y-8"
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              variants={staggerContainer}
+            >
+              <motion.div variants={fadeInUp} className="flex gap-4">
                 <div className="flex-shrink-0 mt-1"><Bot className="w-8 h-8 text-blue-600" /></div>
                 <div>
                   <h3 className="text-xl font-bold mb-2">Kecerdasan Buatan Terlatih</h3>
                   <p className="text-slate-600">AI kami membaca profil bisnis dan produk Anda, memungkinkannya menjawab seakan-akan CS manusia profesional.</p>
                 </div>
-              </div>
-              <div className="flex gap-4">
+              </motion.div>
+              <motion.div variants={fadeInUp} className="flex gap-4">
                 <div className="flex-shrink-0 mt-1"><TrendingUp className="w-8 h-8 text-emerald-600" /></div>
                 <div>
                   <h3 className="text-xl font-bold mb-2">Auto Lead Capture</h3>
                   <p className="text-slate-600">Setiap pelanggan yang bertanya akan otomatis disimpan ke menu Leads, siap untuk difollow-up kemudian.</p>
                 </div>
-              </div>
-              <div className="flex gap-4">
+              </motion.div>
+              <motion.div variants={fadeInUp} className="flex gap-4">
                 <div className="flex-shrink-0 mt-1"><MessageCircle className="w-8 h-8 text-purple-600" /></div>
                 <div>
                   <h3 className="text-xl font-bold mb-2">Human Handover & Out-of-Hours</h3>
                   <p className="text-slate-600">Pelanggan bisa meminta bicara dengan CS manusia. Sistem juga tahu cara menjawab sopan di luar jam kerja.</p>
                 </div>
-              </div>
-            </div>
-            <div className="bg-slate-100 rounded-3xl p-8 relative overflow-hidden border border-slate-200">
+              </motion.div>
+            </motion.div>
+            <motion.div 
+              initial={{ opacity: 0, x: 50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8 }}
+              viewport={{ once: true }}
+              className="bg-slate-100 rounded-3xl p-8 relative overflow-hidden border border-slate-200"
+            >
               <div className="absolute inset-0 bg-gradient-to-br from-blue-100/50 to-indigo-100/50 z-0"></div>
               <div className="relative z-10 space-y-4">
-                <div className="bg-white p-4 rounded-2xl shadow-sm self-start max-w-[80%] rounded-tl-sm text-sm">Halo min, toko buka jam berapa ya?</div>
-                <div className="bg-blue-600 text-white p-4 rounded-2xl shadow-sm self-end max-w-[80%] rounded-br-sm ml-auto text-sm">
+                <motion.div initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }} className="bg-white p-4 rounded-2xl shadow-sm self-start max-w-[80%] rounded-tl-sm text-sm">Halo min, toko buka jam berapa ya?</motion.div>
+                <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} transition={{ delay: 0.6 }} className="bg-blue-600 text-white p-4 rounded-2xl shadow-sm self-end max-w-[80%] rounded-br-sm ml-auto text-sm">
                   Halo! 👋 Toko kami buka setiap hari jam 08:00 - 17:00. Apakah ada yang bisa kami bantu?
-                </div>
-                <div className="bg-white p-4 rounded-2xl shadow-sm self-start max-w-[80%] rounded-tl-sm text-sm">Ada jual sepatu lari ukuran 42?</div>
-                <div className="bg-blue-600 text-white p-4 rounded-2xl shadow-sm self-end max-w-[80%] rounded-br-sm ml-auto text-sm">
+                </motion.div>
+                <motion.div initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} transition={{ delay: 1.0 }} className="bg-white p-4 rounded-2xl shadow-sm self-start max-w-[80%] rounded-tl-sm text-sm">Ada jual sepatu lari ukuran 42?</motion.div>
+                <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} transition={{ delay: 1.4 }} className="bg-blue-600 text-white p-4 rounded-2xl shadow-sm self-end max-w-[80%] rounded-br-sm ml-auto text-sm">
                   Tentu! Kami memiliki sepatu lari &ldquo;SpeedRunner&rdquo; ukuran 42 yang sedang ready stock. Harganya Rp 450.000. Ingin kami bantu proses pesanannya? 👟
-                </div>
+                </motion.div>
               </div>
-            </div>
+            </motion.div>
           </div>
         </div>
       </section>
@@ -122,30 +175,43 @@ export default function Home() {
       {/* How it Works */}
       <section id="cara-kerja" className="py-24 bg-slate-900 text-white px-4">
         <div className="max-w-5xl mx-auto text-center space-y-16">
-          <h2 className="text-3xl font-bold">Aktif Hanya Dalam 3 Langkah</h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="relative">
+          <motion.h2 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-3xl font-bold"
+          >
+            Aktif Hanya Dalam 3 Langkah
+          </motion.h2>
+          <motion.div 
+            className="grid md:grid-cols-3 gap-8"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={staggerContainer}
+          >
+            <motion.div variants={fadeInUp} className="relative">
               <div className="text-6xl font-black text-slate-800 absolute -top-8 left-1/2 -translate-x-1/2 z-0">1</div>
               <div className="relative z-10 pt-4">
                 <h3 className="text-xl font-bold mb-2">Isi Profil & Data</h3>
                 <p className="text-slate-400">Daftar dan isi data toko, jam kerja, serta upload Excel daftar produk Anda.</p>
               </div>
-            </div>
-            <div className="relative">
+            </motion.div>
+            <motion.div variants={fadeInUp} className="relative">
               <div className="text-6xl font-black text-slate-800 absolute -top-8 left-1/2 -translate-x-1/2 z-0">2</div>
               <div className="relative z-10 pt-4">
                 <h3 className="text-xl font-bold mb-2">Scan QR WA</h3>
                 <p className="text-slate-400">Klik &ldquo;Mulai Sesi&rdquo; dan scan QR Code menggunakan WhatsApp Business Anda.</p>
               </div>
-            </div>
-            <div className="relative">
+            </motion.div>
+            <motion.div variants={fadeInUp} className="relative">
               <div className="text-6xl font-black text-slate-800 absolute -top-8 left-1/2 -translate-x-1/2 z-0">3</div>
               <div className="relative z-10 pt-4">
                 <h3 className="text-xl font-bold mb-2">Bot Langsung Aktif</h3>
                 <p className="text-slate-400">Bot langsung membalas pelanggan secara cerdas. Anda tinggal memantau dari Dashboard.</p>
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </div>
       </section>
 

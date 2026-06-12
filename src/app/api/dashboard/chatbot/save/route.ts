@@ -103,6 +103,9 @@ export async function POST(req: Request) {
       ...(encryptedAiApiKey !== undefined && { aiApiKeyEncrypted: encryptedAiApiKey }),
       dailyChatLimit: data.dailyChatLimit,
       monthlyChatLimit: data.monthlyChatLimit,
+      historyMessageCount: data.historyMessageCount,
+      knowledgeCharLimit: data.knowledgeCharLimit,
+      actionWebhookUrl: data.actionWebhookUrl || null,
       // wahaSessionName is preserved — never overwritten from user input
       wahaSessionName: sessionName,
       n8nWebhookUrl: data.n8nWebhookUrl || null,
