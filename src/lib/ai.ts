@@ -63,8 +63,14 @@ export class AIService {
       });
 
       if (!res.ok) {
-        console.error('AI API Error Status:', res.status);
-        throw new Error('Gagal menghubungi AI provider.');
+        const errText = await res.text().catch(() => 'No response body');
+        console.error('AI API Error Status:', res.status, errText);
+        let parsedErr = 'Gagal menghubungi AI provider.';
+        try {
+          const jsonErr = JSON.parse(errText);
+          parsedErr = jsonErr.error?.message || jsonErr.message || parsedErr;
+        } catch { /* ignore */ }
+        throw new Error(`[API Status ${res.status}] ${parsedErr}`);
       }
 
       const data = await res.json();
@@ -72,13 +78,14 @@ export class AIService {
       const tokenUsage = data.usage?.total_tokens || 0;
 
       return { reply, tokenUsage };
-    } catch (error) {
-      if ((error as Error).name === 'AbortError' || (error as Error).name === 'TimeoutError') {
+    } catch (error: any) {
+      if (error.name === 'AbortError' || error.name === 'TimeoutError') {
         console.error('AI Generation Timeout (30s limit)');
         throw new Error('Waktu respon AI habis (timeout).');
       }
-      console.error('AI Generation Error:', (error as Error).message);
-      throw new Error('Kesalahan internal sistem AI.');
+      console.error('AI Generation Error:', error.message);
+      // Transparently pass the error so the webhook can relay it
+      throw new Error(error.message || 'Kesalahan internal sistem AI.');
     }
   }
 
