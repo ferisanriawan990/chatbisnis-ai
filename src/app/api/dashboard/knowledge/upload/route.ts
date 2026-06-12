@@ -159,6 +159,7 @@ export async function POST(req: Request) {
         price: item.price ?? null,
         stockStatus: sanitizeText(item.stockStatus),
         description: sanitizeText(item.description),
+        imageUrl: item.imageUrl ? sanitizeText(item.imageUrl) : null,
         metadataJson: item.metadataJson || null,
         searchableText: sText,
       };

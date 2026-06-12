@@ -9,6 +9,7 @@ export interface ParsedItem {
   price?: number | null;
   stockStatus?: string;
   description?: string;
+  imageUrl?: string;
   metadataJson?: string;
   searchableText: string;
 }
@@ -80,6 +81,7 @@ function processRow(rawData: Record<string, unknown>): ParsedItem | null {
   let priceStr: string | null = null;
   let stockStatus = '';
   let description = '';
+  let imageUrl = '';
   const extraMetadata: Record<string, string> = {};
 
   for (const [rawKey, rawValue] of Object.entries(rawData)) {
@@ -103,6 +105,8 @@ function processRow(rawData: Record<string, unknown>): ParsedItem | null {
       stockStatus = val;
     } else if (['deskripsi', 'description', 'keterangan', 'detail'].includes(normKey)) {
       description = val;
+    } else if (['gambar', 'image', 'foto', 'photo', 'imageurl', 'urlgambar', 'linkgambar'].includes(normKey)) {
+      imageUrl = val;
     } else if (['warna', 'color', 'varianwarna', 'pilihanwarna'].includes(normKey)) {
       extraMetadata['Warna'] = val;
     } else if (['hargakredit', 'kredit', 'cicilan', 'angsuran'].includes(normKey)) {
@@ -151,6 +155,7 @@ function processRow(rawData: Record<string, unknown>): ParsedItem | null {
     price,
     stockStatus,
     description,
+    imageUrl,
     metadataJson: Object.keys(extraMetadata).length > 0 ? JSON.stringify(extraMetadata) : undefined,
     searchableText,
   };
