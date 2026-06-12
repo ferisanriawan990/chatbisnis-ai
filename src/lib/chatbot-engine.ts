@@ -308,7 +308,8 @@ export class ChatbotEngine {
     let aiModel = chatbotSetting.aiModel || 'gpt-4o-mini';
 
     const globalKey = await prisma.secretCredential.findUnique({ where: { key: 'FLAZ_API_KEY_GLOBAL' } });
-    if (globalKey?.isActive) {
+    // Use Global Key ONLY if user doesn't have a custom key, AND the global key is active
+    if (!aiApiKey && globalKey?.isActive) {
       aiApiKey = decrypt(globalKey.encryptedValue);
       const globalModel = await prisma.secretCredential.findUnique({ where: { key: 'GLOBAL_AI_MODEL' } });
       if (globalModel?.isActive) aiModel = decrypt(globalModel.encryptedValue);
