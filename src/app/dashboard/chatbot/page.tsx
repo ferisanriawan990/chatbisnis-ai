@@ -5,7 +5,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Save, Trash2, CheckCircle2, AlertCircle, UploadCloud, Download, Database, Bot, Power, PowerOff } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import Link from 'next/link';
-import { BusinessProfileForm, AIStyleForm, WhatsAppConnectionCard, AdvancedRulesPanel, ChatbotPreview, AiIntegrationPanel } from './components';
+import { BusinessProfileForm, AIStyleForm, WhatsAppConnectionCard, AdvancedRulesPanel, ChatbotPreview } from './components';
 
 export default function ChatbotDashboard() {
   const [loading, setLoading] = useState(true);
@@ -485,7 +485,7 @@ export default function ChatbotDashboard() {
 
           <WhatsAppConnectionCard wahaStatus={wahaStatus} isComplete={stepsComplete.waha} />
           
-          <AiIntegrationPanel form={form} handleChange={handleChange} />
+
           <AdvancedRulesPanel form={form} handleChange={handleChange} />
 
         </div>
