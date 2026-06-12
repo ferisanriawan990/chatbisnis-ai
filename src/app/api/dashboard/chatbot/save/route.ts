@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { encrypt } from '@/lib/crypto';
 import { saveChatbotSchema } from '@/lib/validations';
 import { getActiveWahaSessionName } from '@/lib/waha-helpers';
+import { validatePublicHttpsUrl } from '@/lib/security';
 
 export async function POST(req: Request) {
   try {
@@ -23,6 +24,13 @@ export async function POST(req: Request) {
     }
 
     const data = parsed.data;
+
+    if (data.actionWebhookUrl && !validatePublicHttpsUrl(data.actionWebhookUrl)) {
+      return NextResponse.json({ error: 'Webhook aksi harus berupa URL HTTPS publik.' }, { status: 400 });
+    }
+    if (data.n8nWebhookUrl && !validatePublicHttpsUrl(data.n8nWebhookUrl)) {
+      return NextResponse.json({ error: 'Webhook n8n harus berupa URL HTTPS publik.' }, { status: 400 });
+    }
 
     // Save Business Profile
     let profile = await prisma.businessProfile.findFirst({ where: { userId } });

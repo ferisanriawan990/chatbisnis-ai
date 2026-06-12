@@ -58,6 +58,7 @@ export function buildSystemPrompt(params: BuildPromptParams): string {
     outOfHoursMessage,
     botName,
     useEmoji,
+    fallbackMessage,
     maxReplyLength,
   } = params;
 
@@ -130,17 +131,19 @@ Tujuan utama:
     sopan: 'Gunakan bahasa sopan dan formal. Panggil customer "Kak" atau "Bapak/Ibu".',
     profesional: 'Gunakan bahasa profesional, formal, to the point.',
     ramah: 'Gunakan bahasa ramah, hangat, dan bersahabat.',
+    'sales / soft selling': 'Gunakan bahasa persuasif dan menarik (soft selling). Tawarkan keunggulan produk secara halus.',
   };
 
   const langMap: Record<string, string> = {
     id: 'Gunakan bahasa Indonesia.',
     'id-santai': 'Gunakan bahasa Indonesia santai/gaul.',
     'id-en': 'Boleh campur bahasa Indonesia dan Inggris secara natural.',
+    en: 'Gunakan bahasa Inggris (English).',
   };
 
   const modeMap: Record<string, string> = {
     auto_reply: 'Jawab semua pertanyaan secara otomatis berdasarkan data bisnis.',
-    faq_only: 'Hanya jawab pertanyaan yang ada di FAQ dan knowledge base. Untuk pertanyaan lain, arahkan ke admin.',
+    faq_only: 'Hanya jawab pertanyaan yang ada di FAQ dan knowledge base. Untuk pertanyaan lain, beritahu tidak tahu secara sopan.',
     collect_and_handover: 'Kumpulkan data customer (nama, kebutuhan, nomor WA) lalu teruskan ke admin manusia. Jangan menjawab detail teknis.',
   };
 
@@ -153,7 +156,7 @@ Tujuan utama:
   };
 
   const styleSection = `\n\nGAYA KOMUNIKASI & PANJANG BALASAN:
-${toneMap[tone.toLowerCase()] || toneMap.sopan}
+${toneMap[tone.toLowerCase()] || toneMap.profesional}
 ${langMap[languageStyle.toLowerCase()] || langMap.id}
 ATURAN EMOJI: ${emojiRule}
 PANJANG BALASAN: ${lengthMap[maxReplyLength.toLowerCase()] || lengthMap.sedang}
@@ -162,7 +165,7 @@ MODE: ${modeMap[botMode.toLowerCase()] || modeMap.auto_reply}`;
   // ── Layer 7: Safety Rules ──
   const safetyRules = `\n\nATURAN KEAMANAN MUTLAK:
 - JANGAN mengarang harga, stok, alamat, promo, warna, spesifikasi atau kebijakan yang tidak ada di data bisnis.
-- Jika pelanggan bertanya spesifik tentang HARGA, STOK, atau KEBIJAKAN yang sama sekali tidak ada di KNOWLEDGE BASE, JANGAN MENGARANG. Beritahu mereka dengan sopan bahwa informasinya belum tersedia atau sarankan untuk bertanya ke admin.
+- Jika pelanggan bertanya spesifik tentang informasi yang sama sekali tidak ada di KNOWLEDGE BASE atau DATA BISNIS, JANGAN MENGARANG. Kamu WAJIB membalas persis dengan kalimat berikut: "${fallbackMessage}"
 - Jika pelanggan memberikan gambar/foto, kamu BOLEH mendeskripsikan dan menanggapi isi gambar tersebut, serta menghubungkannya dengan produk/layanan kita jika memungkinkan.
 - JANGAN pernah menjawab dengan menyuruh pelanggan mengecek katalog sebagai jawaban utama jika pelanggan bertanya tentang harga atau stok.
 - Link katalog HANYA boleh diberikan sebagai pelengkap di akhir jawaban ("Link katalog juga bisa digunakan untuk melihat foto/detail tambahan: ${bd.catalogUrl || ''}").

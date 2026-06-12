@@ -66,7 +66,10 @@ export default function AdminApiKeysPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ model: globalModel })
       });
-      if (!res.ok) throw new Error('Gagal menyimpan model AI');
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Gagal menyimpan model AI');
+      }
       toast.success('Model AI global berhasil disimpan', { id: 'model' });
     } catch (e: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
       toast.error(e.message, { id: 'model' });
@@ -84,7 +87,10 @@ export default function AdminApiKeysPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
-      if (!res.ok) throw new Error('Gagal menyimpan API Key');
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Gagal menyimpan API Key');
+      }
       toast.success('API Key berhasil disimpan', { id: 'add' });
       setFormData({ name: '', key: '', value: '', provider: 'flaz', description: '' });
     fetchKeys();
@@ -113,7 +119,10 @@ export default function AdminApiKeysPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isActive: !currentStatus })
       });
-      if (!res.ok) throw new Error('Gagal memperbarui status');
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Gagal memperbarui status');
+      }
       toast.success('Status diperbarui', { id: 'status' });
       fetchKeys();
     } catch (e: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -129,7 +138,10 @@ export default function AdminApiKeysPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ value: newValue })
       });
-      if (!res.ok) throw new Error('Gagal merotasi Key');
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Gagal merotasi Key');
+      }
       toast.success('Key berhasil dirotasi', { id: 'rotate' });
       fetchKeys();
     } catch (e: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -145,7 +157,10 @@ export default function AdminApiKeysPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ description: newDesc })
       });
-      if (!res.ok) throw new Error('Gagal memperbarui deskripsi');
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Gagal memperbarui deskripsi');
+      }
       toast.success('Deskripsi diperbarui', { id: 'desc' });
       fetchKeys();
     } catch (e: any) { // eslint-disable-line @typescript-eslint/no-explicit-any

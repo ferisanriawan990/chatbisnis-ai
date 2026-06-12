@@ -1,3 +1,5 @@
+import { validatePublicHttpsUrl } from './security';
+
 export class N8NService {
   /**
    * Send a unified payload to a user's custom n8n webhook URL.
@@ -10,6 +12,10 @@ export class N8NService {
     businessProfileId: string;
   }) {
     try {
+      if (!validatePublicHttpsUrl(n8nWebhookUrl)) {
+        throw new Error('URL n8n harus berupa URL HTTPS publik.');
+      }
+
       const response = await fetch(n8nWebhookUrl, {
         method: 'POST',
         headers: {
@@ -17,6 +23,7 @@ export class N8NService {
           'User-Agent': 'ChatBisnis-AI-Webhook'
         },
         body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(15000),
       });
 
       if (!response.ok) {

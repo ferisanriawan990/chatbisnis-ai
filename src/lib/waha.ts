@@ -14,7 +14,7 @@ export type WAHASessionStatus = 'disconnected' | 'starting' | 'qr' | 'connected'
 
 export interface WAHAMediaSendResult {
   mode: 'image' | 'link-preview';
-  response: any;
+  response: unknown;
 }
 
 class WAHAApiError extends Error {
@@ -25,6 +25,7 @@ class WAHAApiError extends Error {
 }
 
 export class WAHAService {
+  private static mediaModeByServer = new Map<string, 'image' | 'link-preview'>();
   private baseUrl: string;
   private apiKey: string;
 
@@ -251,6 +252,11 @@ export class WAHAService {
 
     const safeFallbackUrl = validatePublicHttpsUrl(fallbackUrl || '') ? fallbackUrl! : imageUrl;
 
+    if (WAHAService.mediaModeByServer.get(this.baseUrl) === 'link-preview') {
+      const response = await this.sendImageLinkPreview(sessionName, phone, safeFallbackUrl, caption);
+      return { mode: 'link-preview', response };
+    }
+
     let ext = 'jpeg';
     const parsedExt = imageUrl.split('.').pop()?.split('?')[0]?.toLowerCase();
     if (parsedExt && parsedExt.length <= 4 && /^[a-z0-9]+$/.test(parsedExt)) {
@@ -274,9 +280,11 @@ export class WAHAService {
           caption: caption || '',
         }),
       });
+      WAHAService.mediaModeByServer.set(this.baseUrl, 'image');
       return { mode: 'image', response };
     } catch (error) {
       if (this.isPlusOnlyMediaError(error)) {
+        WAHAService.mediaModeByServer.set(this.baseUrl, 'link-preview');
         const response = await this.sendImageLinkPreview(sessionName, phone, safeFallbackUrl, caption);
         return { mode: 'link-preview', response };
       }
@@ -313,9 +321,11 @@ export class WAHAService {
             caption: caption || '',
           }),
         });
+        WAHAService.mediaModeByServer.set(this.baseUrl, 'image');
         return { mode: 'image', response };
       } catch (retryError) {
         if (this.isPlusOnlyMediaError(retryError)) {
+          WAHAService.mediaModeByServer.set(this.baseUrl, 'link-preview');
           const response = await this.sendImageLinkPreview(sessionName, phone, safeFallbackUrl, caption);
           return { mode: 'link-preview', response };
         }

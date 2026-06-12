@@ -32,6 +32,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const imageUrl = validatePublicHttpsUrl(item.imageUrl || '') ? item.imageUrl! : undefined;
 
   return {
+    metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://chatbisnis-ai.vercel.app'),
     title,
     description,
     robots: { index: false, follow: false },
@@ -40,7 +41,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description,
       type: 'website',
       siteName: item.businessProfile.businessName,
-      images: imageUrl ? [{ url: imageUrl, alt: title }] : [],
+      images: imageUrl ? [{ url: imageUrl, alt: title, width: 600, height: 600 }] : [],
     },
     twitter: {
       card: 'summary_large_image',

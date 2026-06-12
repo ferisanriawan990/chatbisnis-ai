@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { AIService } from '@/lib/ai';
+import { getAICredentialCandidates } from '@/lib/ai-config';
+
+export const maxDuration = 60;
 
 export async function POST() {
   try {
@@ -45,20 +49,26 @@ export async function POST() {
         missing.push('Tidak ada paket berlangganan yang aktif');
       }
 
-      // Global AI key must exist AND be active
-      const globalKey = await prisma.secretCredential.findUnique({
-        where: { key: 'FLAZ_API_KEY_GLOBAL' },
-      });
-      const globalKeyActive = globalKey && globalKey.isActive === true;
-
-      // Custom key is only valid if plan allows it AND key is configured
-      const hasCustomKey =
-        subscription?.plan?.allowCustomApiKey === true && !!chatbot.aiApiKeyEncrypted;
-
-      if (!globalKeyActive && !hasCustomKey) {
+      const credentials = await getAICredentialCandidates(
+        chatbot,
+        subscription?.plan?.allowCustomApiKey === true,
+      );
+      if (credentials.length === 0) {
         missing.push(
           'Global AI Key belum aktif dan Anda tidak memiliki AI Key custom yang valid',
         );
+      } else {
+        let aiReady = false;
+        for (const credential of credentials) {
+          const validation = await AIService.validateCredential(credential.apiKey, credential.model);
+          if (validation.ok) {
+            aiReady = true;
+            break;
+          }
+        }
+        if (!aiReady) {
+          missing.push('Credential atau model AI ditolak provider. Hubungi Admin untuk memperbarui Global API Key/Model.');
+        }
       }
 
       if (missing.length > 0) {

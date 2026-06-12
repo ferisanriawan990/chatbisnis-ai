@@ -21,6 +21,12 @@ export class AIServiceError extends Error {
   }
 }
 
+export interface AICredentialValidationResult {
+  ok: boolean;
+  status?: number;
+  error?: string;
+}
+
 export class AIService {
   /**
    * Panggil LLM provider (Flaz Cloud / OpenAI-compatible endpoint)
@@ -77,6 +83,10 @@ export class AIService {
       const reply = data.choices?.[0]?.message?.content || '';
       const tokenUsage = data.usage?.total_tokens || 0;
 
+      if (typeof reply !== 'string' || reply.trim() === '') {
+        throw new AIServiceError('AI provider mengembalikan respons kosong.', 502);
+      }
+
       return { reply, tokenUsage };
     } catch (error: unknown) {
       if (error instanceof AIServiceError) throw error;
@@ -91,8 +101,39 @@ export class AIService {
     }
   }
 
-  static isAuthenticationError(error: unknown): boolean {
-    return error instanceof AIServiceError && (error.status === 401 || error.status === 403);
+  static isRetryableError(error: unknown): boolean {
+    if (!(error instanceof AIServiceError)) return false;
+    if (!error.status) return true;
+    return error.status === 401
+      || error.status === 403
+      || error.status === 408
+      || error.status === 429
+      || error.status >= 500;
+  }
+
+  static async validateCredential(apiKey: string, model: string): Promise<AICredentialValidationResult> {
+    try {
+      await this.generateReply({
+        systemPrompt: 'Balas singkat sesuai instruksi.',
+        userMessage: 'Balas hanya dengan kata OK.',
+        provider: 'Flaz Cloud',
+        model,
+        apiKey,
+        maxTokens: 8,
+      });
+      return { ok: true };
+    } catch (error) {
+      if (error instanceof AIServiceError) {
+        return {
+          ok: false,
+          status: error.status,
+          error: error.status
+            ? `Credential atau model ditolak AI provider (HTTP ${error.status}).`
+            : error.message,
+        };
+      }
+      return { ok: false, error: 'Gagal memvalidasi credential AI.' };
+    }
   }
 
   static sanitizeInput(text: string): string {

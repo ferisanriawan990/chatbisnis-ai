@@ -1,10 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { prisma } from './prisma';
-import { decrypt } from './crypto';
 import { AIService } from './ai';
+import { getAICredentialCandidates } from './ai-config';
 import { buildSystemPrompt } from './prompt-builder';
-import { searchKnowledgeItems, buildProductAnswer, detectCustomerIntent } from './knowledge-search';
+import { searchKnowledgeItems, buildKnowledgeFallbackAnswer, detectCustomerIntent } from './knowledge-search';
 import { validatePublicHttpsUrl } from './security';
 
 export interface ChatbotEngineParams {
@@ -23,13 +22,6 @@ export interface ChatbotEngineResult {
   mediaToSend?: { url: string; caption: string; fallbackUrl?: string }[];
 }
 
-interface AICredential {
-  apiKey: string;
-  provider: string;
-  model: string;
-  source: 'custom' | 'global' | 'environment';
-}
-
 function customerRequestsImage(message: string): boolean {
   return /\b(gambar|foto|image|photo|picture|pic)\b/i.test(message);
 }
@@ -41,6 +33,26 @@ function isPublicImageUrl(value: string | null | undefined): value is string {
 function getKnowledgeShareUrl(itemId: string): string {
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://chatbisnis-ai.vercel.app').replace(/\/$/, '');
   return `${appUrl}/share/knowledge/${encodeURIComponent(itemId)}`;
+}
+
+function getJakartaDateParts(date = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Jakarta',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(date);
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return {
+    year: Number(values.year),
+    month: Number(values.month),
+    day: Number(values.day),
+    hour: Number(values.hour),
+    minute: Number(values.minute),
+  };
 }
 
 export class ChatbotEngine {
@@ -82,8 +94,6 @@ export class ChatbotEngine {
     const matchedItems = await searchKnowledgeItems(sanitizedMessageIn, profile.id);
     const knowledgeMatchCount = matchedItems.length;
 
-    // Deterministic reply has been removed to ensure all responses follow AI settings.
-
     // 6. Retrieve Chat History
     const chatHistoryLogs = await prisma.chatLog.findMany({
       where: {
@@ -103,52 +113,59 @@ export class ChatbotEngine {
 
     // 7. Build Prompt & Call AI
     const systemPrompt = this.buildPrompt(chatbotSetting, botConfig, profile, matchedItems);
-    const { replyMessage, tokenUsage, usedCatalogUrl, promptSource, aiModelUsed } = await this.callAI(chatbotSetting, activePlan, systemPrompt, sanitizedMessageIn, isTest, chatHistory, params.imageUrl);
+    const { replyMessage, tokenUsage, usedCatalogUrl, promptSource, aiModelUsed } = await this.callAI(
+      chatbotSetting,
+      activePlan,
+      systemPrompt,
+      sanitizedMessageIn,
+      chatHistory,
+      params.imageUrl,
+      botConfig?.catalogUrl,
+    );
 
     // Extract image tags: [SEND_IMAGE: url | caption]
     let finalReply = replyMessage;
     const mediaToSend: { url: string; caption: string; fallbackUrl?: string }[] = [];
     const imageRegex = /\[SEND_IMAGE:\s*([^|\]]+?)(?:\s*\|\s*([^\]]+))?\]/g;
+    const shouldSendImage = customerRequestsImage(sanitizedMessageIn);
     let match;
     while ((match = imageRegex.exec(finalReply)) !== null) {
       const url = match[1].trim();
-      const knowledgeItem = matchedItems.find((item) => (item as any).imageUrl === url);
+      const knowledgeItem = matchedItems.find((item) => item.imageUrl === url);
+      if (!shouldSendImage || !knowledgeItem || !isPublicImageUrl(url)) continue;
       mediaToSend.push({
         url,
         caption: (match[2] || '').trim(),
-        fallbackUrl: knowledgeItem ? getKnowledgeShareUrl(knowledgeItem.id) : undefined,
+        fallbackUrl: getKnowledgeShareUrl(knowledgeItem.id),
       });
     }
-    finalReply = finalReply.replace(imageRegex, '').trim();
+    finalReply = finalReply.replace(imageRegex, '').replace(/\n{3,}/g, '\n\n').trim();
 
     // Do not rely solely on the model to emit SEND_IMAGE. If the customer
     // explicitly asks for a picture, attach images from matched KB items.
-    if (customerRequestsImage(sanitizedMessageIn)) {
+    if (shouldSendImage) {
       const knownUrls = new Set(mediaToSend.map((media) => media.url));
       for (const item of matchedItems) {
-        if (!isPublicImageUrl((item as any).imageUrl) || knownUrls.has((item as any).imageUrl)) continue;
+        if (!isPublicImageUrl(item.imageUrl) || knownUrls.has(item.imageUrl)) continue;
         mediaToSend.push({
-          url: (item as any).imageUrl,
+          url: item.imageUrl,
           caption: item.productName ? `Gambar ${item.productName}` : 'Gambar produk',
           fallbackUrl: getKnowledgeShareUrl(item.id),
         });
-        knownUrls.add((item as any).imageUrl);
+        knownUrls.add(item.imageUrl);
         if (mediaToSend.length >= 3) break;
       }
     }
 
     let effectivePromptSource = promptSource;
     let usedDeterministicReply = false;
-    if (promptSource === 'error' && mediaToSend.length > 0) {
-      const productNames = matchedItems
-        .filter((item) => isPublicImageUrl((item as any).imageUrl) && item.productName)
-        .slice(0, mediaToSend.length)
-        .map((item) => item.productName);
-      finalReply = productNames.length > 0
-        ? `Berikut gambar ${productNames.join(', ')}.`
-        : 'Berikut gambar produk yang diminta.';
-      effectivePromptSource = 'knowledge_image';
-      usedDeterministicReply = true;
+    if (promptSource === 'error') {
+      const knowledgeFallback = buildKnowledgeFallbackAnswer(sanitizedMessageIn, matchedItems);
+      if (knowledgeFallback) {
+        finalReply = knowledgeFallback;
+        effectivePromptSource = mediaToSend.length > 0 ? 'knowledge_image' : 'knowledge_fallback';
+        usedDeterministicReply = true;
+      }
     }
 
     // 8. Record Usage & Log
@@ -157,7 +174,18 @@ export class ChatbotEngine {
         where: { id: access.usageId! },
         data: { aiTokens: { increment: tokenUsage }, aiChats: { increment: 1 } }
       });
-      await this.sendLog({ ...params, chatbotSetting, messageOut: finalReply, tokenUsage, intent, promptSource: effectivePromptSource, knowledgeMatchCount, usedCatalogUrl, aiUsed: aiModelUsed });
+      await this.sendLog({
+        ...params,
+        chatbotSetting,
+        messageOut: finalReply,
+        tokenUsage,
+        intent,
+        promptSource: effectivePromptSource,
+        knowledgeMatchCount,
+        usedCatalogUrl,
+        aiUsed: aiModelUsed,
+        status: effectivePromptSource === 'error' ? 'failed' : 'success',
+      });
     }
 
     return { 
@@ -239,23 +267,22 @@ export class ChatbotEngine {
     }
 
     // Out of Hours Check
-    const now = new Date();
-    const jakartaHour = (now.getUTCHours() + 7) % 24;
+    const jakartaNow = getJakartaDateParts();
+    const currentMinutes = (jakartaNow.hour * 60) + jakartaNow.minute;
     const hoursStr = (chatbotSetting.businessProfile.openingHours || '08:00-17:00').toLowerCase().replace(/\s/g, '');
     if (hoursStr !== '24jam' && hoursStr !== '24/7') {
-      const match = hoursStr.match(/(\d{1,2}):\d{2}-(\d{1,2}):\d{2}/);
+      const match = hoursStr.match(/(\d{1,2}):(\d{2})-(\d{1,2}):(\d{2})/);
       if (match) {
-        const startHour = parseInt(match[1], 10);
-        let endHour = parseInt(match[2], 10);
-        if (endHour === 0) endHour = 24;
+        const startMinutes = (parseInt(match[1], 10) * 60) + parseInt(match[2], 10);
+        const endMinutes = (parseInt(match[3], 10) * 60) + parseInt(match[4], 10);
 
-        if (endHour <= startHour) {
+        if (endMinutes <= startMinutes) {
           // Overnight hours, e.g. 09:00-02:00
-          const isAllowed = jakartaHour >= startHour || jakartaHour < endHour;
+          const isAllowed = currentMinutes >= startMinutes || currentMinutes < endMinutes;
           if (!isAllowed) return { allowed: false, replyMessage: chatbotSetting.outOfHoursMessage };
         } else {
           // Normal hours, e.g. 08:00-17:00
-          if (jakartaHour < startHour || jakartaHour >= endHour) {
+          if (currentMinutes < startMinutes || currentMinutes >= endMinutes) {
             return { allowed: false, replyMessage: chatbotSetting.outOfHoursMessage };
           }
         }
@@ -263,9 +290,8 @@ export class ChatbotEngine {
     }
 
     // Usage Limits
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const monthStr = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}`;
+    const today = new Date(Date.UTC(jakartaNow.year, jakartaNow.month - 1, jakartaNow.day));
+    const monthStr = `${jakartaNow.year}-${jakartaNow.month.toString().padStart(2, '0')}`;
     const maxDaily = activePlan?.dailyChatLimit || chatbotSetting.dailyChatLimit;
     const maxMonthly = activePlan?.monthlyChatLimit || chatbotSetting.monthlyChatLimit;
 
@@ -365,71 +391,20 @@ export class ChatbotEngine {
     });
   }
 
-  private static async callAI(chatbotSetting: any, activePlan: any, systemPrompt: string, messageIn: string, isTest: boolean, chatHistory: { role: string; content: string }[] = [], imageUrl?: string) {
+  private static async callAI(
+    chatbotSetting: any,
+    activePlan: any,
+    systemPrompt: string,
+    messageIn: string,
+    chatHistory: { role: string; content: string }[] = [],
+    imageUrl?: string,
+    catalogUrl?: string | null,
+  ) {
     const defaultModel = chatbotSetting.aiModel || 'gpt-4o-mini';
-    const credentials: AICredential[] = [];
-
-    // 1. Global Key (Highest Priority)
-    const globalCredentials = await prisma.secretCredential.findMany({
-      where: { key: { in: ['FLAZ_API_KEY_GLOBAL', 'GLOBAL_AI_MODEL'] } },
-    });
-    const globalKey = globalCredentials.find((credential) => credential.key === 'FLAZ_API_KEY_GLOBAL');
-    const globalModelCredential = globalCredentials.find((credential) => credential.key === 'GLOBAL_AI_MODEL');
-    let globalModel = defaultModel;
-
-    if (globalKey?.isActive) {
-      try {
-        const globalApiKey = decrypt(globalKey.encryptedValue);
-        if (globalModelCredential?.isActive) {
-          try {
-            globalModel = decrypt(globalModelCredential.encryptedValue);
-          } catch (error) {
-            console.error('Failed to decrypt global AI model:', error);
-          }
-        }
-
-        if (!credentials.some((credential) => credential.apiKey === globalApiKey)) {
-          credentials.push({
-            apiKey: globalApiKey,
-            provider: 'Flaz Cloud',
-            model: globalModel,
-            source: 'global',
-          });
-        }
-      } catch (error) {
-        console.error('Failed to decrypt global AI credential:', error);
-      }
-    }
-
-    // 2. Custom User Key (Only if it's Flaz Cloud format)
-    if (chatbotSetting.aiApiKeyEncrypted) {
-      try {
-        const customKey = decrypt(chatbotSetting.aiApiKeyEncrypted);
-        if (customKey.startsWith('sk-') && !credentials.some((credential) => credential.apiKey === customKey)) {
-          credentials.push({
-            apiKey: customKey,
-            provider: 'Flaz Cloud',
-            model: defaultModel,
-            source: 'custom',
-          });
-        } else if (!customKey.startsWith('sk-')) {
-          console.warn('Custom API Key diabaikan karena tidak berformat sk-');
-        }
-      } catch (error) {
-        console.error('Failed to decrypt custom AI credential:', error);
-      }
-    }
-
-    // 3. Environment Key
-    const environmentApiKey = process.env.AI_API_KEY?.trim();
-    if (environmentApiKey && !credentials.some((credential) => credential.apiKey === environmentApiKey)) {
-      credentials.push({
-        apiKey: environmentApiKey,
-        provider: 'Flaz Cloud',
-        model: globalModel,
-        source: 'environment',
-      });
-    }
+    const credentials = await getAICredentialCandidates(
+      chatbotSetting,
+      activePlan?.allowCustomApiKey === true,
+    );
 
     if (credentials.length === 0) {
       return { replyMessage: chatbotSetting.fallbackMessage, tokenUsage: 0, usedCatalogUrl: false, promptSource: 'error', aiModelUsed: defaultModel };
@@ -445,19 +420,27 @@ export class ChatbotEngine {
     if (!allowPromoOffer) {
       finalSystemPrompt += '\n\nDILARANG keras memberikan promosi, diskon, atau janji penawaran yang tidak tertulis eksplisit.';
     }
-    if (chatbotSetting.actionWebhookUrl) {
+    const actionWebhookUrl = validatePublicHttpsUrl(chatbotSetting.actionWebhookUrl || '')
+      ? chatbotSetting.actionWebhookUrl
+      : null;
+    if (actionWebhookUrl) {
       finalSystemPrompt += `\n\nAKSI EKSTERNAL:\nJika kamu butuh mengecek data dinamis ke sistem pihak ketiga (seperti cek stok real-time, buat invoice, dll), balas pesan ini HANYA dengan output JSON berformat: {"tool_call": true, "action": "nama_aksi", "params": {"key": "value"}}. Jangan tambahkan teks lain. Sistem akan memproses dan mengembalikan data kepadamu.`;
     }
     
     finalSystemPrompt += `\n\nPENGIRIMAN GAMBAR PRODUK (SANGAT PENTING):
-Jika pengguna bertanya, meminta, atau membahas produk/layanan yang memiliki data "URL Gambar Tersedia", KAMU WAJIB MENYELIPKAN TAG GAMBAR INI di akhir atau di tengah balasanmu:
+Hanya jika pengguna secara eksplisit meminta gambar/foto produk yang memiliki data "URL Gambar Tersedia", KAMU WAJIB MENYELIPKAN TAG GAMBAR INI di akhir atau di tengah balasanmu:
 [SEND_IMAGE: <url_gambar> | <caption_singkat>]
 CONTOH BENAR: [SEND_IMAGE: https://imgur.com/xyz.jpg | Ini adalah gambar sepatu]
-JANGAN gunakan format markdown seperti ![gambar](url). WAJIB gunakan format kurung siku [SEND_IMAGE: url | caption] persis seperti contoh. Jika kamu tidak menggunakan format ini, gambar tidak akan terkirim!`;
+JANGAN mengirim tag gambar untuk pertanyaan harga, stok, atau detail biasa jika pengguna tidak meminta gambar. JANGAN gunakan format markdown seperti ![gambar](url). WAJIB gunakan format kurung siku [SEND_IMAGE: url | caption] persis seperti contoh.`;
 
     try {
       const maxTokens = chatbotSetting.maxReplyLength === 'pendek' ? 150 : chatbotSetting.maxReplyLength === 'panjang' ? 800 : 450;
-      const generateWithCredential = (credential: AICredential, userMessage: string, history = chatHistory, requestImageUrl = imageUrl) => AIService.generateReply({
+      const generateWithCredential = (
+        credential: (typeof credentials)[number],
+        userMessage: string,
+        history = chatHistory,
+        requestImageUrl?: string,
+      ) => AIService.generateReply({
         systemPrompt: finalSystemPrompt,
         userMessage,
         imageUrl: requestImageUrl,
@@ -473,11 +456,13 @@ JANGAN gunakan format markdown seperti ![gambar](url). WAJIB gunakan format kuru
       for (let index = 0; index < credentials.length; index += 1) {
         activeCredential = credentials[index];
         try {
-          aiResult = await generateWithCredential(activeCredential, messageIn);
+          // If vision is not allowed, strip the image URL so the AI only gets text
+          const effectiveImageUrl = chatbotSetting.allowVision ? imageUrl : undefined;
+          aiResult = await generateWithCredential(activeCredential, messageIn, chatHistory, effectiveImageUrl);
           break;
         } catch (error) {
           const hasNextCredential = index < credentials.length - 1;
-          if (!AIService.isAuthenticationError(error) || !hasNextCredential) throw error;
+          if (!AIService.isRetryableError(error) || !hasNextCredential) throw error;
           console.warn(`AI credential source "${activeCredential.source}" was rejected; trying the next configured credential.`);
         }
       }
@@ -488,21 +473,21 @@ JANGAN gunakan format markdown seperti ![gambar](url). WAJIB gunakan format kuru
       let totalTokens = aiResult.tokenUsage || 0;
 
       // Tool Call Execution Loop
-      if (chatbotSetting.actionWebhookUrl && finalReply.includes('"tool_call":')) {
+      if (actionWebhookUrl && finalReply.includes('"tool_call":')) {
         try {
           const jsonMatch = finalReply.match(/\{[\s\S]*"tool_call"[\s\S]*\}/);
           if (jsonMatch) {
             const toolData = JSON.parse(jsonMatch[0]);
             if (toolData.tool_call === true) {
-              console.log('--- EXECUTING TOOL CALL ---', toolData);
-              const webhookRes = await fetch(chatbotSetting.actionWebhookUrl, {
+              const webhookRes = await fetch(actionWebhookUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: toolData.action, params: toolData.params, customerMessage: messageIn })
+                body: JSON.stringify({ action: toolData.action, params: toolData.params, customerMessage: messageIn }),
+                signal: AbortSignal.timeout(15000),
               });
               let webhookResultString = 'Gagal memanggil sistem eksternal.';
               if (webhookRes.ok) {
-                webhookResultString = JSON.stringify(await webhookRes.json());
+                webhookResultString = (await webhookRes.text()).slice(0, 20000);
               }
 
               const updatedHistory = [...chatHistory, { role: 'user', content: messageIn }, { role: 'assistant', content: finalReply }];
@@ -519,7 +504,13 @@ JANGAN gunakan format markdown seperti ![gambar](url). WAJIB gunakan format kuru
         }
       }
 
-      return { replyMessage: finalReply, tokenUsage: totalTokens, usedCatalogUrl: Boolean(chatbotSetting.catalogUrl && finalReply.includes(chatbotSetting.catalogUrl)), promptSource: 'ai', aiModelUsed: activeCredential.model };
+      return {
+        replyMessage: finalReply,
+        tokenUsage: totalTokens,
+        usedCatalogUrl: Boolean(catalogUrl && finalReply.includes(catalogUrl)),
+        promptSource: 'ai',
+        aiModelUsed: activeCredential.model,
+      };
     } catch (error: unknown) {
       console.error('AI Error:', error);
       return { replyMessage: chatbotSetting.fallbackMessage, tokenUsage: 0, usedCatalogUrl: false, promptSource: 'error', aiModelUsed: credentials[0].model };
@@ -538,7 +529,8 @@ JANGAN gunakan format markdown seperti ![gambar](url). WAJIB gunakan format kuru
           customerName: params.customerName || '',
           messageIn: params.messageIn,
           messageOut: params.messageOut,
-          status: 'success',
+          status: params.status || 'success',
+          errorMessage: params.status === 'failed' ? 'AI provider unavailable and no knowledge fallback matched.' : null,
           needsHuman: params.needsHuman || false,
           tokenUsage: params.tokenUsage || 0,
           aiUsed: params.aiUsed || params.chatbotSetting.aiModel || 'unknown',

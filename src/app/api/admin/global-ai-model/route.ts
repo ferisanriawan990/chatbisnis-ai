@@ -1,7 +1,14 @@
 import { NextResponse } from 'next/server';
-import { getRequiredAdminOrResponse } from '@/lib/admin-helper';
+import { getRequiredAdminOrResponse, validateAdminMutationOrigin } from '@/lib/admin-helper';
 import { prisma } from '@/lib/prisma';
 import { encrypt, decrypt } from '@/lib/crypto';
+import { AIService } from '@/lib/ai';
+import { SUPPORTED_AI_MODELS } from '@/lib/ai-config';
+import { z } from 'zod';
+
+const modelSchema = z.object({
+  model: z.enum(SUPPORTED_AI_MODELS),
+});
 
 export async function GET() {
   try {
@@ -30,12 +37,31 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
+    const originError = validateAdminMutationOrigin(req);
+    if (originError) return originError;
+
     const admin = await getRequiredAdminOrResponse();
     if (admin instanceof NextResponse) return admin;
 
-    const { model } = await req.json();
-    if (!model) {
-      return NextResponse.json({ error: 'Model wajib diisi' }, { status: 400 });
+    const parsed = modelSchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Model AI tidak didukung' }, { status: 400 });
+    }
+    const { model } = parsed.data;
+
+    const globalKey = await prisma.secretCredential.findUnique({
+      where: { key: 'FLAZ_API_KEY_GLOBAL' },
+    });
+    if (!globalKey?.isActive) {
+      return NextResponse.json({ error: 'Global API Key belum aktif' }, { status: 400 });
+    }
+
+    const validation = await AIService.validateCredential(decrypt(globalKey.encryptedValue), model);
+    if (!validation.ok) {
+      return NextResponse.json(
+        { error: validation.error || 'Model tidak dapat digunakan dengan Global API Key.' },
+        { status: 400 },
+      );
     }
 
     const encryptedValue = encrypt(model);
@@ -51,6 +77,15 @@ export async function POST(req: Request) {
         description: 'Model AI default yang digunakan secara global',
         isActive: true,
       }
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        actorUserId: admin.id,
+        action: 'UPDATE_GLOBAL_AI_MODEL',
+        entityType: 'SecretCredential',
+        metadataJson: JSON.stringify({ model }),
+      },
     });
 
     return NextResponse.json({ success: true, model });

@@ -5,6 +5,11 @@ export function normalizeText(text: string): string {
   return text.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
 }
 
+const INTENT_WORDS = new Set([
+  'ada', 'berapa', 'coba', 'foto', 'gambar', 'harga', 'image', 'kirim', 'minta',
+  'photo', 'picture', 'produk', 'ready', 'stock', 'stok', 'tersedia', 'tolong',
+]);
+
 export function detectCustomerIntent(message: string): string {
   const msg = normalizeText(message);
   
@@ -17,6 +22,7 @@ export function detectCustomerIntent(message: string): string {
   if (msg.match(/(daftar stok|apa aja|unit ready apa aja|katalog|stok apa aja|ready apa aja|list)/i)) return 'daftar_stok';
   
   // Specific Product inquiries
+  if (msg.match(/(gambar|foto|image|photo|picture|pic)/i)) return 'gambar_produk';
   if (msg.match(/(harga kredit|kredit|cicilan|angsuran|kreditnya|cicilannya)/i)) return 'harga_kredit';
   if (msg.match(/(dp|uang muka|dpnya|uang mukanya)/i)) return 'dp_cicilan';
   if (msg.match(/(warna|pilihan warna|varian warna|warna apa aja)/i)) return 'warna';
@@ -58,7 +64,10 @@ export async function searchKnowledgeItems(message: string, businessProfileId: s
     where: { businessProfileId, isActive: true },
   });
 
-  const words = msg.split(/\s+/).filter(w => w.length > 2);
+  const words = msg
+    .split(/\s+/)
+    .filter((word) => word.length > 2 && !INTENT_WORDS.has(word));
+  const intent = detectCustomerIntent(msg);
   
   const scoredItems = allItems.map(item => {
     let score = 0;
@@ -90,9 +99,14 @@ export async function searchKnowledgeItems(message: string, businessProfileId: s
       score += 15;
     }
 
-    const intent = detectCustomerIntent(msg);
-    if ((['stok_produk', 'harga_produk', 'harga_kredit', 'dp_cicilan', 'warna', 'spesifikasi'].includes(intent)) && productName) {
-      score += 10; // Boost products when asking product questions
+    if (intent === 'daftar_stok' && productName) {
+      score += 10;
+    } else if (
+      ['gambar_produk', 'stok_produk', 'harga_produk', 'harga_kredit', 'dp_cicilan', 'warna', 'spesifikasi'].includes(intent)
+      && productName
+      && (score > 0 || (intent === 'gambar_produk' && words.length === 0))
+    ) {
+      score += 10;
     }
 
     if (category && words.some(w => category.includes(w))) {
@@ -105,6 +119,7 @@ export async function searchKnowledgeItems(message: string, businessProfileId: s
   return scoredItems
     .filter(si => si.score > 5)
     .sort((a, b) => b.score - a.score)
+    .slice(0, 20)
     .map(si => si.item);
 }
 
@@ -138,7 +153,7 @@ export function formatProductDetail(p: KnowledgeItem, intent: string): string {
 export function buildProductAnswer(message: string, matchedItems: KnowledgeItem[]): string | null {
   const intent = detectCustomerIntent(message);
   
-  const productIntents = ['daftar_stok', 'stok_produk', 'harga_produk', 'harga_kredit', 'dp_cicilan', 'warna', 'spesifikasi'];
+  const productIntents = ['gambar_produk', 'daftar_stok', 'stok_produk', 'harga_produk', 'harga_kredit', 'dp_cicilan', 'warna', 'spesifikasi'];
   if (!productIntents.includes(intent)) return null;
 
   const products = matchedItems.filter(i => i.productName);
@@ -146,6 +161,13 @@ export function buildProductAnswer(message: string, matchedItems: KnowledgeItem[
   // Jika produk tidak ditemukan, biarkan AI yang menjawab berdasarkan context (business profile, dll)
   if (products.length === 0) {
     return null;
+  }
+
+  if (intent === 'gambar_produk') {
+    const productNames = products.slice(0, 3).map((product) => product.productName).filter(Boolean);
+    return productNames.length > 0
+      ? `Berikut gambar ${productNames.join(', ')}.`
+      : 'Berikut gambar produk yang diminta.';
   }
 
   // Handle daftar_stok intent
@@ -187,4 +209,20 @@ export function buildProductAnswer(message: string, matchedItems: KnowledgeItem[
   reply += `\nKakak mau info detail yang mana?`;
   
   return reply;
+}
+
+export function buildKnowledgeFallbackAnswer(message: string, matchedItems: KnowledgeItem[]): string | null {
+  const productAnswer = buildProductAnswer(message, matchedItems);
+  if (productAnswer) return productAnswer;
+
+  const topItem = matchedItems[0];
+  if (!topItem) return null;
+  if (topItem.answer?.trim()) return topItem.answer.trim();
+  if (topItem.productName) {
+    const reply = formatProductDetail(topItem, detectCustomerIntent(message)).trim();
+    return reply || null;
+  }
+  if (topItem.description?.trim()) return topItem.description.trim();
+
+  return null;
 }

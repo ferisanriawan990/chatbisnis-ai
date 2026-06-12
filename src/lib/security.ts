@@ -98,10 +98,35 @@ export function validatePublicHttpsUrl(urlString: string): boolean {
 export function blockPrivateNetworkUrl(urlString: string): boolean {
   try {
     const url = new URL(urlString);
-    const host = url.hostname;
+    const host = url.hostname.toLowerCase().replace(/^\[|\]$/g, '');
+
+    if (url.username || url.password) return true;
 
     // Block localhost
-    if (host === 'localhost' || host.endsWith('.localhost')) return true;
+    if (
+      host === 'localhost'
+      || host.endsWith('.localhost')
+      || host.endsWith('.local')
+      || host.endsWith('.internal')
+      || host === 'metadata.google.internal'
+    ) return true;
+
+    // IPv6 loopback, unspecified, link-local, and unique-local ranges.
+    if (host.includes(':')) {
+      if (
+        host === '::1'
+        || host === '::'
+        || host.startsWith('fc')
+        || host.startsWith('fd')
+        || /^fe[89ab]/.test(host)
+        || host.startsWith('::ffff:127.')
+        || host.startsWith('::ffff:0.')
+        || host.startsWith('::ffff:10.')
+        || /^::ffff:172\.(1[6-9]|2\d|3[01])\./.test(host)
+        || host.startsWith('::ffff:192.168.')
+        || host.startsWith('::ffff:169.254.')
+      ) return true;
+    }
 
     // IP blocks
     const ipv4Regex = /^(\d+)\.(\d+)\.(\d+)\.(\d+)$/;
@@ -121,6 +146,12 @@ export function blockPrivateNetworkUrl(urlString: string): boolean {
       if (parts[0] === 192 && parts[1] === 168) return true;
       // 169.254.0.0/16 (Link local)
       if (parts[0] === 169 && parts[1] === 254) return true;
+      // 100.64.0.0/10 (Carrier-grade NAT)
+      if (parts[0] === 100 && parts[1] >= 64 && parts[1] <= 127) return true;
+      // 198.18.0.0/15 (Benchmark networks)
+      if (parts[0] === 198 && (parts[1] === 18 || parts[1] === 19)) return true;
+      // Multicast and reserved ranges
+      if (parts[0] >= 224) return true;
     }
 
     return false;

@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { getRequiredAdminOrResponse, validateAdminMutationOrigin } from '@/lib/admin-helper';
 import { prisma } from '@/lib/prisma';
 import { encrypt } from '@/lib/crypto';
+import { AIService } from '@/lib/ai';
+import { getConfiguredGlobalAIModel } from '@/lib/ai-config';
 import { z } from 'zod';
 
 const apiKeySchema = z.object({
@@ -57,6 +59,17 @@ export async function POST(req: Request) {
     if (parsed.data.key === 'FLAZ_API_KEY_GLOBAL' || parsed.data.provider.toLowerCase() === 'flaz') {
       if (!parsed.data.value.startsWith('sk-')) {
         return NextResponse.json({ error: 'API Key Flaz Cloud harus diawali dengan sk-' }, { status: 400 });
+      }
+
+      const validation = await AIService.validateCredential(
+        parsed.data.value,
+        await getConfiguredGlobalAIModel(),
+      );
+      if (!validation.ok) {
+        return NextResponse.json(
+          { error: validation.error || 'API Key Flaz Cloud tidak valid.' },
+          { status: 400 },
+        );
       }
     }
 

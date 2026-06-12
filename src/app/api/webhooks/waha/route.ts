@@ -117,13 +117,6 @@ function normalizePayload(rawBody: WahaIncomingBody): NormalizedWahaPayload {
 
 export async function POST(req: NextRequest) {
   try {
-    // Basic rate limiting for webhook
-    const ip = getRequestIp(req);
-    const rl = await rateLimit(`webhook:waha:${ip}`, 60, 60 * 1000); // 60 msgs per minute
-    if (!rl.success) {
-      return NextResponse.json({ error: 'Too Many Requests' }, { status: 429 });
-    }
-
     // Security validation
     if (!requireHeaderSecret(req, 'x-webhook-secret', process.env.WAHA_WEBHOOK_SECRET)) {
       return NextResponse.json({ error: 'Unauthorized or missing secret' }, { status: 401 });
@@ -162,6 +155,13 @@ export async function POST(req: NextRequest) {
         { error: 'Invalid payload structure or session name' },
         { status: 400 },
       );
+    }
+
+    const ip = getRequestIp(req);
+    const rateLimitKey = `webhook:waha:${wahaServerId || norm.sessionName}:${norm.customerPhone}:${ip}`;
+    const rl = await rateLimit(rateLimitKey, 20, 60 * 1000);
+    if (!rl.success) {
+      return NextResponse.json({ error: 'Too Many Requests' }, { status: 429 });
     }
 
     const qUserId = req.nextUrl.searchParams.get('userId');
