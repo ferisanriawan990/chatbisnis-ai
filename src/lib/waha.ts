@@ -213,22 +213,39 @@ export class WAHAService {
   }
 
   async sendImage(sessionName: string, phone: string, imageUrl: string, caption?: string) {
-    const ext = imageUrl.split('.').pop()?.split('?')[0]?.toLowerCase() || 'jpeg';
+    let ext = 'jpeg';
+    const parsedExt = imageUrl.split('.').pop()?.split('?')[0]?.toLowerCase();
+    if (parsedExt && parsedExt.length <= 4 && /^[a-z0-9]+$/.test(parsedExt)) {
+      ext = parsedExt;
+    }
+
     let mimetype = 'image/jpeg';
     if (ext === 'png') mimetype = 'image/png';
     else if (ext === 'webp') mimetype = 'image/webp';
     else if (ext === 'gif') mimetype = 'image/gif';
+
+    let filePayload: any = { mimetype, filename: `image.${ext}`, url: imageUrl };
+    try {
+      // Force download the image on our backend first because WAHA's fetch mechanism can sometimes fail.
+      const res = await fetch(imageUrl);
+      if (res.ok) {
+        const buffer = Buffer.from(await res.arrayBuffer());
+        const base64 = buffer.toString('base64');
+        const fetchedMime = res.headers.get('content-type');
+        if (fetchedMime) mimetype = fetchedMime;
+        // Use base64 data to ensure 100% reliability
+        filePayload = { mimetype, filename: `image.${ext}`, data: base64 };
+      }
+    } catch (e) {
+      console.error('Failed to pre-download image for WAHA:', e);
+    }
 
     return this.request(`/api/sendImage`, {
       method: 'POST',
       body: JSON.stringify({
         session: this.getEffectiveSession(sessionName),
         chatId: phone.includes('@') ? phone : `${phone}@c.us`,
-        file: { 
-          mimetype,
-          filename: `image.${ext}`,
-          url: imageUrl 
-        },
+        file: filePayload,
         caption: caption || '',
       }),
     });
