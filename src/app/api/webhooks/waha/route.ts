@@ -173,6 +173,7 @@ export async function POST(req: NextRequest) {
         ...(qUserId && process.env.NODE_ENV !== 'production' ? { userId: qUserId } : {}),
         isActive: true,
         user: {
+          email: { not: 'admin@chatbisnis.id' },
           subscriptions: {
             some: { status: 'active' }
           }
