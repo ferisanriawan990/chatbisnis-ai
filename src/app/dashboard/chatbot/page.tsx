@@ -482,6 +482,7 @@ export default function ChatbotDashboard() {
 
           <WhatsAppConnectionCard wahaStatus={wahaStatus} isComplete={stepsComplete.waha} />
           
+          <AiIntegrationPanel form={form} handleChange={handleChange} />
           <AdvancedRulesPanel form={form} handleChange={handleChange} />
 
         </div>
