@@ -24,8 +24,11 @@ export class AIService {
         throw new Error('API Key tidak ditemukan.');
       }
 
-      // Default to standard OpenAI API format (Flaz Cloud is compatible)
-      const baseUrl = process.env.AI_BASE_URL || 'https://ai.flaz.id/v1';
+      let baseUrl = process.env.AI_BASE_URL || 'https://ai.flaz.id/v1';
+      if (config.provider === 'OpenAI') {
+        baseUrl = 'https://api.openai.com/v1';
+      }
+      
       const url = `${baseUrl.replace(/\/$/, '')}/chat/completions`;
 
       const signal = AbortSignal.timeout(30000); // 30s timeout
