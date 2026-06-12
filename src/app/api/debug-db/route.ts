@@ -16,6 +16,7 @@ export async function GET() {
 
   return NextResponse.json({
     databaseUrl: process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(0, 30) + "..." : "missing",
+    secretPrefix: process.env.ENCRYPTION_SECRET ? process.env.ENCRYPTION_SECRET.substring(0, 5) : "missing",
     settings
   });
 }
