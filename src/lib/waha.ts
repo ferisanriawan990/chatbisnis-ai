@@ -213,12 +213,22 @@ export class WAHAService {
   }
 
   async sendImage(sessionName: string, phone: string, imageUrl: string, caption?: string) {
+    const ext = imageUrl.split('.').pop()?.split('?')[0]?.toLowerCase() || 'jpeg';
+    let mimetype = 'image/jpeg';
+    if (ext === 'png') mimetype = 'image/png';
+    else if (ext === 'webp') mimetype = 'image/webp';
+    else if (ext === 'gif') mimetype = 'image/gif';
+
     return this.request(`/api/sendImage`, {
       method: 'POST',
       body: JSON.stringify({
         session: this.getEffectiveSession(sessionName),
         chatId: phone.includes('@') ? phone : `${phone}@c.us`,
-        file: { url: imageUrl },
+        file: { 
+          mimetype,
+          filename: `image.${ext}`,
+          url: imageUrl 
+        },
         caption: caption || '',
       }),
     });
