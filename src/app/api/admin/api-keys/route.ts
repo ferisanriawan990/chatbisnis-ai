@@ -54,6 +54,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Invalid data' }, { status: 400 });
     }
 
+    if (parsed.data.key === 'FLAZ_API_KEY_GLOBAL' || parsed.data.provider.toLowerCase() === 'flaz') {
+      if (!parsed.data.value.startsWith('sk-flaz-')) {
+        return NextResponse.json({ error: 'API Key Flaz Cloud harus diawali dengan sk-flaz-' }, { status: 400 });
+      }
+    }
+
     const encryptedValue = encrypt(parsed.data.value);
 
     const credential = await prisma.secretCredential.create({
