@@ -112,7 +112,7 @@ export class ChatbotEngine {
     let match;
     while ((match = imageRegex.exec(finalReply)) !== null) {
       const url = match[1].trim();
-      const knowledgeItem = matchedItems.find((item) => item.imageUrl === url);
+      const knowledgeItem = matchedItems.find((item) => (item as any).imageUrl === url);
       mediaToSend.push({
         url,
         caption: (match[2] || '').trim(),
@@ -126,13 +126,13 @@ export class ChatbotEngine {
     if (customerRequestsImage(sanitizedMessageIn)) {
       const knownUrls = new Set(mediaToSend.map((media) => media.url));
       for (const item of matchedItems) {
-        if (!isPublicImageUrl(item.imageUrl) || knownUrls.has(item.imageUrl)) continue;
+        if (!isPublicImageUrl((item as any).imageUrl) || knownUrls.has((item as any).imageUrl)) continue;
         mediaToSend.push({
-          url: item.imageUrl,
+          url: (item as any).imageUrl,
           caption: item.productName ? `Gambar ${item.productName}` : 'Gambar produk',
           fallbackUrl: getKnowledgeShareUrl(item.id),
         });
-        knownUrls.add(item.imageUrl);
+        knownUrls.add((item as any).imageUrl);
         if (mediaToSend.length >= 3) break;
       }
     }
@@ -141,7 +141,7 @@ export class ChatbotEngine {
     let usedDeterministicReply = false;
     if (promptSource === 'error' && mediaToSend.length > 0) {
       const productNames = matchedItems
-        .filter((item) => isPublicImageUrl(item.imageUrl) && item.productName)
+        .filter((item) => isPublicImageUrl((item as any).imageUrl) && item.productName)
         .slice(0, mediaToSend.length)
         .map((item) => item.productName);
       finalReply = productNames.length > 0

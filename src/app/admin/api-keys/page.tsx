@@ -181,12 +181,10 @@ export default function AdminApiKeysPage() {
               >
                 <option value="gpt-4o-mini">GPT-4o Mini</option>
                 <option value="gpt-4o">GPT-4o</option>
-                <option value="claude-3-haiku-20240307">Claude 3 Haiku</option>
-                <option value="claude-3-5-sonnet-20240620">Claude 3.5 Sonnet</option>
-                <option value="gemini/gemini-1.5-flash">Gemini 1.5 Flash</option>
-                <option value="gemini/gemini-1.5-pro">Gemini 1.5 Pro</option>
-                <option value="gemini/gemini-2.5-flash-lite">Gemini 2.5 Flash Lite</option>
-                <option value="llama-3.1-8b-instruct">Llama 3.1 8B</option>
+                <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite</option>
+                <option value="claude-haiku-4-5">Claude Haiku 4.5</option>
+                <option value="claude-sonnet-4-6">Claude Sonnet 4.6</option>
                 <option value="llama-3.1-70b-instruct">Llama 3.1 70B</option>
               </select>
             </div>
