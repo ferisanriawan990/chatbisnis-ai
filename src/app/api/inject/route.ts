@@ -1,12 +1,15 @@
 import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { decrypt } from '@/lib/crypto';
 
 export async function GET() {
   try {
-    return NextResponse.json({ 
-      success: true, 
-      FLAZ: process.env.FLAZ_CLOUD_API_KEY ? process.env.FLAZ_CLOUD_API_KEY.slice(0, 5) + '...' + process.env.FLAZ_CLOUD_API_KEY.slice(-4) : null,
-      OPENAI: process.env.OPENAI_API_KEY ? 'exists' : null
-    });
+    const adminUser = await prisma.user.findUnique({ where: { email: 'admin@chatbisnis.id' } });
+    const chatbotSetting = await prisma.chatbotSetting.findFirst({ where: { userId: adminUser?.id } });
+    if (!chatbotSetting) return NextResponse.json({ error: 'Not found' });
+    
+    const decryptedKey = decrypt(chatbotSetting.aiApiKeyEncrypted || '');
+    return NextResponse.json({ success: true, key: decryptedKey });
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
