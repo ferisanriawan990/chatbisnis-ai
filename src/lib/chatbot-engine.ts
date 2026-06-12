@@ -117,7 +117,12 @@ export class ChatbotEngine {
     if (!isTest) whereClause.isActive = true;
 
     const chatbotSetting = await prisma.chatbotSetting.findFirst({
-      where: whereClause,
+      where: {
+        ...whereClause,
+        user: {
+          email: { not: 'admin@chatbisnis.id' }
+        }
+      },
       include: {
         businessProfile: true,
         user: { include: { subscriptions: { include: { plan: true }, where: { status: 'active' }, take: 1 } } }
