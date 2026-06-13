@@ -137,7 +137,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             }`}
           >
             <MessageSquare className="w-5 h-5" />
-            <span className="font-medium text-sm">Log Chat</span>
+            <span className="font-medium text-sm">Riwayat Chat</span>
           </Link>
 
           <Link 
@@ -209,7 +209,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             }`}
           >
             <Users className="w-5 h-5" />
-            <span className="font-medium">Leads</span>
+            <span className="font-medium">Data Pelanggan</span>
           </Link>
           <Link 
             href="/dashboard/chat-logs" 
@@ -219,7 +219,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             }`}
           >
             <MessageSquare className="w-5 h-5" />
-            <span className="font-medium">Chat Logs</span>
+            <span className="font-medium">Riwayat Chat</span>
           </Link>
           <Link 
             href="/dashboard/billing" 
