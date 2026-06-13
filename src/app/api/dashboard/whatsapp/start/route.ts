@@ -29,7 +29,7 @@ export async function POST() {
     });
 
     if (!chatbot) {
-      return NextResponse.json({ error: 'Chatbot setting tidak ditemukan' }, { status: 404 });
+      console.error("DEBUG: chatbot not found for userId", userId); return NextResponse.json({ error: `Chatbot setting tidak ditemukan untuk userId: ${userId}` }, { status: 404 });
     }
 
     const sessionName = getActiveWhatsappSessionName(userId, chatbot.businessProfileId);

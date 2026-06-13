@@ -15,7 +15,7 @@ export async function GET() {
     const userId = (authSession.user as { id: string }).id;
     const chatbot = await prisma.chatbotSetting.findFirst({ where: { userId } });
     if (!chatbot) {
-      return NextResponse.json({ error: 'Chatbot setting tidak ditemukan' }, { status: 404 });
+      console.error("DEBUG: chatbot not found for userId", userId); return NextResponse.json({ error: `Chatbot setting tidak ditemukan untuk userId: ${userId}` }, { status: 404 });
     }
 
     const sessionName = getActiveWhatsappSessionName(userId, chatbot.businessProfileId);

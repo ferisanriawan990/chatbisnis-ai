@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    const gateway = BaileysService.fromEnv();
+    const { gateway } = await BaileysService.resolveInstance(chatbot.id);
     const incomingText = (event.text || event.caption || '').trim();
     const isImage = event.type === 'image' && Boolean(event.media?.base64);
     let imageUrl: string | undefined;
