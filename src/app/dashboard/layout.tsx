@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 import { 
   Bot, Settings, BookOpen, Package, MessageSquare, Phone, 
   Users, CreditCard, LayoutDashboard, Send, Inbox, Database, 
-  Box, X, Menu, BotMessageSquare, BarChart3, Shield, ShoppingCart, Star, History
+  Box, X, Menu, BotMessageSquare, BarChart3, Shield, ShoppingCart, Star, History, Megaphone
 } from 'lucide-react';
 import Link from 'next/link';
 import LogoutButton from '@/components/LogoutButton';
@@ -129,6 +129,16 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           >
             <BookOpen className="w-5 h-5" />
             <span className="font-medium">Reservasi (Booking)</span>
+          </Link>
+
+          <Link 
+            href="/dashboard/campaigns" 
+            className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+              pathname === '/dashboard/campaigns' ? 'bg-fuchsia-50 text-fuchsia-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+            }`}
+          >
+            <Megaphone className="w-5 h-5" />
+            <span className="font-medium">Pemasaran (Campaign)</span>
           </Link>
 
           <Link 

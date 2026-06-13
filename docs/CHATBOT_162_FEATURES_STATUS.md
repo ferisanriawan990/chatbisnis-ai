@@ -89,10 +89,10 @@
 | 85 | Broadcast berdasarkan segmentasi | | | | | | DONE | Memanfaatkan data tags dari Lead |
 | 86 | Jadwal broadcast | | | | | | DONE | Mendukung background queue delay |
 | 87 | Personalisasi broadcast | | | | | | DONE | Mengganti placeholder [Nama] dengan nama pelanggan |
-| 88 | Batas kecepatan broadcast | | | | | | NOT_STARTED | |
-| 89 | Opt-out promosi | | | | | | NOT_STARTED | |
-| 90 | Promo ulang tahun | | | | | | NOT_STARTED | |
-| 91 | Aktivasi kembali pelanggan tidak aktif | | | | | | NOT_STARTED | |
+| 88 | Batas kecepatan broadcast | | | | | | DONE | Tersedia antrean *Drip Campaign* di Cron untuk anti-banned |
+| 89 | Opt-out promosi | | | | | | DONE | *Engine* bot akan menangkap kata kunci STOP dan berhenti promosi |
+| 90 | Promo ulang tahun otomatis | | | | | | DONE | Ekstraksi Cron harian ke target yang ulang tahun hari ini |
+| 91 | Aktivasi kembali pelanggan yang tidak aktif | | | | | | DONE | Skrip *Retargeting* otomatis bagi pelanggan pasif >30 hari |
 | 92 | Program loyalitas | | | | | | DONE | Loyalitas Poin dicatat secara otomatis untuk setiap Rp 1.000 belanja |
 | 93 | Kode voucher otomatis | | | | | | DONE | Diimplementasikan melalui AI native tool apply_voucher |
 | 94 | A/B testing pesan promosi | | | | | | NOT_STARTED | |

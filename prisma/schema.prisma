@@ -97,6 +97,7 @@ model BusinessProfile {
   knowledgeItems        KnowledgeItem[]
   chatLogs              ChatLog[]
   leads                 Lead[]
+  campaigns             Campaign[]
   whatsappSessions      WhatsAppSession[]
   usageCounters         UsageCounter[]
   conversationStates    ConversationState[]
@@ -247,6 +248,9 @@ model Lead {
   churnReason       String?    @db.Text // Alasan kegagalan closing
   loyaltyPoints     Int        @default(0)
   isReturning       Boolean    @default(false)
+  isOptedOut        Boolean    @default(false)
+  birthDate         DateTime?
+  lastActiveAt      DateTime?  @default(now())
   assignedAdminId   String?
   createdAt         DateTime   @default(now())
   updatedAt         DateTime   @updatedAt
@@ -254,6 +258,7 @@ model Lead {
   user            User            @relation("OwnerLeads", fields: [userId], references: [id], onDelete: Cascade)
   assignedAdmin   User?           @relation("AssignedLeadAdmin", fields: [assignedAdminId], references: [id], onDelete: SetNull)
   businessProfile BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+  campaignTargets CampaignTarget[]
 
   @@unique([businessProfileId, customerPhone])
   @@index([userId, businessProfileId, status, createdAt])
@@ -735,4 +740,60 @@ model Voucher {
   businessProfile BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
   
   @@index([businessProfileId, code])
+}
+
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  RUNNING
+  PAUSED
+  COMPLETED
+}
+
+enum CampaignType {
+  MANUAL
+  BIRTHDAY_AUTO
+  RETARGETING_AUTO
+}
+
+enum CampaignTargetStatus {
+  PENDING
+  SENT
+  FAILED
+  OPT_OUT
+}
+
+model Campaign {
+  id                String         @id @default(uuid())
+  businessProfileId String
+  name              String
+  type              CampaignType   @default(MANUAL)
+  messageTemplate   String         @db.Text
+  status            CampaignStatus @default(DRAFT)
+  scheduledAt       DateTime?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  businessProfile   BusinessProfile  @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+  targets           CampaignTarget[]
+
+  @@index([businessProfileId, status])
+}
+
+model CampaignTarget {
+  id           String               @id @default(uuid())
+  campaignId   String
+  leadId       String
+  status       CampaignTargetStatus @default(PENDING)
+  sentAt       DateTime?
+  errorReason  String?              @db.Text
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  campaign     Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  lead         Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId, status])
+  @@index([leadId])
+  @@unique([campaignId, leadId])
 }

@@ -84,6 +84,34 @@ export class ChatbotEngine {
       return null;
     }
 
+    // Phase 34: Opt-Out & Activity Tracking
+    const isOptOut = sanitizedMessageIn.toUpperCase() === 'STOP' || sanitizedMessageIn.toUpperCase() === 'BERHENTI';
+    let existingLead = null;
+    
+    if (profile && params.customerPhone) {
+      existingLead = await prisma.lead.findUnique({
+        where: { businessProfileId_customerPhone: { businessProfileId: profile.id, customerPhone: params.customerPhone } }
+      });
+      
+      if (existingLead) {
+        await prisma.lead.update({
+          where: { id: existingLead.id },
+          data: { 
+            lastActiveAt: new Date(),
+            ...(isOptOut ? { isOptedOut: true } : {})
+          }
+        });
+
+        if (isOptOut) {
+          const reply = 'Anda telah berhasil berhenti berlangganan dari pesan promosi kami. Terima kasih.';
+          if (!isTest) {
+            await this.sendLog({ ...params, chatbotSetting, messageOut: reply, needsHuman: false, intent: 'opt_out', sentiment: 'neutral' });
+          }
+          return { reply, metadata: { intent: 'opt_out', promptSource: 'opt_out' } };
+        }
+      }
+    }
+
     // 3. Lead Capture is now handled asynchronously below
 
     // 4. (N8N Bypass Removed)
@@ -143,9 +171,12 @@ export class ChatbotEngine {
       where: { businessProfileId: profile.id, isAvailable: true }
     });
 
-    const existingLead = await prisma.lead.findUnique({
-      where: { businessProfileId_customerPhone: { businessProfileId: profile.id, customerPhone: params.customerPhone } }
-    });
+    // existingLead is already fetched above for Opt-out tracking, but just in case it was created asynchronously, we can re-fetch if it was null
+    if (!existingLead) {
+      existingLead = await prisma.lead.findUnique({
+        where: { businessProfileId_customerPhone: { businessProfileId: profile.id, customerPhone: params.customerPhone } }
+      });
+    }
 
     const activeCart = await prisma.order.findFirst({
       where: { businessProfileId: profile.id, customerPhone: params.customerPhone, status: 'draft' },
