@@ -598,6 +598,8 @@ model Order {
   shippingAddress   String?     @db.Text
   shippingCourier   String?
   shippingResi      String?
+  shippingFee       Decimal     @default(0.0)
+  deliveryMethod    String      @default("shipping") // shipping, pickup
   reminderSentAt    DateTime?
   items             OrderItem[]
   createdAt         DateTime    @default(now())

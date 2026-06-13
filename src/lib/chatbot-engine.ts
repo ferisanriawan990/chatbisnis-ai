@@ -584,7 +584,8 @@ export class ChatbotEngine {
 
     finalSystemPrompt += `\nKamu MEMILIKI native tool_call berikut:
 - {"tool_call": true, "action": "add_to_cart", "params": {"productId": "<ID>", "quantity": 1}} : Untuk memasukkan barang ke keranjang pembeli.
-- {"tool_call": true, "action": "checkout"} : Untuk memproses keranjang menjadi pesanan Pending.
+- {"tool_call": true, "action": "calculate_shipping", "params": {"address": "alamat lengkap", "deliveryMethod": "shipping atau pickup"}} : PANGGIL INI sebelum melakukan checkout untuk menghitung total dengan ongkir. Tanyakan dulu apakah mereka ingin pesanan Dikirim (shipping) atau Diambil di Toko (pickup) beserta alamat jika belum ada.
+- {"tool_call": true, "action": "checkout"} : Untuk memproses keranjang menjadi pesanan Pending. PASTIKAN sudah menghitung ongkir dulu menggunakan calculate_shipping.
 - {"tool_call": true, "action": "verify_payment"} : PANGGIL INI JIKA pelanggan baru saja mengirimkan FOTO BUKTI TRANSFER dan kamu bisa memvalidasi bahwa foto tersebut memang bukti transfer.
 - {"tool_call": true, "action": "check_availability", "params": {"date": "YYYY-MM-DD", "hour": "HH:00"}} : Cek apakah slot jam tersebut kosong untuk layanan.
 - {"tool_call": true, "action": "create_booking", "params": {"date": "YYYY-MM-DD", "hour": "HH:00", "serviceName": "Nama Layanan"}} : Buat reservasi / booking ke dalam sistem jika slot kosong.
@@ -673,13 +674,45 @@ CONTOH BENAR: [SEND_IMAGE: https://imgur.com/xyz.jpg | Ini adalah gambar sepatu]
                 } else {
                   toolResultString = 'Gagal: Produk tidak ditemukan.';
                 }
+              } else if (toolData.action === 'calculate_shipping' && businessProfileId && customerPhone) {
+                const method = toolData.params.deliveryMethod === 'pickup' ? 'pickup' : 'shipping';
+                let fee = 0;
+                let replyFee = "Gratis karena pesanan diambil di toko.";
+                
+                if (method === 'shipping') {
+                  const addr = (toolData.params.address || '').toLowerCase();
+                  if (addr.includes('jakarta')) fee = 15000;
+                  else if (addr.includes('jawa')) fee = 25000;
+                  else if (addr.includes('sumatera')) fee = 40000;
+                  else if (addr.includes('kalimantan')) fee = 50000;
+                  else if (addr.includes('sulawesi')) fee = 60000;
+                  else if (addr.includes('papua')) fee = 100000;
+                  else fee = 20000; // default tarif flat simulasi
+                  replyFee = `Rp ${fee}`;
+                }
+
+                const order = await prisma.order.findFirst({ where: { businessProfileId, customerPhone, status: 'draft' } });
+                if (order) {
+                  await prisma.order.update({ 
+                    where: { id: order.id }, 
+                    data: { 
+                      shippingFee: fee, 
+                      deliveryMethod: method,
+                      shippingAddress: method === 'shipping' ? toolData.params.address : null
+                    } 
+                  });
+                  toolResultString = `Kalkulasi selesai. Metode: ${method}. Ongkir: ${replyFee}. Total keranjang + ongkir = Rp ${Number(order.totalAmount) + fee}. Sampaikan rincian ini ke pelanggan dan tanyakan apakah ingin diproses checkout sekarang.`;
+                } else {
+                  toolResultString = 'Gagal: Keranjang masih kosong. Tambahkan produk ke keranjang dulu.';
+                }
               } else if (toolData.action === 'checkout' && businessProfileId && customerPhone) {
                 const order = await prisma.order.findFirst({ where: { businessProfileId, customerPhone, status: 'draft' }, include: { items: true } });
                 if (order && order.items.length > 0) {
                   await prisma.order.update({ where: { id: order.id }, data: { status: 'pending_payment' } });
                   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
                   const invoiceLink = `${baseUrl}/pay/${order.id}`;
-                  toolResultString = `Checkout berhasil. Order ID: ${order.orderNumber}. Total: Rp ${order.totalAmount}. BERIKAN LINK INVOICE INI KE PELANGGAN UNTUK MEMBAYAR: ${invoiceLink}`;
+                  const grandTotal = Number(order.totalAmount) + Number(order.shippingFee);
+                  toolResultString = `Checkout berhasil. Order ID: ${order.orderNumber}. Grand Total: Rp ${grandTotal}. BERIKAN LINK INVOICE INI KE PELANGGAN UNTUK MEMBAYAR: ${invoiceLink}`;
                 } else {
                   toolResultString = 'Gagal checkout: Keranjang kosong.';
                 }

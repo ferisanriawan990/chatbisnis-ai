@@ -73,10 +73,26 @@ export default function PublicInvoicePage() {
             </div>
           </div>
 
-          <div className="p-6 border-b border-slate-100">
-            <h3 className="text-sm font-semibold text-slate-800 mb-4 uppercase tracking-wider">Rincian Pelanggan</h3>
-            <p className="font-medium text-slate-800">{order.customerName}</p>
-            <p className="text-slate-600 flex items-center gap-2 mt-1"><MapPin className="w-4 h-4" /> {order.customerPhone}</p>
+          <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row gap-6">
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold text-slate-800 mb-4 uppercase tracking-wider">Rincian Pelanggan</h3>
+              <p className="font-medium text-slate-800">{order.customerName}</p>
+              <p className="text-slate-600 flex items-center gap-2 mt-1"><MapPin className="w-4 h-4" /> {order.customerPhone}</p>
+            </div>
+            {order.deliveryMethod === 'shipping' && order.shippingAddress && (
+              <div className="flex-1">
+                <h3 className="text-sm font-semibold text-slate-800 mb-4 uppercase tracking-wider">Alamat Pengiriman</h3>
+                <p className="text-sm text-slate-600 leading-relaxed bg-slate-50 p-3 rounded border border-slate-100">{order.shippingAddress}</p>
+              </div>
+            )}
+            {order.deliveryMethod === 'pickup' && (
+              <div className="flex-1">
+                <h3 className="text-sm font-semibold text-slate-800 mb-4 uppercase tracking-wider">Metode Pengambilan</h3>
+                <p className="text-sm font-medium text-blue-700 bg-blue-50 p-3 rounded border border-blue-100 flex items-center gap-2">
+                  Ambil Sendiri di Toko (Pickup)
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="p-6 border-b border-slate-100">
@@ -91,6 +107,23 @@ export default function PublicInvoicePage() {
                   <p className="font-medium text-slate-800">Rp {(item.quantity * Number(item.price)).toLocaleString('id-ID')}</p>
                 </div>
               ))}
+              
+              <div className="border-t border-slate-100 pt-4 mt-4 space-y-2">
+                <div className="flex justify-between items-center text-sm">
+                  <p className="text-slate-500">Subtotal Produk</p>
+                  <p className="font-medium text-slate-800">Rp {Number(order.totalAmount).toLocaleString('id-ID')}</p>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                  <p className="text-slate-500">Biaya Pengiriman</p>
+                  <p className="font-medium text-slate-800">
+                    {Number(order.shippingFee) > 0 ? `Rp ${Number(order.shippingFee).toLocaleString('id-ID')}` : 'Gratis'}
+                  </p>
+                </div>
+                <div className="flex justify-between items-center pt-2 mt-2 border-t border-slate-100">
+                  <p className="font-bold text-slate-800">Total Tagihan</p>
+                  <p className="font-bold text-blue-700 text-lg">Rp {(Number(order.totalAmount) + Number(order.shippingFee)).toLocaleString('id-ID')}</p>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -153,7 +186,7 @@ export default function PublicInvoicePage() {
             <>
               <h3 className="font-bold text-slate-800 text-sm">Cara Pembayaran</h3>
               <p className="text-sm text-slate-600">
-                Silakan lakukan transfer sebesar <strong className="text-blue-600">Rp {Number(order.totalAmount).toLocaleString('id-ID')}</strong>. 
+                Silakan lakukan transfer sebesar <strong className="text-blue-600">Rp {(Number(order.totalAmount) + Number(order.shippingFee)).toLocaleString('id-ID')}</strong>. 
                 Untuk mendapatkan informasi nomor rekening atau metode pembayaran e-wallet, silakan balas pesan di WhatsApp.
               </p>
               <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-3">

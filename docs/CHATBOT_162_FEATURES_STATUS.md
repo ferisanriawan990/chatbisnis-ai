@@ -40,9 +40,9 @@
 | 36 | Tautan pembayaran otomatis | | | | | | DONE | AI memberikan link /pay saat customer checkout |
 | 37 | Verifikasi pembayaran otomatis | | | | | | NOT_STARTED | |
 | 38 | Konfirmasi transfer manual | | | | | | DONE | Admin dapat mengeset status pesanan menjadi Paid via Dashboard Orders |
-| 39 | Perhitungan ongkir otomatis | | | | | | NOT_STARTED | |
-| 40 | Pengecekan area pengiriman | | | | | | NOT_STARTED | |
-| 41 | Pilihan pengiriman atau ambil di toko | | | | | | NOT_STARTED | |
+| 39 | Perhitungan ongkir otomatis | | | | | | DONE | Implementasi tool_call calculate_shipping (simulasi) |
+| 40 | Pengecekan area pengiriman | | | | | | DONE | Tool_call mengidentifikasi provinsi dari teks alamat |
+| 41 | Pilihan pengiriman atau ambil di toko | | | | | | DONE | Kolom deliveryMethod (shipping/pickup) di database Order |
 | 42 | Pelacakan status pesanan | | | | | | DONE | Status dapat dilacak di halaman public Invoice |
 | 43 | Pengiriman nomor resi otomatis | | | | | | DONE | Admin dapat menginput resi dan otomatis muncul di Invoice Pelanggan |
 | 44 | Pembatalan pesanan | | | | | | DONE | Admin dapat mengeset status pesanan menjadi Cancelled |
