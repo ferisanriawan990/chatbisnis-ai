@@ -151,14 +151,14 @@
 | 147 | Pembatasan data berdasarkan cabang | | | | | | NOT_STARTED | |
 | 148 | Log aktivitas pengguna | | | | | | DONE | Diimplementasikan melalui tabel AuditLog terpusat |
 | 149 | Pembagian chat otomatis | | | | | | DONE | Algoritma Round-Robin (Beban CS Terendah) diterapkan di Mesin AI |
-| 150 | Dashboard Super Admin | | | | | | NOT_STARTED | |
+| 150 | Dashboard Super Admin | | | | | | DONE | Tersedia rute rahasia /super-admin khusus untuk pemilik SaaS |
 | 151 | Pemisahan data setiap bisnis | | | | | | DONE | Setiap data dipisahkan via businessProfileId (Multi-tenant) |
 | 152 | Enkripsi kredensial WhatsApp | | | | | | DONE | Data Whatsapp Server Session diisolasi |
 | 153 | Enkripsi API key | | | | | | DONE | Menggunakan fitur encrypt/decrypt AES256 di utilitas security |
 | 154 | Validasi webhook | | | | | | NOT_STARTED | |
 | 155 | Rate limit pesan | | | | | | NOT_STARTED | |
-| 156 | Batas penggunaan AI | | | | | | NOT_STARTED | |
-| 157 | Peringatan kuota hampir habis | | | | | | NOT_STARTED | |
+| 156 | Batas penggunaan AI | | | | | | DONE | Ditegakkan di dalam `chatbot-engine.ts` |
+| 157 | Peringatan kuota hampir habis | | | | | | DONE | Notifikasi via WhatsApp jika menyentuh 90% batas kuota |
 | 158 | Audit log keamanan | | | | | | DONE | Tersedia UI 'Audit Log' di Sidebar Dasbor untuk Pemilik |
 | 159 | Autentikasi dua langkah | | | | | | NOT_STARTED | |
 | 160 | Backup data otomatis | | | | | | NOT_STARTED | |

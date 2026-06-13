@@ -8,6 +8,7 @@ import { buildSystemPrompt } from './prompt-builder';
 import { searchKnowledgeItems, buildKnowledgeFallbackAnswer, detectCustomerIntent } from './knowledge-search';
 import { validatePublicHttpsUrl } from './security';
 import { analyzeSentiment, SentimentResult } from './sentiment-analysis';
+import { BaileysService } from './baileys';
 
 export interface ChatbotEngineParams {
   whatsappServerId?: string;
@@ -427,9 +428,48 @@ export class ChatbotEngine {
       
       if (usage.aiChats >= maxDaily || monthlyCount >= maxMonthly) return { allowed: false, usage };
       
-      const updatedUsage = await tx.usageCounter.update({ where: { id: usage.id }, data: { whatsappMessages: { increment: 1 } } });
-      return { allowed: true, usage: updatedUsage };
+      // Phase 31: Quota Warnings (90% threshold)
+      let dailyWarningTriggered = false;
+      let monthlyWarningTriggered = false;
+
+      if (!usage.dailyWarningSent && usage.aiChats >= maxDaily * 0.9) {
+        dailyWarningTriggered = true;
+      }
+      if (!usage.monthlyWarningSent && monthlyCount >= maxMonthly * 0.9) {
+        monthlyWarningTriggered = true;
+      }
+
+      const updatedUsage = await tx.usageCounter.update({ 
+        where: { id: usage.id }, 
+        data: { 
+          whatsappMessages: { increment: 1 },
+          ...(dailyWarningTriggered && { dailyWarningSent: true }),
+          ...(monthlyWarningTriggered && { monthlyWarningSent: true })
+        } 
+      });
+      return { allowed: true, usage: updatedUsage, dailyWarningTriggered, monthlyWarningTriggered };
     });
+
+    // Send Warning Async if triggered
+    if (usageResult.dailyWarningTriggered || usageResult.monthlyWarningTriggered) {
+      (async () => {
+        try {
+          const profile = await prisma.businessProfile.findUnique({ where: { id: chatbotSetting.businessProfileId } });
+          if (profile?.adminPhone && chatbotSetting.whatsappSessionName) {
+            const { gateway } = await BaileysService.resolveInstance(chatbotSetting.id);
+            const warningType = usageResult.monthlyWarningTriggered ? 'Bulanan' : 'Harian';
+            const message = `⚠️ *PERINGATAN KUOTA AI*\n\nHalo Bos!\nSistem mendeteksi bahwa kuota AI Chatbot Anda untuk periode ${warningType} telah mencapai *90%* dari batas maksimal.\n\nHarap segera pantau Dasbor Anda agar Chatbot tidak berhenti merespons pelanggan.\nTerima kasih!`;
+            
+            let targetPhone = profile.adminPhone;
+            if (targetPhone.startsWith('0')) targetPhone = '62' + targetPhone.substring(1);
+            
+            await gateway.sendMessage(chatbotSetting.whatsappSessionName, targetPhone, message);
+          }
+        } catch (e) {
+          console.error('Failed to send quota warning:', e);
+        }
+      })();
+    }
 
     if (!usageResult.allowed) {
       return { allowed: false, replyMessage: chatbotSetting.fallbackMessage };

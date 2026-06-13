@@ -360,12 +360,14 @@ model UsageCounter {
   userId            String
   businessProfileId String?
   date              DateTime @db.Date
-  month             String
-  aiChats           Int      @default(0)
-  aiTokens          Int      @default(0)
-  whatsappMessages  Int      @default(0)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  month              String
+  aiChats            Int      @default(0)
+  aiTokens           Int      @default(0)
+  whatsappMessages   Int      @default(0)
+  dailyWarningSent   Boolean  @default(false)
+  monthlyWarningSent Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   businessProfile BusinessProfile? @relation(fields: [businessProfileId], references: [id], onDelete: SetNull)
