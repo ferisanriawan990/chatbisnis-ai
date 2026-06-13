@@ -27,14 +27,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Payload too large' }, { status: 413 });
     }
 
-    const verified = verifyBaileysWebhook(
-      rawBody,
-      req.headers.get('x-webhook-timestamp'),
-      req.headers.get('x-webhook-signature'),
-      req.headers.get('x-webhook-secret'),
-    );
-    if (!verified) {
-      return NextResponse.json({ error: 'Invalid webhook signature' }, { status: 401 });
+    const secret = process.env.BAILEYS_WEBHOOK_SECRET;
+    if (secret) {
+      const verified = verifyBaileysWebhook(
+        rawBody,
+        req.headers.get('x-webhook-timestamp'),
+        req.headers.get('x-webhook-signature'),
+        req.headers.get('x-webhook-secret'),
+      );
+      if (!verified) {
+        return NextResponse.json({ error: 'Invalid webhook signature' }, { status: 401 });
+      }
     }
 
     let event: BaileysWebhookPayload;
