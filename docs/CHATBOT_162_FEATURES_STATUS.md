@@ -149,7 +149,7 @@
 | 145 | Banyak admin dalam satu bisnis | | | | | | DONE | Diimplementasikan melalui dashboard "Tim & Akses" |
 | 146 | Hak akses berdasarkan peran | | | | | | DONE | Mendukung peran Admin dan Customer Service (RBAC) |
 | 147 | Pembatasan data berdasarkan cabang | | | | | | NOT_STARTED | |
-| 148 | Log aktivitas pengguna | | | | | | NOT_STARTED | |
+| 148 | Log aktivitas pengguna | | | | | | DONE | Diimplementasikan melalui tabel AuditLog terpusat |
 | 149 | Pembagian chat otomatis | | | | | | DONE | Algoritma Round-Robin (Beban CS Terendah) diterapkan di Mesin AI |
 | 150 | Dashboard Super Admin | | | | | | NOT_STARTED | |
 | 151 | Pemisahan data setiap bisnis | | | | | | DONE | Setiap data dipisahkan via businessProfileId (Multi-tenant) |
@@ -159,7 +159,7 @@
 | 155 | Rate limit pesan | | | | | | NOT_STARTED | |
 | 156 | Batas penggunaan AI | | | | | | NOT_STARTED | |
 | 157 | Peringatan kuota hampir habis | | | | | | NOT_STARTED | |
-| 158 | Audit log keamanan | | | | | | NOT_STARTED | |
+| 158 | Audit log keamanan | | | | | | DONE | Tersedia UI 'Audit Log' di Sidebar Dasbor untuk Pemilik |
 | 159 | Autentikasi dua langkah | | | | | | NOT_STARTED | |
 | 160 | Backup data otomatis | | | | | | NOT_STARTED | |
 | 161 | Pengaturan retensi data chat | | | | | | NOT_STARTED | |

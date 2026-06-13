@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 import { 
   Bot, Settings, BookOpen, Package, MessageSquare, Phone, 
   Users, CreditCard, LayoutDashboard, Send, Inbox, Database, 
-  Box, X, Menu, BotMessageSquare, BarChart3, Shield, ShoppingCart, Star
+  Box, X, Menu, BotMessageSquare, BarChart3, Shield, ShoppingCart, Star, History
 } from 'lucide-react';
 import Link from 'next/link';
 import LogoutButton from '@/components/LogoutButton';
@@ -211,6 +211,17 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           >
             <CreditCard className="w-5 h-5" />
             <span className="font-medium">Billing</span>
+          </Link>
+
+          <Link 
+            href="/dashboard/settings/audit" 
+            onClick={() => setMobileMenuOpen(false)}
+            className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+              pathname === '/dashboard/settings/audit' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+            }`}
+          >
+            <History className="w-5 h-5" />
+            <span className="font-medium">Audit Log</span>
           </Link>
         </nav>
         <div className="p-4 border-t border-slate-200">

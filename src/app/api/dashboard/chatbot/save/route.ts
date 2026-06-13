@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { saveChatbotSchema } from '@/lib/validations';
 import { getActiveWhatsappSessionName } from '@/lib/whatsapp-helpers';
 import { validatePublicHttpsUrl } from '@/lib/security';
+import { logAudit } from "@/lib/audit-logger";
 
 export async function POST(req: Request) {
   try {
@@ -97,13 +98,14 @@ export async function POST(req: Request) {
       // whatsappBaseUrl, whatsappApiKeyEncrypted, whatsappServerId are NEVER set from user save
     };
 
+    let updatedChatbot;
     if (chatbot) {
-      await prisma.chatbotSetting.update({
+      updatedChatbot = await prisma.chatbotSetting.update({
         where: { id: chatbot.id },
         data: chatbotData,
       });
     } else {
-      await prisma.chatbotSetting.create({
+      updatedChatbot = await prisma.chatbotSetting.create({
         data: {
           userId,
           businessProfileId: profile.id,
@@ -162,6 +164,23 @@ export async function POST(req: Request) {
         }
       });
     }
+
+    await logAudit({
+      actorUserId: userId,
+      businessProfileId: profile.id,
+      action: 'UPDATE_CHATBOT_SETTINGS',
+      entityType: 'ChatbotSetting',
+      entityId: updatedChatbot.id,
+      metadata: {
+        botName: data.botName,
+        toneStyle: data.toneStyle,
+        language: data.language,
+        useEmoji: data.useEmoji,
+        allowSelling: data.allowSelling,
+        allowVision: data.allowVision,
+        allowVoiceNote: data.allowVoiceNote
+      }
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

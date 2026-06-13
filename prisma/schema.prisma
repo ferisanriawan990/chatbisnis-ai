@@ -107,6 +107,7 @@ model BusinessProfile {
   bookings              Booking[]
   Testimonial           Testimonial[]
   vouchers              Voucher[]
+  auditLogs             AuditLog[]
 }
 
 model ChatbotSetting {
@@ -374,19 +375,22 @@ model UsageCounter {
 }
 
 model AuditLog {
-  id           String   @id @default(uuid())
-  actorUserId  String?
-  action       String
-  entityType   String
-  entityId     String?
-  metadataJson String?  @db.Text
-  ipAddress    String?
-  userAgent    String?  @db.Text
-  createdAt    DateTime @default(now())
+  id                String   @id @default(uuid())
+  actorUserId       String?
+  businessProfileId String?
+  action            String
+  entityType        String
+  entityId          String?
+  metadataJson      String?  @db.Text
+  ipAddress         String?
+  userAgent         String?  @db.Text
+  createdAt         DateTime @default(now())
 
-  actorUser User? @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+  actorUser       User?            @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+  businessProfile BusinessProfile? @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
 
   @@index([actorUserId, createdAt])
+  @@index([businessProfileId, createdAt])
   @@index([entityType, entityId])
 }
 
