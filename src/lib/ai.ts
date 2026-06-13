@@ -103,7 +103,7 @@ export class AIService {
             },
           ],
           max_tokens: config.maxTokens || 1500,
-          temperature: 0.7,
+          temperature: 0.2, // Lowered from 0.7 to 0.2 to prevent hallucinations and make the AI strictly follow the rules
           response_format: config.responseFormat,
         }),
         // Add timeout via AbortController if supported in edge/node, or just rely on platform defaults

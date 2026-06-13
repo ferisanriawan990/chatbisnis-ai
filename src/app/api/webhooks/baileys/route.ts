@@ -124,17 +124,18 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const isAudio = (event.type === 'ptt' || event.type === 'audio') && Boolean(event.media?.base64);
+    const isAudioType = event.type === 'ptt' || event.type === 'audio' || event.type === 'voice';
+    const hasAudioMedia = Boolean(event.media?.base64);
 
-    if (isAudio) {
-      if (!chatbot.allowVoiceNote) {
+    if (isAudioType) {
+      if (!chatbot.allowVoiceNote || !hasAudioMedia) {
         await gateway.sendMessage(
           event.sessionId,
           customerPhone,
-          'Maaf, saya tidak dapat mendengarkan pesan suara saat ini. Silakan ketik pesan Anda.',
+          'Maaf, saat ini saya tidak dapat mendengarkan pesan suara (Voice Note). Silakan ketik pesan Anda dalam bentuk teks ya.',
           webhookIdempotencyKey(event.messageId, 'voice-disabled'),
         );
-        return NextResponse.json({ received: true, handled: 'voice_disabled' });
+        return NextResponse.json({ received: true, handled: 'voice_disabled_or_missing_media' });
       }
 
       try {
@@ -147,11 +148,17 @@ export async function POST(req: NextRequest) {
         }
       } catch (err) {
         console.error('Transcription error:', err);
+        await gateway.sendMessage(
+          event.sessionId,
+          customerPhone,
+          'Maaf, sistem sedang kesulitan memproses pesan suara Anda. Mohon berkenan untuk mengetik pesannya ya.',
+          webhookIdempotencyKey(event.messageId, 'voice-error'),
+        );
         return NextResponse.json({ received: true, error: 'transcription_failed' });
       }
     }
 
-    if (!messageForAI && !isImage && !isAudio) {
+    if (!messageForAI && !isImage && !isAudioType) {
       return NextResponse.json({ received: true, ignored: 'empty_or_unsupported_message' });
     }
 
