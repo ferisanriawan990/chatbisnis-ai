@@ -76,7 +76,7 @@ export async function GET(req: Request) {
 
     // Resolve FAQ titles
     const faqIds = Object.keys(faqCounts);
-    let topFaqs = [];
+    let topFaqs: any[] = [];
     if (faqIds.length > 0) {
       const faqs = await prisma.knowledgeItem.findMany({
         where: { id: { in: faqIds } },
@@ -108,7 +108,7 @@ export async function GET(req: Request) {
     });
 
     const adminIds = Object.keys(adminScores);
-    let salesLeaderboard = [];
+    let salesLeaderboard: any[] = [];
     if (adminIds.length > 0) {
       const admins = await prisma.user.findMany({
         where: { id: { in: adminIds } },
