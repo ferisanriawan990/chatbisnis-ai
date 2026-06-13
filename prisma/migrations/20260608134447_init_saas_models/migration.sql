@@ -67,9 +67,9 @@ CREATE TABLE "ChatbotSetting" (
     "aiApiKeyEncrypted" TEXT,
     "dailyChatLimit" INTEGER NOT NULL DEFAULT 1000,
     "monthlyChatLimit" INTEGER NOT NULL DEFAULT 30000,
-    "wahaBaseUrl" TEXT,
-    "wahaApiKeyEncrypted" TEXT,
-    "wahaSessionName" TEXT NOT NULL,
+    "whatsappBaseUrl" TEXT,
+    "whatsappApiKeyEncrypted" TEXT,
+    "whatsappSessionName" TEXT NOT NULL,
     "n8nWebhookUrl" TEXT,
     "internalWebhookSecret" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -207,7 +207,7 @@ CREATE TABLE "SecretCredential" (
 );
 
 -- CreateTable
-CREATE TABLE "WahaServer" (
+CREATE TABLE "WhatsappServer" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "baseUrl" TEXT NOT NULL,
@@ -220,7 +220,7 @@ CREATE TABLE "WahaServer" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "WahaServer_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "WhatsappServer_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -293,7 +293,7 @@ CREATE TABLE "AuditLog" (
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "ChatbotSetting_wahaSessionName_key" ON "ChatbotSetting"("wahaSessionName");
+CREATE UNIQUE INDEX "ChatbotSetting_whatsappSessionName_key" ON "ChatbotSetting"("whatsappSessionName");
 
 -- CreateIndex
 CREATE INDEX "KnowledgeSource_userId_businessProfileId_status_idx" ON "KnowledgeSource"("userId", "businessProfileId", "status");

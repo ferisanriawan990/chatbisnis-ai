@@ -47,28 +47,28 @@ enum ChatLogStatus {
 // ─── Models ──────────────────────────────────────────────
 
 model User {
-  id                 String              @id @default(uuid())
-  name               String
-  email              String              @unique
-  passwordHash       String
-  role               UserRole            @default(USER)
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
-  businessProfiles   BusinessProfile[]
-  chatbotSettings    ChatbotSetting[]
-  knowledgeSources   KnowledgeSource[]
-  knowledgeItems     KnowledgeItem[]
-  chatLogs           ChatLog[]
-  leads              Lead[]
-  whatsappSessions   WhatsAppSession[]
-  subscriptions      Subscription[]
-  usageCounters      UsageCounter[]
-  auditLogs          AuditLog[]
-  conversationStates ConversationState[]
-  assignedConversations ConversationState[] @relation("AssignedAdmin")
-  Transaction        Transaction[]
-  botConfig          BusinessBotConfig?
-  userRoleAssignments UserRoleAssignment[]
+  id                    String               @id @default(uuid())
+  name                  String
+  email                 String               @unique
+  passwordHash          String
+  role                  UserRole             @default(USER)
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+  businessProfiles      BusinessProfile[]
+  chatbotSettings       ChatbotSetting[]
+  knowledgeSources      KnowledgeSource[]
+  knowledgeItems        KnowledgeItem[]
+  chatLogs              ChatLog[]
+  leads                 Lead[]
+  whatsappSessions      WhatsAppSession[]
+  subscriptions         Subscription[]
+  usageCounters         UsageCounter[]
+  auditLogs             AuditLog[]
+  conversationStates    ConversationState[]
+  assignedConversations ConversationState[]  @relation("AssignedAdmin")
+  Transaction           Transaction[]
+  botConfig             BusinessBotConfig?
+  userRoleAssignments   UserRoleAssignment[]
 }
 
 model BusinessProfile {
@@ -87,52 +87,52 @@ model BusinessProfile {
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
-  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  chatbotSettings    ChatbotSetting[]
-  knowledgeSources   KnowledgeSource[]
-  knowledgeItems     KnowledgeItem[]
-  chatLogs           ChatLog[]
-  leads              Lead[]
-  whatsappSessions   WhatsAppSession[]
-  usageCounters      UsageCounter[]
-  conversationStates ConversationState[]
-  branches             Branch[]
-  roles                Role[]
-  userRoleAssignments  UserRoleAssignment[]
+  user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chatbotSettings       ChatbotSetting[]
+  knowledgeSources      KnowledgeSource[]
+  knowledgeItems        KnowledgeItem[]
+  chatLogs              ChatLog[]
+  leads                 Lead[]
+  whatsappSessions      WhatsAppSession[]
+  usageCounters         UsageCounter[]
+  conversationStates    ConversationState[]
+  branches              Branch[]
+  roles                 Role[]
+  userRoleAssignments   UserRoleAssignment[]
   tenantFeatureSettings TenantFeatureSetting[]
-  products             Product[]
+  products              Product[]
 }
 
 model ChatbotSetting {
-  id                    String   @id @default(uuid())
-  userId                String
-  businessProfileId     String
-  botName               String
-  isActive              Boolean  @default(false)
-  toneStyle             String   @default("Profesional")
-  language              String   @default("id")
-  useEmoji              Boolean  @default(true)
-  maxReplyLength        String   @default("sedang")
-  allowSelling          Boolean  @default(true)
-  allowPromoOffer       Boolean  @default(true)
-  allowVision           Boolean  @default(false)
-  fallbackMessage       String   @db.Text
-  handoverMessage       String   @db.Text
-  handoverKeywords      String   @db.Text
-  outOfHoursMessage     String   @db.Text
-  aiProvider            String   @default("Flaz Cloud")
-  aiModel               String   @default("claude-haiku-4-5")
-  dailyChatLimit        Int      @default(1000)
-  monthlyChatLimit      Int      @default(30000)
-  historyMessageCount   Int      @default(6)
-  knowledgeCharLimit    Int      @default(3500)
-  actionWebhookUrl      String?
-  whatsappBaseUrl           String?  @map("wahaBaseUrl")
-  whatsappApiKeyEncrypted   String?  @map("wahaApiKeyEncrypted")
-  whatsappServerId          String?  @map("wahaServerId")
-  whatsappSessionName       String   @map("wahaSessionName")
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  id                      String   @id @default(uuid())
+  userId                  String
+  businessProfileId       String
+  botName                 String
+  isActive                Boolean  @default(false)
+  toneStyle               String   @default("Profesional")
+  language                String   @default("id")
+  useEmoji                Boolean  @default(true)
+  maxReplyLength          String   @default("sedang")
+  allowSelling            Boolean  @default(true)
+  allowPromoOffer         Boolean  @default(true)
+  allowVision             Boolean  @default(false)
+  fallbackMessage         String   @db.Text
+  handoverMessage         String   @db.Text
+  handoverKeywords        String   @db.Text
+  outOfHoursMessage       String   @db.Text
+  aiProvider              String   @default("Flaz Cloud")
+  aiModel                 String   @default("claude-haiku-4-5")
+  dailyChatLimit          Int      @default(1000)
+  monthlyChatLimit        Int      @default(30000)
+  historyMessageCount     Int      @default(6)
+  knowledgeCharLimit      Int      @default(3500)
+  actionWebhookUrl        String?
+  whatsappBaseUrl         String?
+  whatsappApiKeyEncrypted String?
+  whatsappServerId        String?
+  whatsappSessionName     String
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
 
   user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   businessProfile    BusinessProfile     @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
@@ -246,7 +246,7 @@ model WhatsAppSession {
   userId            String
   businessProfileId String
   chatbotSettingId  String
-  whatsappServerId  String?  @map("wahaServerId")
+  whatsappServerId  String?
   sessionName       String
   status            String    @default("disconnected") // disconnected, starting, qr, connected, failed
   lastConnectedAt   DateTime?
@@ -289,7 +289,6 @@ model SecretCredential {
 }
 
 model WhatsappServer {
-  @@map("WahaServer")
   id                String    @id @default(uuid())
   name              String
   baseUrl           String
@@ -388,7 +387,7 @@ model ConversationState {
   handoverUntil     DateTime?
   unreadCount       Int       @default(0)
   lastMessageAt     DateTime  @default(now())
-  sentimentScore    String?   // positif, netral, negatif, marah
+  sentimentScore    String? // positif, netral, negatif, marah
   summary           String?   @db.Text
   assignedAdminId   String?
   createdAt         DateTime  @default(now())
@@ -431,13 +430,13 @@ model BusinessTemplate {
   category        String
   description     String   @db.Text
   systemPrompt    String   @db.Text
-  requiredFields  String   @db.Text    // JSON array of required field names
-  sampleQuestions String   @db.Text    // JSON array of sample customer questions
+  requiredFields  String   @db.Text // JSON array of required field names
+  sampleQuestions String   @db.Text // JSON array of sample customer questions
   isActive        Boolean  @default(true)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  botConfigs      BusinessBotConfig[]
+  botConfigs BusinessBotConfig[]
 }
 
 model BusinessBotConfig {
@@ -446,7 +445,7 @@ model BusinessBotConfig {
   templateId          String?
   businessName        String
   businessDescription String   @db.Text
-  productsOrServices  String?  @db.Text    // JSON array or free text
+  productsOrServices  String?  @db.Text // JSON array or free text
   pricingInfo         String?  @db.Text
   operationalHours    String?
   address             String?  @db.Text
@@ -456,7 +455,7 @@ model BusinessBotConfig {
   humanAdminContact   String?
   catalogUrl          String?
   mapsUrl             String?
-  customFAQ           String?  @db.Text    // JSON array [{q, a}]
+  customFAQ           String?  @db.Text // JSON array [{q, a}]
   tone                String   @default("sopan")
   languageStyle       String   @default("id")
   botMode             String   @default("auto_reply")
@@ -464,8 +463,8 @@ model BusinessBotConfig {
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
-  user                User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  template            BusinessTemplate? @relation(fields: [templateId], references: [id])
+  user     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  template BusinessTemplate? @relation(fields: [templateId], references: [id])
 }
 
 // ─── Multi-Tenant & RBAC ─────────────────────────────────
@@ -480,23 +479,23 @@ model Branch {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  businessProfile   BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
-  
+  businessProfile BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+
   @@index([businessProfileId])
 }
 
 model Role {
   id                String   @id @default(uuid())
-  businessProfileId String?  // If null, it's a global system role. If set, it's a tenant-specific custom role.
+  businessProfileId String? // If null, it's a global system role. If set, it's a tenant-specific custom role.
   name              String
   description       String?
   isSystem          Boolean  @default(false) // System roles cannot be deleted
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  businessProfile   BusinessProfile?     @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
-  permissions       RolePermission[]
-  userRoles         UserRoleAssignment[]
+  businessProfile BusinessProfile?     @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+  permissions     RolePermission[]
+  userRoles       UserRoleAssignment[]
 
   @@index([businessProfileId])
 }
@@ -505,7 +504,7 @@ model Permission {
   id          String   @id @default(uuid())
   action      String   @unique // e.g., 'whatsapp.view', 'customer.create'
   description String?
-  module      String   // e.g., 'whatsapp', 'customer', 'order'
+  module      String // e.g., 'whatsapp', 'customer', 'order'
   createdAt   DateTime @default(now())
 
   rolePermissions RolePermission[]
@@ -527,7 +526,7 @@ model RolePermission {
 model UserRoleAssignment {
   id                String   @id @default(uuid())
   userId            String
-  businessProfileId String?  
+  businessProfileId String?
   roleId            String
   createdAt         DateTime @default(now())
 
@@ -541,20 +540,20 @@ model UserRoleAssignment {
 }
 
 model Product {
-  id                String          @id @default(uuid())
+  id                String  @id @default(uuid())
   businessProfileId String
   name              String
-  description       String?         @db.Text
-  price             Decimal         @default(0.0)
-  stock             Int             @default(0)
-  isAvailable       Boolean         @default(true)
+  description       String? @db.Text
+  price             Decimal @default(0.0)
+  stock             Int     @default(0)
+  isAvailable       Boolean @default(true)
   imageUrl          String?
   category          String?
-  
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
 
-  businessProfile   BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  businessProfile BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
 
   @@index([businessProfileId])
 }
@@ -578,14 +577,14 @@ model TenantFeatureSetting {
   businessProfileId String
   featureId         String
   isEnabled         Boolean  @default(true)
-  limitCount        Int?     // If the feature has a quota
+  limitCount        Int? // If the feature has a quota
   configJson        String?  @db.Text
   updatedBy         String?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  businessProfile   BusinessProfile   @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
-  feature           FeatureDefinition @relation(fields: [featureId], references: [id], onDelete: Cascade)
+  businessProfile BusinessProfile   @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+  feature         FeatureDefinition @relation(fields: [featureId], references: [id], onDelete: Cascade)
 
   @@unique([businessProfileId, featureId])
   @@index([businessProfileId])

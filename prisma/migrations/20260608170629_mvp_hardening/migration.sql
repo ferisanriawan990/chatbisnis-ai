@@ -1,5 +1,5 @@
 -- AlterTable
-ALTER TABLE "WahaServer" ADD COLUMN     "lastError" TEXT,
+ALTER TABLE "WhatsappServer" ADD COLUMN     "lastError" TEXT,
 ADD COLUMN     "lastHealthCheckAt" TIMESTAMP(3);
 
 -- CreateTable
