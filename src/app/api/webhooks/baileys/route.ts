@@ -62,15 +62,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ received: true, ignored: 'invalid_or_group_message' });
     }
 
-    const idempotency = await rateLimit(
-      `idempotency:msg:${event.messageId}`,
-      1,
-      300_000 // 5 minutes window
-    );
-
-    if (!idempotency.success) {
-      console.log(`Duplicate webhook detected for messageId: ${event.messageId}`);
-      return NextResponse.json({ received: true, ignored: 'duplicate_message_id' });
+    try {
+      await prisma.idempotencyKey.create({
+        data: { key: `msg:${event.messageId}` }
+      });
+    } catch (e: any) {
+      if (e.code === 'P2002') {
+        console.log(`Duplicate webhook rejected atomically for messageId: ${event.messageId}`);
+        return NextResponse.json({ received: true, ignored: 'duplicate_message_id_atomic' });
+      }
     }
 
     if (event.from.includes('status@broadcast')) {

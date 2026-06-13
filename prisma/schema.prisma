@@ -817,3 +817,8 @@ model QuickReply {
 
   @@index([businessProfileId, shortcut])
 }
+
+model IdempotencyKey {
+  key       String   @id
+  createdAt DateTime @default(now())
+}
