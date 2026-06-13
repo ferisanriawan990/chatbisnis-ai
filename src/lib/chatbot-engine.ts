@@ -754,7 +754,7 @@ CONTOH BENAR: [SEND_IMAGE: https://imgur.com/xyz.jpg | Ini adalah gambar sepatu]
 
       if (!aiResult) throw new Error('Tidak ada credential AI yang dapat digunakan.');
 
-      let finalReply = aiResult.reply;
+      let finalReply = aiResult.reply + " [V2]";
       let totalTokens = aiResult.tokenUsage || 0;
 
       // Tool Call Execution Loop
