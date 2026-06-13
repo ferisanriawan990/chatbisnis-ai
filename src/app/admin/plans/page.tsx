@@ -12,7 +12,7 @@ export default function AdminPlansPage() {
   const [formData, setFormData] = useState<any>({ // eslint-disable-line @typescript-eslint/no-explicit-any
     name: '', slug: '', priceMonthly: 0, maxWhatsappSessions: 1, 
     maxKnowledgeItems: 5, dailyChatLimit: 100, monthlyChatLimit: 3000,
-    allowN8nTemplates: false, allowLeadCapture: false, allowHumanHandover: false, allowCustomApiKey: false,
+    allowLeadCapture: false, allowHumanHandover: false,
     isActive: true
   });
 
@@ -43,7 +43,7 @@ export default function AdminPlansPage() {
       setFormData({
         name: '', slug: '', priceMonthly: 0, maxWhatsappSessions: 1, 
         maxKnowledgeItems: 5, dailyChatLimit: 100, monthlyChatLimit: 3000,
-        allowN8nTemplates: false, allowLeadCapture: false, allowHumanHandover: false, allowCustomApiKey: false,
+        allowLeadCapture: false, allowHumanHandover: false,
         isActive: true
       });
     }
@@ -164,17 +164,11 @@ export default function AdminPlansPage() {
               
               {/* Feature Toggles */}
               <div className="bg-slate-50 rounded-2xl p-4 flex flex-col gap-2.5">
-                <div className={`flex items-center gap-2 text-xs font-semibold ${p.allowN8nTemplates ? 'text-indigo-700' : 'text-slate-400'}`}>
-                  {p.allowN8nTemplates ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />} Webhook & n8n Support
-                </div>
                 <div className={`flex items-center gap-2 text-xs font-semibold ${p.allowLeadCapture ? 'text-indigo-700' : 'text-slate-400'}`}>
                   {p.allowLeadCapture ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />} AI Auto Lead Capture
                 </div>
                 <div className={`flex items-center gap-2 text-xs font-semibold ${p.allowHumanHandover ? 'text-indigo-700' : 'text-slate-400'}`}>
                   {p.allowHumanHandover ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />} Live Human Handover
-                </div>
-                <div className={`flex items-center gap-2 text-xs font-semibold ${p.allowCustomApiKey ? 'text-indigo-700' : 'text-slate-400'}`}>
-                  {p.allowCustomApiKey ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />} Custom API Key
                 </div>
               </div>
             </div>
@@ -246,11 +240,7 @@ export default function AdminPlansPage() {
                 {/* Feature Toggles */}
                 <div>
                   <h4 className="text-sm font-bold text-indigo-600 uppercase tracking-wider mb-4 border-b border-slate-100 pb-2">Unlock Fitur Lanjutan</h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <label className="flex items-center gap-3 p-4 border border-slate-200 rounded-2xl cursor-pointer hover:bg-indigo-50 transition-colors">
-                      <input type="checkbox" checked={formData.allowN8nTemplates} onChange={e => setFormData({...formData, allowN8nTemplates: e.target.checked})} className="w-5 h-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500" />
-                      <span className="text-sm font-semibold text-slate-700">Akses Webhook & n8n</span>
-                    </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
                     <label className="flex items-center gap-3 p-4 border border-slate-200 rounded-2xl cursor-pointer hover:bg-emerald-50 transition-colors">
                       <input type="checkbox" checked={formData.allowLeadCapture} onChange={e => setFormData({...formData, allowLeadCapture: e.target.checked})} className="w-5 h-5 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500" />
                       <span className="text-sm font-semibold text-slate-700">AI Lead Capture</span>
@@ -258,10 +248,6 @@ export default function AdminPlansPage() {
                     <label className="flex items-center gap-3 p-4 border border-slate-200 rounded-2xl cursor-pointer hover:bg-blue-50 transition-colors">
                       <input type="checkbox" checked={formData.allowHumanHandover} onChange={e => setFormData({...formData, allowHumanHandover: e.target.checked})} className="w-5 h-5 text-blue-600 rounded border-slate-300 focus:ring-blue-500" />
                       <span className="text-sm font-semibold text-slate-700">Live Human Handover</span>
-                    </label>
-                    <label className="flex items-center gap-3 p-4 border border-slate-200 rounded-2xl cursor-pointer hover:bg-purple-50 transition-colors">
-                      <input type="checkbox" checked={formData.allowCustomApiKey} onChange={e => setFormData({...formData, allowCustomApiKey: e.target.checked})} className="w-5 h-5 text-purple-600 rounded border-slate-300 focus:ring-purple-500" />
-                      <span className="text-sm font-semibold text-slate-700">Custom OpenAI Key</span>
                     </label>
                   </div>
                 </div>
