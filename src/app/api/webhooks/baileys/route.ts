@@ -72,7 +72,6 @@ export async function POST(req: NextRequest) {
       where: {
         whatsappSessionName: event.sessionId,
         isActive: true,
-        user: { subscriptions: { some: { status: 'active' } } },
       },
     });
     if (!chatbot) {
