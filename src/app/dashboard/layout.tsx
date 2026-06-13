@@ -23,7 +23,21 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   const pathname = usePathname();
 
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  // Phase 35: Admin Presence Ping
+  useEffect(() => {
+    if (status !== 'authenticated') return;
+    
+    const pingServer = async () => {
+      try {
+        await fetch('/api/admin/ping', { method: 'POST' });
+      } catch (e) {
+        // silently fail
+      }
+    };
+    pingServer(); // initial ping
+    const interval = setInterval(pingServer, 30000); // every 30s
+    return () => clearInterval(interval);
+  }, [status]);  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Prevent scrolling when mobile menu is open
   useEffect(() => {

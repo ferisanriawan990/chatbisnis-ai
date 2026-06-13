@@ -23,6 +23,12 @@ export default function ChatLogsPage() {
   const [loading, setLoading] = useState(true);
   const [logs, setLogs] = useState<ChatLogRow[]>([]);
   const [states, setStates] = useState<Record<string, string>>({});
+  const [quickReplies, setQuickReplies] = useState<{id:string, title:string, shortcut:string, content:string}[]>([]);
+  
+  // Reply State
+  const [replyingTo, setReplyingTo] = useState<{phone: string, settingId: string} | null>(null);
+  const [replyMessage, setReplyMessage] = useState('');
+  const [isSendingReply, setIsSendingReply] = useState(false);
 
   // Filters
   const [search, setSearch] = useState('');
@@ -58,6 +64,56 @@ export default function ChatLogsPage() {
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { void fetchLogs(); }, [page, search, status, needsHuman]);
+
+  useEffect(() => {
+    // Fetch quick replies
+    const fetchQR = async () => {
+      try {
+        const res = await fetch('/api/dashboard/quick-replies');
+        const data = await res.json();
+        if (data.replies) setQuickReplies(data.replies);
+      } catch (e) {}
+    };
+    fetchQR();
+  }, []);
+
+  const handleShortcutCheck = (text: string) => {
+    let newText = text;
+    quickReplies.forEach(qr => {
+      if (newText.includes(qr.shortcut)) {
+        newText = newText.replace(qr.shortcut, qr.content);
+      }
+    });
+    setReplyMessage(newText);
+  };
+
+  const handleSendReply = async () => {
+    if (!replyingTo || !replyMessage.trim()) return;
+    setIsSendingReply(true);
+    try {
+      const res = await fetch('/api/dashboard/conversations/reply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customerPhone: replyingTo.phone,
+          chatbotSettingId: replyingTo.settingId,
+          message: replyMessage
+        })
+      });
+      if (res.ok) {
+        toast.success('Pesan terkirim!');
+        setReplyingTo(null);
+        setReplyMessage('');
+        fetchLogs();
+      } else {
+        toast.error('Gagal mengirim pesan');
+      }
+    } catch {
+      toast.error('Terjadi kesalahan jaringan');
+    } finally {
+      setIsSendingReply(false);
+    }
+  };
 
   const handleResetHandover = async (customerPhone: string, chatbotSettingId: string) => {
     try {
@@ -154,12 +210,20 @@ export default function ChatLogsPage() {
                   </div>
 
                   {isHandover && (
-                    <button
-                      onClick={() => handleResetHandover(log.customerPhone, log.chatbotSettingId)}
-                      className="text-xs font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 px-3 py-1.5 rounded flex items-center gap-1 transition-colors"
-                    >
-                      <RefreshCcw className="w-3 h-3" /> Aktifkan AI Lagi
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setReplyingTo({ phone: log.customerPhone, settingId: log.chatbotSettingId })}
+                        className="text-xs font-medium bg-emerald-50 text-emerald-600 hover:bg-emerald-100 px-3 py-1.5 rounded flex items-center gap-1 transition-colors"
+                      >
+                        <MessageSquare className="w-3 h-3" /> Balas Pesan
+                      </button>
+                      <button
+                        onClick={() => handleResetHandover(log.customerPhone, log.chatbotSettingId)}
+                        className="text-xs font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 px-3 py-1.5 rounded flex items-center gap-1 transition-colors"
+                      >
+                        <RefreshCcw className="w-3 h-3" /> Aktifkan AI Lagi
+                      </button>
+                    </div>
                   )}
                 </div>
 
@@ -221,6 +285,65 @@ export default function ChatLogsPage() {
           >
             <ChevronRight className="w-5 h-5" />
           </button>
+        </div>
+      )}
+
+      {/* Reply Modal */}
+      {replyingTo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden">
+            <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+              <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                <MessageSquare className="w-5 h-5 text-blue-600" /> Balas Pesan ({replyingTo.phone})
+              </h3>
+              <button onClick={() => setReplyingTo(null)} className="text-slate-400 hover:text-slate-600">
+                &times;
+              </button>
+            </div>
+            <div className="p-4 space-y-4">
+              <textarea
+                className="w-full border rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                rows={4}
+                placeholder="Ketik balasan Anda di sini... (Anda bisa mengetik shortcut Quick Reply, misal: /salam)"
+                value={replyMessage}
+                onChange={(e) => handleShortcutCheck(e.target.value)}
+              />
+              
+              {quickReplies.length > 0 && (
+                <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                  <p className="text-xs font-bold text-slate-500 mb-2 uppercase">Quick Replies Tersedia</p>
+                  <div className="flex flex-wrap gap-2">
+                    {quickReplies.map(qr => (
+                      <button 
+                        key={qr.id}
+                        onClick={() => handleShortcutCheck(replyMessage + qr.shortcut)}
+                        className="text-xs px-2 py-1 bg-white border border-slate-200 text-slate-600 rounded hover:bg-blue-50 hover:border-blue-200 transition-colors"
+                        title={qr.content}
+                      >
+                        {qr.shortcut}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-2">
+              <button
+                onClick={() => setReplyingTo(null)}
+                className="px-4 py-2 text-sm text-slate-600 bg-white border rounded hover:bg-slate-50"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleSendReply}
+                disabled={!replyMessage.trim() || isSendingReply}
+                className="px-4 py-2 text-sm text-white bg-blue-600 rounded hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+              >
+                {isSendingReply ? <RefreshCcw className="w-4 h-4 animate-spin" /> : null}
+                Kirim Pesan
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

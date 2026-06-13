@@ -57,10 +57,11 @@ export async function GET(req: Request) {
 
 const updateOrderSchema = z.object({
   id: z.string().uuid(),
-  status: z.enum(['draft', 'pending_payment', 'paid', 'processing', 'shipped', 'completed', 'cancelled']),
+  status: z.enum(['draft', 'pending_payment', 'dp_paid', 'paid', 'processing', 'shipped', 'completed', 'cancelled']),
   shippingCourier: z.string().max(100).optional().nullable(),
   shippingResi: z.string().max(100).optional().nullable(),
-  shippingAddress: z.string().max(1000).optional().nullable()
+  shippingAddress: z.string().max(1000).optional().nullable(),
+  dpAmount: z.number().optional().nullable()
 });
 
 export async function PATCH(req: Request) {
@@ -103,7 +104,9 @@ export async function PATCH(req: Request) {
         status: data.status,
         shippingCourier: data.shippingCourier !== undefined ? data.shippingCourier : existingOrder.shippingCourier,
         shippingResi: data.shippingResi !== undefined ? data.shippingResi : existingOrder.shippingResi,
-        shippingAddress: data.shippingAddress !== undefined ? data.shippingAddress : existingOrder.shippingAddress
+        shippingAddress: data.shippingAddress !== undefined ? data.shippingAddress : existingOrder.shippingAddress,
+        dpAmount: data.dpAmount != null ? data.dpAmount : existingOrder.dpAmount,
+        ...(data.status === 'dp_paid' && existingOrder.status !== 'dp_paid' ? { dpPaidAt: new Date() } : {})
       }
     });
 

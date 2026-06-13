@@ -54,6 +54,7 @@ model User {
   role                  UserRole             @default(USER)
   twoFactorSecret       String?
   twoFactorEnabled      Boolean              @default(false)
+  lastSeenAt            DateTime?
   createdAt             DateTime             @default(now())
   updatedAt             DateTime             @updatedAt
   businessProfiles      BusinessProfile[]
@@ -98,6 +99,7 @@ model BusinessProfile {
   chatLogs              ChatLog[]
   leads                 Lead[]
   campaigns             Campaign[]
+  quickReplies          QuickReply[]
   whatsappSessions      WhatsAppSession[]
   usageCounters         UsageCounter[]
   conversationStates    ConversationState[]
@@ -251,6 +253,8 @@ model Lead {
   isOptedOut        Boolean    @default(false)
   birthDate         DateTime?
   lastActiveAt      DateTime?  @default(now())
+  followUpDate      DateTime?
+  followUpStatus    String?    @default("pending") // pending, contacted, closing, cancelled
   assignedAdminId   String?
   createdAt         DateTime   @default(now())
   updatedAt         DateTime   @updatedAt
@@ -609,8 +613,10 @@ model Order {
   customerPhone     String
   customerName      String?
   orderNumber       String      @unique
-  status            String      @default("draft") // draft, pending_payment, paid, processing, shipped, completed, cancelled
+  status            String      @default("draft") // draft, pending_payment, dp_paid, paid, processing, shipped, completed, cancelled
   totalAmount       Decimal     @default(0.0)
+  dpAmount          Decimal     @default(0.0)
+  dpPaidAt          DateTime?
   notes             String?     @db.Text
   shippingAddress   String?     @db.Text
   shippingCourier   String?
@@ -796,4 +802,18 @@ model CampaignTarget {
   @@index([campaignId, status])
   @@index([leadId])
   @@unique([campaignId, leadId])
+}
+
+model QuickReply {
+  id                String   @id @default(uuid())
+  businessProfileId String
+  title             String
+  content           String   @db.Text
+  shortcut          String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  businessProfile   BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+
+  @@index([businessProfileId, shortcut])
 }

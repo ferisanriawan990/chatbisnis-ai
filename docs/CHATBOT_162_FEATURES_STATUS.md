@@ -61,8 +61,8 @@
 | 57 | Segmentasi customer otomatis | | | | | | DONE | Segmentasi dinamis menggunakan field tags AI |
 | 58 | Integrasi CRM eksternal | | | | | | NOT_STARTED | |
 | 59 | Penugasan lead ke sales | | | | | | DONE | |
-| 60 | Pengingat follow-up sales | | | | | | NOT_STARTED | |
-| 61 | Status follow-up customer | | | | | | NOT_STARTED | |
+| 60 | Pengingat follow-up | | | | | | DONE | Cron job harian akan mengirim pesan otomatis ke admin untuk follow-up leads hari itu |
+| 61 | Label status follow-up | | | | | | DONE | Tersedia status pending, contacted, closing di database Lead |
 | 62 | Pencatatan alasan gagal closing | | | | | | DONE | Diekstraksi menjadi field churnReason di model Lead |
 | 63 | Deteksi customer marah | | | | | | DONE | Diselesaikan via native tool request_human |
 | 64 | Deteksi permintaan berbicara dengan admin | | | | | | DONE | Diselesaikan via native tool request_human |
@@ -76,9 +76,9 @@
 | 72 | Pengaturan waktu pengembalian percakapan ke AI | | | | | | DONE | Auto-return to AI jika obrolan pasif selama > 1 jam |
 | 73 | Prioritas percakapan | | | | | | NOT_STARTED | |
 | 74 | Penugasan chat ke admin tertentu | | | | | | DONE | |
-| 75 | Status admin online atau offline | | | | | | NOT_STARTED | |
-| 76 | Ringkasan serah terima dari AI ke admin | | | | | | DONE | |
-| 77 | Balasan cepat admin | | | | | | NOT_STARTED | |
+| 75 | Status admin online/offline | | | | | | DONE | Sistem ping otomatis setiap 30 detik untuk mendeteksi ketersediaan Admin |
+| 76 | Riwayat chat pelanggan lintas admin | | | | | | DONE | Termasuk dalam Log Percakapan Omni-Channel |
+| 77 | Template jawaban (Quick Replies) | | | | | | DONE | Admin dapat menggunakan shortcut (misal: /salam) untuk mengetik teks panjang di dashboard |
 | 78 | Saran balasan AI untuk admin | | | | | | DONE | |
 | 79 | Follow-up otomatis | | | | | | DONE | Cron Engine dibangun di /api/cron/reminders |
 | 80 | Pengingat pembayaran | | | | | | DONE | Diimplementasikan via Cron API untuk Pending Payment |
@@ -122,7 +122,7 @@
 | 118 | Pengingat jadwal | | | | | | DONE | Diimplementasikan lewat Vercel Cron pengingat H-1 |
 | 119 | Perubahan jadwal | | | | | | DONE | Diimplementasikan lewat native tool reschedule_booking |
 | 120 | Pembatalan reservasi | | | | | | DONE | Diimplementasikan lewat native tool cancel_booking |
-| 121 | Pembayaran uang muka | | | | | | NOT_STARTED | |
+| 121 | Pembayaran uang muka (DP) | | | | | | DONE | Opsi dan tracking DP telah disuntikkan ke model Order Kasir |
 | 122 | Daftar tunggu | | | | | | NOT_STARTED | |
 | 123 | Penugasan teknisi atau petugas | | | | | | NOT_STARTED | |
 | 124 | Estimasi kedatangan petugas | | | | | | NOT_STARTED | |
