@@ -52,6 +52,8 @@ model User {
   email                 String               @unique
   passwordHash          String
   role                  UserRole             @default(USER)
+  twoFactorSecret       String?
+  twoFactorEnabled      Boolean              @default(false)
   createdAt             DateTime             @default(now())
   updatedAt             DateTime             @updatedAt
   businessProfiles      BusinessProfile[]
@@ -87,6 +89,7 @@ model BusinessProfile {
   customLinks         String?  @db.Text
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
+  chatRetentionDays   Int      @default(0) // 0 means keep forever
 
   user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
   chatbotSettings       ChatbotSetting[]

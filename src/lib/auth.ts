@@ -14,6 +14,7 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         email: { label: 'Email', type: 'text' },
         password: { label: 'Password', type: 'password' },
+        totpCode: { label: '2FA Code', type: 'text' }
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
@@ -38,6 +39,25 @@ export const authOptions: NextAuthOptions = {
 
         if (!isValid) {
           throw new Error('Email atau password salah');
+        }
+
+        // Phase 33: 2FA Check
+        if (user.twoFactorEnabled && user.twoFactorSecret) {
+          if (!credentials.totpCode) {
+            throw new Error('2FA_REQUIRED');
+          }
+          
+          const speakeasy = require('speakeasy');
+          const isTotpValid = speakeasy.totp.verify({
+            secret: user.twoFactorSecret,
+            encoding: 'base32',
+            token: credentials.totpCode,
+            window: 1 // allow 1 window tolerance
+          });
+
+          if (!isTotpValid) {
+            throw new Error('Kode 2FA tidak valid');
+          }
         }
 
         // Map tenants and roles

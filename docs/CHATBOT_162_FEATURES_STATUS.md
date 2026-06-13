@@ -160,7 +160,7 @@
 | 156 | Batas penggunaan AI | | | | | | DONE | Ditegakkan di dalam `chatbot-engine.ts` |
 | 157 | Peringatan kuota hampir habis | | | | | | DONE | Notifikasi via WhatsApp jika menyentuh 90% batas kuota |
 | 158 | Audit log keamanan | | | | | | DONE | Tersedia UI 'Audit Log' di Sidebar Dasbor untuk Pemilik |
-| 159 | Autentikasi dua langkah | | | | | | NOT_STARTED | |
-| 160 | Backup data otomatis | | | | | | NOT_STARTED | |
-| 161 | Pengaturan retensi data chat | | | | | | NOT_STARTED | |
-| 162 | Penghapusan atau anonimisasi data customer | | | | | | NOT_STARTED | |
+| 159 | Autentikasi dua langkah | | | | | | DONE | Implementasi _Google Authenticator_ di Dasbor Keamanan dan Gerbang _Login_ |
+| 160 | Backup data otomatis | | | | | | DONE | Fitur Ekspor Data ke format JSON bagi para pemilik _tenant_ SaaS |
+| 161 | Pengaturan retensi data chat | | | | | | DONE | Skrip _Cron_ harian mengeksekusi Auto-Delete berdasarkan jadwal batas umur |
+| 162 | Penghapusan atau anonimisasi data customer | | | | | | DONE | Area "Wipe Data Permanen" telah disediakan di Dasbor Privasi |
