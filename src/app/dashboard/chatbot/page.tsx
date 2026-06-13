@@ -276,7 +276,7 @@ export default function ChatbotDashboard() {
   const stepsComplete = {
     profile: !!form.businessName,
     knowledge: true, // Knowledge base is now optional
-    waha: whatsappStatus === 'connected'
+    whatsapp: whatsappStatus === 'connected'
   };
 
   return (
@@ -483,7 +483,7 @@ export default function ChatbotDashboard() {
 
         <div className="space-y-8">
 
-          <WhatsAppConnectionCard whatsappStatus={whatsappStatus} isComplete={stepsComplete.waha} />
+          <WhatsAppConnectionCard whatsappStatus={whatsappStatus} isComplete={stepsComplete.whatsapp} />
           
           <AiIntegrationPanel form={form} handleChange={handleChange} />
 

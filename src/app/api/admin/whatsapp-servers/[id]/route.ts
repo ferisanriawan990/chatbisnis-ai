@@ -51,7 +51,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     await prisma.auditLog.create({
       data: {
         actorUserId: admin.id,
-        action: 'UPDATE_WAHA_SERVER',
+        action: 'UPDATE_WHATSAPP_SERVER',
         entityType: 'WhatsappServer',
         entityId: server.id,
       }
@@ -109,7 +109,7 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
     await prisma.auditLog.create({
       data: {
         actorUserId: admin.id,
-        action: 'DELETE_WAHA_SERVER',
+        action: 'DELETE_WHATSAPP_SERVER',
         entityType: 'WhatsappServer',
         entityId: (await params).id,
       }

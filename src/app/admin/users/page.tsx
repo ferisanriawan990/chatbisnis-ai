@@ -208,7 +208,7 @@ export default function AdminUsersPage() {
               <tbody className="divide-y divide-slate-100">
                 {filtered.map((u) => {
                   const botActive = u.chatbotSettings?.[0]?.isActive;
-                  const wahaConnected = u.whatsappSessions?.some(
+                  const whatsappConnected = u.whatsappSessions?.some(
                     (s) => s.status === 'connected',
                   );
                   const sub = u.subscriptions?.[0];
@@ -234,9 +234,9 @@ export default function AdminUsersPage() {
                             Bot: {botActive ? 'Aktif' : 'Off'}
                           </span>
                           <span
-                            className={`text-xs px-2 py-1 inline-block w-fit rounded ${wahaConnected ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}
+                            className={`text-xs px-2 py-1 inline-block w-fit rounded ${whatsappConnected ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}
                           >
-                            WA: {wahaConnected ? 'Connected' : 'Disconnected'}
+                            WA: {whatsappConnected ? 'Connected' : 'Disconnected'}
                           </span>
                         </div>
                       </td>

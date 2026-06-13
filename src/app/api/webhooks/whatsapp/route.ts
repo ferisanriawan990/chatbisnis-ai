@@ -10,7 +10,7 @@ export const maxDuration = 60; // Set max duration to 60 seconds for Vercel Hobb
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-interface WahaMessageData {
+interface WhatsappMessageData {
   from?: string;
   chatId?: string;
   body?: string;
@@ -23,13 +23,13 @@ interface WahaMessageData {
   id?: { remote?: string };
 }
 
-interface WahaIncomingBody {
+interface WhatsappIncomingBody {
   session?: string;
   event?: string;
   payload?: {
     session?: string;
     event?: string;
-    payload?: WahaMessageData;
+    payload?: WhatsappMessageData;
     from?: string;
     chatId?: string;
     body?: string;
@@ -49,7 +49,7 @@ interface WahaIncomingBody {
   headers?: Record<string, string>;
 }
 
-interface NormalizedWahaPayload {
+interface NormalizedWhatsappPayload {
   sessionName: string;
   event: string;
   fromMe: boolean;
@@ -65,12 +65,12 @@ interface NormalizedWahaPayload {
 
 // ─── Normalizer ───────────────────────────────────────────────────────────────
 
-function normalizePayload(rawBody: WahaIncomingBody): NormalizedWahaPayload {
+function normalizePayload(rawBody: WhatsappIncomingBody): NormalizedWhatsappPayload {
   const sessionName = rawBody.session || rawBody.payload?.session || '';
   const event = rawBody.event || rawBody.payload?.event || 'message';
 
   // Resolve nested payload
-  const messagePayload: WahaMessageData =
+  const messagePayload: WhatsappMessageData =
     rawBody.payload?.payload || rawBody.payload || rawBody;
 
   const customerPhone =
@@ -92,7 +92,7 @@ function normalizePayload(rawBody: WahaIncomingBody): NormalizedWahaPayload {
     Boolean(messagePayload.isGroup ?? rawBody.isGroup) || customerPhone.endsWith('@g.us');
   const remote = messagePayload.id?.remote || rawBody.payload?.id?.remote || '';
   
-  // Cast id as any to handle WAHA's polymorphic id property (string or object)
+  // Cast id as any to handle WhatsApp's polymorphic id property (string or object)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const payloadId = (messagePayload.id as any);
   const messageId = typeof payloadId === 'string' ? payloadId : (payloadId?._serialized || payloadId?.id || '');
@@ -130,7 +130,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'x-whatsapp-server-id header is required in multi-server mode' }, { status: 400 });
     }
 
-    const body = await parseJsonSafe<WahaIncomingBody>(req, 5 * 1024 * 1024);
+    const body = await parseJsonSafe<WhatsappIncomingBody>(req, 5 * 1024 * 1024);
     if (!body) {
       return NextResponse.json({ error: 'Invalid or too large payload' }, { status: 400 });
     }
@@ -158,7 +158,7 @@ export async function POST(req: NextRequest) {
     }
 
     const ip = getRequestIp(req);
-    const rateLimitKey = `webhook:waha:${whatsappServerId || norm.sessionName}:${norm.customerPhone}:${ip}`;
+    const rateLimitKey = `webhook:whatsapp:${whatsappServerId || norm.sessionName}:${norm.customerPhone}:${ip}`;
     const rl = await rateLimit(rateLimitKey, 20, 60 * 1000);
     if (!rl.success) {
       return NextResponse.json({ error: 'Too Many Requests' }, { status: 429 });
@@ -212,7 +212,7 @@ export async function POST(req: NextRequest) {
           if (b64) downloadedImageUrl = b64;
         }
       } catch (err) {
-        console.error('Failed to download image from WAHA:', err);
+        console.error('Failed to download image from WhatsApp:', err);
       }
     }
 
@@ -249,27 +249,27 @@ export async function POST(req: NextRequest) {
 
     if (result) {
       const { reply, mediaToSend } = result;
-      let waha: WhatsappService | null = null;
+      let whatsapp: WhatsappService | null = null;
       let usedSessionName = actualSessionName;
 
       if (chatbotSetting?.whatsappServer?.apiKeyEncrypted) {
-        waha = WhatsappService.fromEncrypted(chatbotSetting.whatsappServer.baseUrl, chatbotSetting.whatsappServer.apiKeyEncrypted || '');
+        whatsapp = WhatsappService.fromEncrypted(chatbotSetting.whatsappServer.baseUrl, chatbotSetting.whatsappServer.apiKeyEncrypted || '');
       } else if (chatbotSetting?.whatsappApiKeyEncrypted && chatbotSetting?.whatsappBaseUrl) {
-        waha = WhatsappService.fromEncrypted(chatbotSetting.whatsappBaseUrl, chatbotSetting.whatsappApiKeyEncrypted || '');
+        whatsapp = WhatsappService.fromEncrypted(chatbotSetting.whatsappBaseUrl, chatbotSetting.whatsappApiKeyEncrypted || '');
         usedSessionName = norm.sessionName;
       }
 
-      if (waha) {
+      if (whatsapp) {
         // 1. Send Images if any
         let mediaDeliveryFailed = false;
         let usedLinkPreviewFallback = false;
         if (mediaToSend && mediaToSend.length > 0) {
           for (const media of mediaToSend) {
             try {
-              const mediaResult = await waha.sendImage(usedSessionName, norm.customerPhone, media.url, media.caption, media.fallbackUrl);
+              const mediaResult = await whatsapp.sendImage(usedSessionName, norm.customerPhone, media.url, media.caption, media.fallbackUrl);
               if (mediaResult.mode === 'link-preview') usedLinkPreviewFallback = true;
             } catch (err: unknown) {
-              console.error('Failed to send image via WAHA:', err);
+              console.error('Failed to send image via WhatsApp:', err);
               mediaDeliveryFailed = true;
             }
           }
@@ -282,8 +282,8 @@ export async function POST(req: NextRequest) {
           const finalReplyToSend = mediaDeliveryFailed
             ? `${reply}\n\nMaaf, gambar belum dapat dikirim saat ini.`
             : reply;
-          await waha.sendMessage(usedSessionName, norm.customerPhone, finalReplyToSend).catch((err) => {
-            console.error('Failed to send reply via WAHA:', err);
+          await whatsapp.sendMessage(usedSessionName, norm.customerPhone, finalReplyToSend).catch((err) => {
+            console.error('Failed to send reply via WhatsApp:', err);
           });
         }
       } else {

@@ -14,7 +14,7 @@ Daftar environment variable yang dibutuhkan oleh ChatBisnis AI.
 - `FLAZ_CHAT_MODEL`: Model AI default untuk chat (misal: claude-3-haiku).
 
 ## WhatsApp Gateway
-- `WAHA_URL`: URL WhatsApp Server (jika menggunakan engine terpisah).
+- `WHATSAPP_URL`: URL WhatsApp Server (jika menggunakan engine terpisah).
 - `WHATSAPP_API_KEY`: API Key WhatsApp Server.
 
 ## Opsional (Untuk Fitur Lanjut)

@@ -195,7 +195,7 @@ export class WhatsappService {
       }
       return null;
     } catch (e) {
-      console.error('Failed to download media from WAHA:', e);
+      console.error('Failed to download media from WhatsApp:', e);
       return null;
     }
   }

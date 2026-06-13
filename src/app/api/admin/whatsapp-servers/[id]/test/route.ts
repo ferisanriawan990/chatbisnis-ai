@@ -22,8 +22,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     }
 
     try {
-      const waha = WhatsappService.fromEncrypted(server.baseUrl, server.apiKeyEncrypted);
-      const isOk = await waha.testConnection();
+      const whatsapp = WhatsappService.fromEncrypted(server.baseUrl, server.apiKeyEncrypted);
+      const isOk = await whatsapp.testConnection();
       
       if (!isOk) throw new Error('Cannot connect to server');
       

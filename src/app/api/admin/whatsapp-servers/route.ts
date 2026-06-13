@@ -75,7 +75,7 @@ export async function POST(req: Request) {
     await prisma.auditLog.create({
       data: {
         actorUserId: admin.id,
-        action: 'CREATE_WAHA_SERVER',
+        action: 'CREATE_WHATSAPP_SERVER',
         entityType: 'WhatsappServer',
         entityId: server.id,
       }

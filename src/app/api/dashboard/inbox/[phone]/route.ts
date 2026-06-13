@@ -113,7 +113,7 @@ export async function POST(req: Request, { params }: { params: { phone: string }
     });
 
     if (chatbotSetting && chatbotSetting.whatsappSessionName) {
-      const wahaUrl = process.env.WAHA_API_URL || 'http://localhost:3000';
+      const whatsappUrl = process.env.WHATSAPP_API_URL || 'http://localhost:3000';
       try {
         const payload: any = {
           session: chatbotSetting.whatsappSessionName,
@@ -121,7 +121,7 @@ export async function POST(req: Request, { params }: { params: { phone: string }
           text: message
         };
 
-        const wahaRes = await fetch(`${wahaUrl.replace(/\/$/, '')}/api/sendText`, {
+        const whatsappRes = await fetch(`${whatsappUrl.replace(/\/$/, '')}/api/sendText`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -130,11 +130,11 @@ export async function POST(req: Request, { params }: { params: { phone: string }
           body: JSON.stringify(payload)
         });
         
-        if (!wahaRes.ok) {
-           console.error('Failed to send WhatsApp message', await wahaRes.text());
+        if (!whatsappRes.ok) {
+           console.error('Failed to send WhatsApp message', await whatsappRes.text());
         }
       } catch (err) {
-        console.error('Error calling WAHA:', err);
+        console.error('Error calling WhatsApp:', err);
       }
     }
 

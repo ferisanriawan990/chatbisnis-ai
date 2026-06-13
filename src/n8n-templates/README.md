@@ -66,9 +66,9 @@ Setelah Anda menekan **Save** dan menyalakan *toggle* **Active** di n8n, Anda ha
 
 ## 🐞 Troubleshooting Dasar
 
-- **Cara debug payload WAHA:** Gunakan webhook test n8n, atau cek log di Waha Server Anda. Jangan mencetak (log) data payload sensitif secara berlebihan di production.
+- **Cara debug payload WhatsApp:** Gunakan webhook test n8n, atau cek log di Whatsapp Server Anda. Jangan mencetak (log) data payload sensitif secara berlebihan di production.
 - **Pesan masuk tapi AI tidak membalas?** Cek kotak "Filter Message" di n8n. Pastikan pesan bukan dari grup dan bukan dikirim oleh nomor Anda sendiri (`fromMe: true`), serta pastikan pesan tidak kosong.
-- **Error saat mengirim balasan ke WAHA?** Pastikan `{{WHATSAPP_BASE_URL}}` menggunakan HTTPS. Jangan me-loop request jika gagal mengirim balasan.
+- **Error saat mengirim balasan ke WhatsApp?** Pastikan `{{WHATSAPP_BASE_URL}}` menggunakan HTTPS. Jangan me-loop request jika gagal mengirim balasan.
 - **Flaz AI Error?** Pastikan *Authorization Header* tertulis persis `Bearer ` diikuti spasi lalu API key Anda. Jika Flaz gagal, bot diprogram untuk mengirim pesan fallback.
 
 *Selamat Mengotomatisasi Bisnis Anda! 🚀*
