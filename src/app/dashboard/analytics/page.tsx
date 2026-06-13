@@ -9,13 +9,17 @@ import { MessageSquare, Bot, ShieldAlert, Banknote, Percent, Download } from 'lu
 
 export default function AnalyticsPage() {
   const [data, setData] = useState<any>(null);
+  const [advancedData, setAdvancedData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/dashboard/analytics')
-      .then(res => res.json())
-      .then(json => {
-        setData(json);
+    Promise.all([
+      fetch('/api/dashboard/analytics').then(res => res.json()),
+      fetch('/api/dashboard/analytics/advanced').then(res => res.json())
+    ])
+      .then(([baseJson, advJson]) => {
+        setData(baseJson);
+        setAdvancedData(advJson);
         setLoading(false);
       })
       .catch(err => {
@@ -59,7 +63,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
           <div className="bg-blue-50 p-4 rounded-xl text-blue-600"><MessageSquare className="w-6 h-6" /></div>
           <div>
@@ -91,6 +95,24 @@ export default function AnalyticsPage() {
             <p className="text-2xl font-bold text-slate-800">{summary.conversionRate}%</p>
           </div>
         </div>
+
+        {advancedData && (
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
+            <div className="bg-indigo-50 p-4 rounded-xl text-indigo-600">
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm text-slate-500 font-medium">Waktu Balas Admin</p>
+              <p className="text-2xl font-bold text-slate-800">
+                {advancedData.averageResponseTimeMinutes > 0 
+                  ? `${advancedData.averageResponseTimeMinutes} mnt` 
+                  : `${Math.floor(advancedData.averageResponseTimeMs / 1000)} dtk`}
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Charts Section */}
@@ -196,6 +218,67 @@ export default function AnalyticsPage() {
             )}
           </div>
         </div>
+
+        {/* Top FAQs Chart */}
+        {advancedData && (
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+            <h2 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+              Top FAQ / Topik Terpopuler
+            </h2>
+            <div className="h-[300px] w-full">
+              {advancedData.topFaqs && advancedData.topFaqs.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={advancedData.topFaqs} layout="vertical" margin={{ top: 10, right: 30, left: 40, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f1f5f9" />
+                    <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} />
+                    <YAxis type="category" dataKey="title" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#475569' }} width={120} />
+                    <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                    <Bar dataKey="count" name="Jumlah Ditanyakan" fill="#ec4899" radius={[0, 4, 4, 0]} barSize={20} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <p className="text-sm text-slate-400">Belum ada data FAQ tercatat.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Sales Leaderboard */}
+        {advancedData && (
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+            <h2 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+              Papan Peringkat Tim Sales (Closing Terbanyak)
+            </h2>
+            <div className="w-full overflow-x-auto">
+              {advancedData.salesLeaderboard && advancedData.salesLeaderboard.length > 0 ? (
+                <table className="w-full text-left text-sm text-slate-600">
+                  <thead className="bg-slate-50 text-slate-500 font-medium">
+                    <tr>
+                      <th className="p-3 rounded-tl-lg">Peringkat</th>
+                      <th className="p-3">Nama Admin / CS</th>
+                      <th className="p-3 rounded-tr-lg">Total Closing</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {advancedData.salesLeaderboard.map((admin: any, idx: number) => (
+                      <tr key={admin.id} className="hover:bg-slate-50 transition">
+                        <td className="p-3 font-bold text-slate-800">
+                          {idx === 0 ? '🏆 #1' : idx === 1 ? '🥈 #2' : idx === 2 ? '🥉 #3' : `#${idx + 1}`}
+                        </td>
+                        <td className="p-3 font-medium text-slate-700">{admin.name}</td>
+                        <td className="p-3 text-emerald-600 font-bold">{admin.convertedLeads} Deals</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <p className="text-sm text-slate-400 text-center py-8">Belum ada data closing sales yang di-assign.</p>
+              )}
+            </div>
+          </div>
+        )}
 
       </div>
     </div>

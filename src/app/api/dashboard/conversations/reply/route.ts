@@ -46,6 +46,21 @@ export async function POST(req: Request) {
         message
       );
 
+      // Calculate response time
+      let responseTimeMs = null;
+      const lastUserLog = await prisma.chatLog.findFirst({
+        where: {
+          customerPhone,
+          chatbotSettingId: botSetting.id,
+          messageIn: { not: '[Admin Reply]' }
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+
+      if (lastUserLog) {
+        responseTimeMs = new Date().getTime() - lastUserLog.createdAt.getTime();
+      }
+
       // Save log
       await prisma.chatLog.create({
         data: {
@@ -56,7 +71,8 @@ export async function POST(req: Request) {
           needsHuman: false,
           chatbotSettingId: botSetting.id,
           businessProfileId: profile.id,
-          userId
+          userId,
+          metadataJson: responseTimeMs ? JSON.stringify({ responseTimeMs }) : null
         }
       });
 

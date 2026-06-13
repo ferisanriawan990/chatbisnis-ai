@@ -131,6 +131,7 @@ export class ChatbotEngine {
     }
 
     const knowledgeMatchCount = matchedItems.length;
+    const matchedItemIds = matchedItems.map((item: any) => item.id);
 
     // 6. Retrieve Chat History
     const chatHistoryLogs = await prisma.chatLog.findMany({
@@ -265,6 +266,7 @@ export class ChatbotEngine {
         intent,
         promptSource: effectivePromptSource,
         knowledgeMatchCount,
+        matchedItemIds,
         usedCatalogUrl,
         aiUsed: aiModelUsed,
         status: effectivePromptSource === 'error' ? 'failed' : 'success',
@@ -1083,7 +1085,8 @@ CONTOH BENAR: [SEND_IMAGE: https://imgur.com/xyz.jpg | Ini adalah gambar sepatu]
             intent: params.intent,
             promptSource: params.promptSource,
             knowledgeMatchCount: params.knowledgeMatchCount,
-            usedCatalogUrl: params.usedCatalogUrl,
+            matchedKnowledgeItemIds: params.matchedItemIds || [],
+            usedCatalogUrl: params.usedCatalogUrl || false,
             sentiment: params.sentiment,
           }),
         }
