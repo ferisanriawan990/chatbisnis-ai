@@ -14,7 +14,7 @@ export default async function DashboardIndex() {
   // 1. Get Chatbot Setting & Profile
   const chatbotSetting = await prisma.chatbotSetting.findFirst({
     where: { userId },
-    include: { businessProfile: true, whatsappServer: true },
+    include: { businessProfile: true },
   });
 
   const businessProfile = chatbotSetting?.businessProfile;
