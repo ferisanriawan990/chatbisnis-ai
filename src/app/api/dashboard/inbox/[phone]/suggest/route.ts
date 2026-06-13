@@ -5,8 +5,11 @@ import { prisma } from '@/lib/prisma';
 import { AIService } from '@/lib/ai';
 import { getAICredentialCandidates } from '@/lib/ai-config';
 
-export async function POST(req: Request, { params }: { params: { phone: string } }) {
+export async function POST(req: Request, { params }: { params: Promise<{ phone: string }> }) {
   try {
+    const resolvedParams = await params;
+    const phone = resolvedParams.phone;
+
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
