@@ -46,7 +46,7 @@
 | 42 | Pelacakan status pesanan | | | | | | DONE | Status dapat dilacak di halaman public Invoice |
 | 43 | Pengiriman nomor resi otomatis | | | | | | DONE | Admin dapat menginput resi dan otomatis muncul di Invoice Pelanggan |
 | 44 | Pembatalan pesanan | | | | | | DONE | Admin dapat mengeset status pesanan menjadi Cancelled |
-| 45 | Repeat order | | | | | | NOT_STARTED | |
+| 45 | Repeat order | | | | | | DONE | AI otomatis menarik riwayat belanja terakhir untuk menawarkan repeat order |
 | 46 | Penawaran khusus untuk membantu closing | | | | | | DONE | Diimplementasikan lewat taktik Diskon Darurat di system prompt |
 | 47 | Deteksi customer hampir membeli | | | | | | DONE | Mendeteksi lewat keluhan harga saat pelanggan menunjukkan minat tinggi |
 | 48 | Pengingat keranjang belum selesai | | | | | | DONE | Diimplementasikan via Vercel Cron API untuk Abandoned Cart |

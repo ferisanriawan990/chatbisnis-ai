@@ -42,6 +42,7 @@ interface BuildPromptParams {
   allowSelling: boolean;
   allowPromoOffer: boolean;
   loyaltyPoints?: number;
+  lastOrder?: any;
 }
 
 /**
@@ -75,6 +76,7 @@ export function buildSystemPrompt(params: BuildPromptParams): string {
     allowSelling,
     allowPromoOffer,
     loyaltyPoints,
+    lastOrder,
   } = params;
 
   const bd = businessData;
@@ -133,6 +135,10 @@ Tujuan utama:
     }
     if (loyaltyPoints && loyaltyPoints > 0) {
       dataLines.push(`- Poin Loyalitas (Loyalty Points): ${loyaltyPoints} poin. (Ingatkan pelanggan bahwa mereka bisa menukarkan poin ini dengan Voucher jika tersedia).`);
+    }
+    if (lastOrder && lastOrder.items && lastOrder.items.length > 0) {
+      const orderItems = lastOrder.items.map((i: any) => `${i.quantity}x ${i.productName}`).join(', ');
+      dataLines.push(`- [RIWAYAT BELANJA] Pesanan terakhir pelanggan ini adalah: ${orderItems}. Jika relevan, kamu boleh menawarkan "Apakah Kakak mau pesan ulang (repeat order) ${orderItems} seperti pesanan sebelumnya?"`);
     }
   }
 

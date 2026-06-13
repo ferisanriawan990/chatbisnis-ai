@@ -151,8 +151,17 @@ export class ChatbotEngine {
       include: { items: true }
     });
 
+    let lastCompletedOrder = null;
+    if (existingLead) {
+      lastCompletedOrder = await prisma.order.findFirst({
+        where: { businessProfileId: profile.id, customerPhone: params.customerPhone, status: 'completed' },
+        orderBy: { createdAt: 'desc' },
+        include: { items: true }
+      });
+    }
+
     // 7. Build Prompt & Call AI
-    const systemPrompt = this.buildPrompt(chatbotSetting, botConfig, profile, matchedItems, products, existingLead, activeCart);
+    const systemPrompt = this.buildPrompt(chatbotSetting, botConfig, profile, matchedItems, products, existingLead, activeCart, lastCompletedOrder);
     const { replyMessage, tokenUsage, usedCatalogUrl, promptSource, aiModelUsed } = await this.callAI(
       chatbotSetting,
       activePlan,
@@ -492,9 +501,10 @@ export class ChatbotEngine {
     botConfig: any,
     profile: any,
     matchedItems: any[],
-    products?: any[],
+    products: any[],
     existingLead?: any,
-    activeCart?: any
+    activeCart?: any,
+    lastOrder?: any
   ): string {
     let relevantKnowledge = '';
     let charCount = 0;
@@ -557,6 +567,7 @@ export class ChatbotEngine {
       allowSelling: chatbotSetting.allowSelling ?? true,
       allowPromoOffer: chatbotSetting.allowPromoOffer ?? true,
       loyaltyPoints: existingLead?.loyaltyPoints || 0,
+      lastOrder,
     });
   }
 
