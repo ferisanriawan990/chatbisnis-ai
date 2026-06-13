@@ -88,8 +88,32 @@ export async function GET(req: Request) {
         results.errors++;
       }
     }
+    // --- PHASE 33: DATA RETENTION (CLEANUP) ---
+    // Automatically delete ChatLogs and ConversationState older than 365 days to prevent DB bloat
+    const oneYearAgo = new Date();
+    oneYearAgo.setDate(oneYearAgo.getDate() - 365);
 
-    return NextResponse.json({ success: true, results });
+    let deletedChatLogs = 0;
+    let deletedConvoStates = 0;
+    
+    try {
+      const deletedLogsRes = await prisma.chatLog.deleteMany({
+        where: { createdAt: { lt: oneYearAgo } }
+      });
+      deletedChatLogs = deletedLogsRes.count;
+
+      // Delete inactive conversations
+      const deletedStatesRes = await prisma.conversationState.deleteMany({
+        where: { lastMessageAt: { lt: oneYearAgo } }
+      });
+      deletedConvoStates = deletedStatesRes.count;
+      
+    } catch (cleanupErr) {
+      console.error('Data Retention Cleanup Error:', cleanupErr);
+    }
+    // -------------------------------------------
+
+    return NextResponse.json({ success: true, results, cleanup: { deletedChatLogs, deletedConvoStates } });
 
   } catch (error) {
     console.error('CRON Daily Report Error:', error);
