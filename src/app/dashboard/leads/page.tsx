@@ -14,6 +14,8 @@ interface LeadRow {
   address?: string;
   status: 'cold' | 'warm' | 'hot' | 'converted' | 'lost';
   notes?: string;
+  tags?: string | null;
+  leadScore?: number;
   assignedAdminId?: string | null;
   createdAt: string;
 }
@@ -117,6 +119,13 @@ export default function LeadsPage() {
     }
   };
 
+  const getScoreColor = (score: number | undefined) => {
+    if (!score) return 'bg-slate-100 text-slate-500';
+    if (score >= 80) return 'bg-rose-100 text-rose-700 font-bold';
+    if (score >= 50) return 'bg-amber-100 text-amber-700 font-medium';
+    return 'bg-blue-50 text-blue-600';
+  };
+
   const toggleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) setSelectedLeads(leads.map(l => l.id));
     else setSelectedLeads([]);
@@ -218,9 +227,10 @@ export default function LeadsPage() {
                 <th className="px-6 py-4 font-semibold">Pelanggan</th>
                 <th className="px-6 py-4 font-semibold">Minat & Budget</th>
                 <th className="px-6 py-4 font-semibold">Alamat</th>
+                <th className="px-6 py-4 font-semibold">AI Score & Tags</th>
                 <th className="px-6 py-4 font-semibold">Status</th>
                 <th className="px-6 py-4 font-semibold">Assigned To</th>
-                <th className="px-6 py-4 font-semibold">Notes / Aksi</th>
+                <th className="px-6 py-4 font-semibold w-1/4">Notes / Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -245,6 +255,28 @@ export default function LeadsPage() {
                     </td>
                     <td className="px-6 py-4 max-w-xs truncate">{lead.address || '-'}</td>
                     
+                    {/* Score & Tags Column */}
+                    <td className="px-6 py-4">
+                      <div className="flex flex-col gap-2">
+                        {lead.leadScore ? (
+                          <span className={`inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs max-w-max shadow-sm border border-white ${getScoreColor(lead.leadScore)}`}>
+                            Score: {lead.leadScore}/100
+                          </span>
+                        ) : (
+                          <span className="text-xs text-slate-400 italic">Belum disekor</span>
+                        )}
+                        {lead.tags && (
+                          <div className="flex flex-wrap gap-1">
+                            {lead.tags.split(',').map((tag, i) => (
+                              <span key={i} className="px-2 py-0.5 bg-slate-100 text-slate-600 border border-slate-200 rounded text-[10px] uppercase font-medium tracking-wide">
+                                {tag.trim()}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </td>
+
                     {/* Status Column */}
                     <td className="px-6 py-4">
                       {editingId === lead.id ? (
@@ -300,18 +332,25 @@ export default function LeadsPage() {
                             placeholder="Catatan..."
                           ></textarea>
                           <div className="flex gap-2">
-                            <button onClick={handleSaveEdit} disabled={saving} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-1 rounded text-xs font-medium disabled:opacity-50">
-                              Simpan
+                            <button onClick={handleSaveEdit} disabled={saving} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded shadow-sm disabled:opacity-50 text-xs font-semibold">
+                              {saving ? 'Menyimpan...' : 'Simpan'}
                             </button>
-                            <button onClick={() => setEditingId(null)} className="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-700 py-1 rounded text-xs font-medium">
+                            <button onClick={() => setEditingId(null)} className="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1.5 rounded shadow-sm text-xs font-semibold">
                               Batal
                             </button>
                           </div>
                         </div>
                       ) : (
-                        <div className="flex flex-col gap-1 items-start">
-                          <p className="text-xs text-slate-600 line-clamp-2 max-w-xs">{lead.notes || <span className="italic text-slate-400">Tidak ada catatan</span>}</p>
-                          <button onClick={() => handleEditClick(lead)} className="text-xs text-blue-600 hover:underline mt-1 font-medium">Edit Status & Note</button>
+                        <div className="flex flex-col gap-2">
+                          <p className="text-xs text-slate-600 line-clamp-3 bg-yellow-50/50 p-2 rounded border border-yellow-100/50 min-h-[2.5rem]">
+                            {lead.notes || <span className="italic text-slate-400">Tidak ada catatan internal.</span>}
+                          </p>
+                          <button 
+                            onClick={() => handleEditClick(lead)}
+                            className="self-start text-blue-600 hover:text-blue-800 text-xs font-semibold px-3 py-1.5 rounded-lg border border-blue-200 hover:bg-blue-50 transition-colors"
+                          >
+                            Edit Lead
+                          </button>
                         </div>
                       )}
                     </td>
