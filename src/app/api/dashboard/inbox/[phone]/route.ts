@@ -4,8 +4,11 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { assertTenantAccess } from '@/lib/tenant-isolation';
 
-export async function GET(req: Request, { params }: { params: { phone: string } }) {
+export async function GET(req: Request, { params }: { params: Promise<{ phone: string }> }) {
+  const resolvedParams = await params;
+  const phone = resolvedParams.phone;
   try {
+
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -37,7 +40,7 @@ export async function GET(req: Request, { params }: { params: { phone: string } 
     const chatLogs = await prisma.chatLog.findMany({
       where: {
         businessProfileId: tenantId,
-        customerPhone: params.phone,
+        customerPhone: phone,
       },
       orderBy: { createdAt: 'asc' },
       take: 100, // Load latest 100
@@ -45,19 +48,22 @@ export async function GET(req: Request, { params }: { params: { phone: string } 
 
     // Reset unread count
     await prisma.conversationState.updateMany({
-      where: { businessProfileId: tenantId, customerPhone: params.phone },
+      where: { businessProfileId: tenantId, customerPhone: phone },
       data: { unreadCount: 0 }
     });
 
     return NextResponse.json({ chatLogs });
   } catch (error) {
-    console.error(`GET /api/dashboard/inbox/${params.phone} Error:`, (error as Error).message);
+    console.error(`GET /api/dashboard/inbox/${phone} Error:`, (error as Error).message);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
 
-export async function POST(req: Request, { params }: { params: { phone: string } }) {
+export async function POST(req: Request, { params }: { params: Promise<{ phone: string }> }) {
+  const resolvedParams = await params;
+  const phone = resolvedParams.phone;
   try {
+    
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -77,7 +83,7 @@ export async function POST(req: Request, { params }: { params: { phone: string }
     }
 
     let convoState = await prisma.conversationState.findFirst({
-      where: { businessProfileId: tenantId, customerPhone: params.phone }
+      where: { businessProfileId: tenantId, customerPhone: phone }
     });
 
     if (!convoState) {
@@ -117,7 +123,7 @@ export async function POST(req: Request, { params }: { params: { phone: string }
       try {
         const payload: any = {
           session: chatbotSetting.whatsappSessionName,
-          chatId: params.phone.includes('@') ? params.phone : `${params.phone}@c.us`,
+          chatId: phone.includes('@') ? phone : `${phone}@c.us`,
           text: message
         };
 
@@ -144,7 +150,7 @@ export async function POST(req: Request, { params }: { params: { phone: string }
         userId: chatbotSetting ? chatbotSetting.userId : userId,
         businessProfileId: tenantId,
         chatbotSettingId: convoState.chatbotSettingId,
-        customerPhone: params.phone,
+        customerPhone: phone,
         messageIn: '',
         messageOut: `[Admin] ${message}`,
         status: 'success',
@@ -155,7 +161,7 @@ export async function POST(req: Request, { params }: { params: { phone: string }
     return NextResponse.json({ success: true, log });
 
   } catch (error) {
-    console.error(`POST /api/dashboard/inbox/${params.phone} Error:`, (error as Error).message);
+    console.error(`POST /api/dashboard/inbox/${phone} Error:`, (error as Error).message);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

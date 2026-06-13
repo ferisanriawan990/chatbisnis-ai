@@ -3,7 +3,9 @@ import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = await params;
+  const id = resolvedParams.id;
   try {
     const session = await getServerSession(authOptions);
     const user = session?.user as any;
@@ -16,7 +18,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
 
     // Verify ownership indirectly by checking if product's business belongs to user
     const existing = await prisma.product.findUnique({
-      where: { id: params.id },
+      where: { id: id },
       include: { businessProfile: true }
     });
 
@@ -25,7 +27,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     }
 
     const product = await prisma.product.update({
-      where: { id: params.id },
+      where: { id: id },
       data: {
         ...(name && { name }),
         ...(description !== undefined && { description }),
@@ -44,7 +46,9 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   }
 }
 
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = await params;
+  const id = resolvedParams.id;
   try {
     const session = await getServerSession(authOptions);
     const user = session?.user as any;
@@ -53,7 +57,7 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
     }
 
     const existing = await prisma.product.findUnique({
-      where: { id: params.id },
+      where: { id: id },
       include: { businessProfile: true }
     });
 
@@ -62,7 +66,7 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
     }
 
     await prisma.product.delete({
-      where: { id: params.id },
+      where: { id: id },
     });
 
     return NextResponse.json({ success: true });
