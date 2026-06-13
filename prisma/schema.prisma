@@ -64,8 +64,10 @@ model User {
   usageCounters      UsageCounter[]
   auditLogs          AuditLog[]
   conversationStates ConversationState[]
+  assignedConversations ConversationState[] @relation("AssignedAdmin")
   Transaction        Transaction[]
   botConfig          BusinessBotConfig?
+  userRoleAssignments UserRoleAssignment[]
 }
 
 model BusinessProfile {
@@ -93,6 +95,10 @@ model BusinessProfile {
   whatsappSessions   WhatsAppSession[]
   usageCounters      UsageCounter[]
   conversationStates ConversationState[]
+  branches             Branch[]
+  roles                Role[]
+  userRoleAssignments  UserRoleAssignment[]
+  tenantFeatureSettings TenantFeatureSetting[]
 }
 
 model ChatbotSetting {
@@ -374,17 +380,25 @@ model ConversationState {
   businessProfileId String
   chatbotSettingId  String
   customerPhone     String
-  status            String    @default("ai_active") // ai_active or human_handover
+  customerName      String?
+  status            String    @default("ai_active") // ai_active, human_handover, waiting_admin
   handoverUntil     DateTime?
+  unreadCount       Int       @default(0)
+  lastMessageAt     DateTime  @default(now())
+  sentimentScore    String?   // positif, netral, negatif, marah
+  summary           String?   @db.Text
+  assignedAdminId   String?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
   user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assignedAdmin   User?           @relation("AssignedAdmin", fields: [assignedAdminId], references: [id], onDelete: SetNull)
   businessProfile BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
   chatbotSetting  ChatbotSetting  @relation(fields: [chatbotSettingId], references: [id], onDelete: Cascade)
 
   @@unique([chatbotSettingId, customerPhone])
   @@index([userId, businessProfileId, status])
+  @@index([businessProfileId, lastMessageAt])
 }
 
 model Transaction {
@@ -449,4 +463,108 @@ model BusinessBotConfig {
 
   user                User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   template            BusinessTemplate? @relation(fields: [templateId], references: [id])
+}
+
+// ─── Multi-Tenant & RBAC ─────────────────────────────────
+
+model Branch {
+  id                String   @id @default(uuid())
+  businessProfileId String
+  name              String
+  address           String?  @db.Text
+  phone             String?
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  businessProfile   BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+  
+  @@index([businessProfileId])
+}
+
+model Role {
+  id                String   @id @default(uuid())
+  businessProfileId String?  // If null, it's a global system role. If set, it's a tenant-specific custom role.
+  name              String
+  description       String?
+  isSystem          Boolean  @default(false) // System roles cannot be deleted
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  businessProfile   BusinessProfile?     @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+  permissions       RolePermission[]
+  userRoles         UserRoleAssignment[]
+
+  @@index([businessProfileId])
+}
+
+model Permission {
+  id          String   @id @default(uuid())
+  action      String   @unique // e.g., 'whatsapp.view', 'customer.create'
+  description String?
+  module      String   // e.g., 'whatsapp', 'customer', 'order'
+  createdAt   DateTime @default(now())
+
+  rolePermissions RolePermission[]
+}
+
+model RolePermission {
+  id           String   @id @default(uuid())
+  roleId       String
+  permissionId String
+  createdAt    DateTime @default(now())
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+}
+
+model UserRoleAssignment {
+  id                String   @id @default(uuid())
+  userId            String
+  businessProfileId String?  // The tenant where this role applies
+  roleId            String
+  createdAt         DateTime @default(now())
+
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessProfile BusinessProfile? @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+  role            Role             @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, businessProfileId, roleId])
+  @@index([userId])
+  @@index([businessProfileId])
+}
+
+// ─── Feature Flags ───────────────────────────────────────
+
+model FeatureDefinition {
+  id          String   @id @default(uuid())
+  key         String   @unique // e.g. 'whatsapp_broadcast', 'ai_vision'
+  name        String
+  description String?  @db.Text
+  module      String
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  tenantSettings TenantFeatureSetting[]
+}
+
+model TenantFeatureSetting {
+  id                String   @id @default(uuid())
+  businessProfileId String
+  featureId         String
+  isEnabled         Boolean  @default(true)
+  limitCount        Int?     // If the feature has a quota
+  configJson        String?  @db.Text
+  updatedBy         String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  businessProfile   BusinessProfile   @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+  feature           FeatureDefinition @relation(fields: [featureId], references: [id], onDelete: Cascade)
+
+  @@unique([businessProfileId, featureId])
+  @@index([businessProfileId])
 }

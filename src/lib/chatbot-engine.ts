@@ -5,6 +5,7 @@ import { getAICredentialCandidates } from './ai-config';
 import { buildSystemPrompt } from './prompt-builder';
 import { searchKnowledgeItems, buildKnowledgeFallbackAnswer, detectCustomerIntent } from './knowledge-search';
 import { validatePublicHttpsUrl } from './security';
+import { analyzeSentiment, SentimentResult } from './sentiment-analysis';
 
 export interface ChatbotEngineParams {
   wahaServerId?: string;
@@ -60,6 +61,7 @@ export class ChatbotEngine {
     const { isTest = false } = params;
     const sanitizedMessageIn = AIService.sanitizeInput(params.messageIn);
     const intent = detectCustomerIntent(sanitizedMessageIn);
+    const sentiment = analyzeSentiment(sanitizedMessageIn);
     
     // 1. Load Context
     const context = await this.loadChatbotContext(params.wahaSessionName, params.wahaServerId, isTest);
@@ -68,11 +70,11 @@ export class ChatbotEngine {
     const { chatbotSetting, botConfig, activePlan, profile } = context;
 
     // 2. Validate Access (Handover, Limits, Out of Hours)
-    const access = await this.validateBotAccess(chatbotSetting, params.customerPhone, sanitizedMessageIn, activePlan, isTest);
+    const access = await this.validateBotAccess(chatbotSetting, params.customerPhone, sanitizedMessageIn, activePlan, isTest, sentiment, params.customerName);
     if (!access.allowed) {
       if (access.replyMessage) {
         if (!isTest) {
-          await this.sendLog({ ...params, chatbotSetting, messageOut: access.replyMessage, needsHuman: access.needsHuman ?? true, intent });
+          await this.sendLog({ ...params, chatbotSetting, messageOut: access.replyMessage, needsHuman: access.needsHuman ?? true, intent, sentiment });
         }
         return { reply: access.replyMessage, metadata: { intent, promptSource: 'handover' } };
       }
@@ -192,6 +194,7 @@ export class ChatbotEngine {
         usedCatalogUrl,
         aiUsed: aiModelUsed,
         status: effectivePromptSource === 'error' ? 'failed' : 'success',
+        sentiment,
       });
     }
 
@@ -236,17 +239,38 @@ export class ChatbotEngine {
     };
   }
 
-  private static async validateBotAccess(chatbotSetting: any, customerPhone: string, messageIn: string, activePlan: any, isTest: boolean) {
+  private static async validateBotAccess(chatbotSetting: any, customerPhone: string, messageIn: string, activePlan: any, isTest: boolean, sentiment: SentimentResult, customerName?: string) {
     if (isTest) return { allowed: true };
 
-    // Handover Check
+    // Handover Check & Inbox Update
     let convoState = await prisma.conversationState.findUnique({
       where: { chatbotSettingId_customerPhone: { chatbotSettingId: chatbotSetting.id, customerPhone } }
     });
 
     if (!convoState) {
       convoState = await prisma.conversationState.create({
-        data: { userId: chatbotSetting.userId, businessProfileId: chatbotSetting.businessProfileId, chatbotSettingId: chatbotSetting.id, customerPhone, status: 'ai_active' }
+        data: { 
+          userId: chatbotSetting.userId, 
+          businessProfileId: chatbotSetting.businessProfileId, 
+          chatbotSettingId: chatbotSetting.id, 
+          customerPhone, 
+          customerName,
+          status: 'ai_active',
+          unreadCount: 1,
+          lastMessageAt: new Date(),
+          sentimentScore: sentiment
+        }
+      });
+    } else {
+      // Update Inbox Unread Count and Last Message
+      convoState = await prisma.conversationState.update({
+        where: { id: convoState.id },
+        data: {
+          unreadCount: { increment: 1 },
+          lastMessageAt: new Date(),
+          sentimentScore: sentiment,
+          customerName: customerName || convoState.customerName
+        }
       });
     }
 
@@ -265,11 +289,11 @@ export class ChatbotEngine {
     if (allowHumanHandover) {
       const keywords = chatbotSetting.handoverKeywords.split(',').map((k: string) => k.trim().toLowerCase());
       const lowerMessageIn = messageIn.toLowerCase();
-      if (keywords.some((k: string) => k && lowerMessageIn.includes(k))) {
+      if (keywords.some((k: string) => k && lowerMessageIn.includes(k)) || sentiment === 'marah') {
         const until = new Date();
         until.setHours(until.getHours() + 24);
-        await prisma.conversationState.update({ where: { id: convoState.id }, data: { status: 'human_handover', handoverUntil: until } });
-        return { allowed: false, replyMessage: chatbotSetting.handoverMessage };
+        await prisma.conversationState.update({ where: { id: convoState.id }, data: { status: 'waiting_admin', handoverUntil: until } });
+        return { allowed: false, replyMessage: chatbotSetting.handoverMessage, needsHuman: true };
       }
     }
 
@@ -536,7 +560,8 @@ JANGAN mengirim tag gambar untuk pertanyaan harga, stok, atau detail biasa jika 
             intent: params.intent,
             promptSource: params.promptSource,
             knowledgeMatchCount: params.knowledgeMatchCount,
-            usedCatalogUrl: params.usedCatalogUrl
+            usedCatalogUrl: params.usedCatalogUrl,
+            sentiment: params.sentiment,
           }),
         }
       });

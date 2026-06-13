@@ -24,6 +24,10 @@ export const authOptions: NextAuthOptions = {
 
         const user = await prisma.user.findUnique({
           where: { email },
+          include: {
+            businessProfiles: { select: { id: true, businessName: true } },
+            userRoleAssignments: { select: { businessProfileId: true, role: { select: { name: true } } } }
+          }
         });
 
         if (!user) {
@@ -36,7 +40,28 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Email atau password salah');
         }
 
-        return { id: user.id, name: user.name, email: user.email, role: user.role };
+        // Map tenants and roles
+        const tenants = user.businessProfiles.map(bp => {
+          const roleAssignment = user.userRoleAssignments.find(r => r.businessProfileId === bp.id);
+          return {
+            id: bp.id,
+            name: bp.businessName,
+            role: roleAssignment?.role.name || 'owner'
+          };
+        });
+
+        // Also add tenants where user is just staff (not owner)
+        user.userRoleAssignments.forEach(assignment => {
+          if (assignment.businessProfileId && !tenants.find(t => t.id === assignment.businessProfileId)) {
+            tenants.push({
+              id: assignment.businessProfileId,
+              name: 'Assigned Business', // Ideally we fetch the name
+              role: assignment.role.name
+            });
+          }
+        });
+
+        return { id: user.id, name: user.name, email: user.email, role: user.role, tenants };
       },
     }),
   ],
@@ -48,14 +73,17 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        token.role = (user as unknown as { role: string }).role;
+        token.role = (user as any).role;
+        token.tenants = (user as any).tenants;
       }
       return token;
     },
     async session({ session, token }) {
       if (token && session.user) {
-        (session.user as unknown as { id: string; role: string }).id = token.id as string;
-        (session.user as unknown as { id: string; role: string }).role = token.role as string;
+        const sessionUser = session.user as any;
+        sessionUser.id = token.id;
+        sessionUser.role = token.role;
+        sessionUser.tenants = token.tenants || [];
       }
       return session;
     },

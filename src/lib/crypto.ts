@@ -5,12 +5,12 @@ const IV_LENGTH = 12; // GCM recommended IV length
 const AUTH_TAG_LENGTH = 16;
 
 function getEncryptionSecret(): Buffer {
-  const secret = process.env.ENCRYPTION_SECRET;
+  const secret = process.env.ENCRYPTION_KEY || process.env.ENCRYPTION_SECRET;
   if (!secret) {
-    throw new Error('ENCRYPTION_SECRET environment variable is required');
+    throw new Error('ENCRYPTION_KEY or ENCRYPTION_SECRET environment variable is required');
   }
   if (secret.length !== 32) {
-    throw new Error('ENCRYPTION_SECRET must be exactly 32 characters');
+    throw new Error('Encryption key must be exactly 32 characters');
   }
   return Buffer.from(secret, 'utf8');
 }
