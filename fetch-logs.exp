@@ -1,0 +1,17 @@
+#!/usr/bin/expect -f
+
+set timeout -1
+set ip "202.155.157.219"
+set user "root"
+set password "@Feriswn990"
+
+spawn ssh -o StrictHostKeyChecking=no $user@$ip
+expect "password:"
+send "$password\r"
+expect "#"
+
+send "cd /root/baileys-gateway && docker compose logs --tail 30\r"
+expect "#"
+
+send "exit\r"
+expect eof
