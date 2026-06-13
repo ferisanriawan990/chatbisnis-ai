@@ -461,6 +461,7 @@ export class ChatbotEngine {
             notes: extracted.notes || undefined,
             tags: tagsStr || undefined,
             leadScore: extracted.leadScore || undefined,
+            churnReason: extracted.churnReason || undefined,
             updatedAt: new Date()
           },
           create: {
@@ -474,7 +475,8 @@ export class ChatbotEngine {
             status: extracted.status,
             notes: extracted.notes,
             tags: tagsStr,
-            leadScore: extracted.leadScore
+            leadScore: extracted.leadScore,
+            churnReason: extracted.churnReason
           }
         });
       }
@@ -582,7 +584,13 @@ export class ChatbotEngine {
       ? chatbotSetting.actionWebhookUrl
       : null;
 
-    finalSystemPrompt += `\nKamu MEMILIKI native tool_call berikut:
+    finalSystemPrompt += `\nSTRATEGI CLOSING & ANTI-CHURN:
+Jika pelanggan menunjukkan ketertarikan tinggi tetapi mengeluhkan "Harga terlalu mahal", "Ongkirnya mahal", atau membandingkan dengan toko lain, KAMU DIIZINKAN untuk memberikan penawaran khusus (Diskon Darurat) untuk menutup penjualan:
+- Tawarkan "Diskon Spesial 10%" atau "Potongan Ongkir Rp 10.000" sebagai tawaran eksklusif.
+- Katakan bahwa penawaran ini hanya berlaku hari ini.
+Jangan tawarkan diskon jika pelanggan tidak mengeluh tentang harga!
+
+Kamu MEMILIKI native tool_call berikut:
 - {"tool_call": true, "action": "add_to_cart", "params": {"productId": "<ID>", "quantity": 1}} : Untuk memasukkan barang ke keranjang pembeli.
 - {"tool_call": true, "action": "calculate_shipping", "params": {"address": "alamat lengkap", "deliveryMethod": "shipping atau pickup"}} : PANGGIL INI sebelum melakukan checkout untuk menghitung total dengan ongkir. Tanyakan dulu apakah mereka ingin pesanan Dikirim (shipping) atau Diambil di Toko (pickup) beserta alamat jika belum ada.
 - {"tool_call": true, "action": "checkout"} : Untuk memproses keranjang menjadi pesanan Pending. PASTIKAN sudah menghitung ongkir dulu menggunakan calculate_shipping.

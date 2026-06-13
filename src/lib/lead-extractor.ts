@@ -10,6 +10,7 @@ export interface ExtractedLead {
   leadScore?: number;
   notes?: string;
   tags?: string[];
+  churnReason?: string;
 }
 
 export class LeadExtractor {
@@ -34,7 +35,8 @@ Jika pelanggan menunjukkan indikasi bertanya harga, ketersediaan produk, alamat,
   "status": "hot", // 'hot' jika ingin segera bayar/beli, 'warm' jika banyak bertanya detail, 'cold' jika hanya menyapa/tanya harga dasar.
   "leadScore": 85, // Angka 1-100 merepresentasikan probabilitas pelanggan akan membeli berdasarkan antusiasme mereka.
   "notes": "Rangkuman singkat aktivitas pelanggan (contoh: Pelanggan bertanya tentang stok sepatu lari, namun ragu soal harga)",
-  "tags": ["tanya-stok", "ragu-harga", "sepatu-lari"] // Array of string, berisi kata kunci segmentasi pendek (tanpa spasi, gunakan strip).
+  "tags": ["tanya-stok", "ragu-harga", "sepatu-lari"], // Array of string, berisi kata kunci segmentasi pendek (tanpa spasi, gunakan strip).
+  "churnReason": "Alasan jika pelanggan membatalkan pesanan atau batal beli (misal: 'Kemahalan', 'Ongkir mahal', 'Sudah beli di tempat lain'). Kosongkan jika pelanggan masih tertarik atau sudah beli."
 }
 
 Anda harus merespon HANYA dengan JSON object tunggal.

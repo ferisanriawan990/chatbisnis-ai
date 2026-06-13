@@ -239,6 +239,7 @@ model Lead {
   notes             String?    @db.Text
   tags              String?    @db.Text
   leadScore         Int?       // 1-100 score of purchase intent
+  churnReason       String?    @db.Text // Alasan kegagalan closing
   isReturning       Boolean    @default(false)
   assignedAdminId   String?
   createdAt         DateTime   @default(now())

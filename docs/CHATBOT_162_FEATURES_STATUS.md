@@ -47,8 +47,8 @@
 | 43 | Pengiriman nomor resi otomatis | | | | | | DONE | Admin dapat menginput resi dan otomatis muncul di Invoice Pelanggan |
 | 44 | Pembatalan pesanan | | | | | | DONE | Admin dapat mengeset status pesanan menjadi Cancelled |
 | 45 | Repeat order | | | | | | NOT_STARTED | |
-| 46 | Penawaran khusus untuk membantu closing | | | | | | NOT_STARTED | |
-| 47 | Deteksi customer hampir membeli | | | | | | NOT_STARTED | |
+| 46 | Penawaran khusus untuk membantu closing | | | | | | DONE | Diimplementasikan lewat taktik Diskon Darurat di system prompt |
+| 47 | Deteksi customer hampir membeli | | | | | | DONE | Mendeteksi lewat keluhan harga saat pelanggan menunjukkan minat tinggi |
 | 48 | Pengingat keranjang belum selesai | | | | | | DONE | Diimplementasikan via Vercel Cron API untuk Abandoned Cart |
 | 49 | Pengambilan data calon pelanggan | | | | | | DONE | Diimplementasikan melalui LeadExtractor AI |
 | 50 | Formulir percakapan otomatis | | | | | | DONE | Percakapan mengumpulkan data secara natural lewat LLM |
@@ -63,9 +63,9 @@
 | 59 | Penugasan lead ke sales | | | | | | DONE | |
 | 60 | Pengingat follow-up sales | | | | | | NOT_STARTED | |
 | 61 | Status follow-up customer | | | | | | NOT_STARTED | |
-| 62 | Pencatatan alasan gagal closing | | | | | | NOT_STARTED | |
-| 63 | Deteksi customer marah | | | | | | NOT_STARTED | |
-| 64 | Deteksi permintaan berbicara dengan admin | | | | | | NOT_STARTED | |
+| 62 | Pencatatan alasan gagal closing | | | | | | DONE | Diekstraksi menjadi field churnReason di model Lead |
+| 63 | Deteksi customer marah | | | | | | DONE | Diselesaikan via native tool request_human |
+| 64 | Deteksi permintaan berbicara dengan admin | | | | | | DONE | Diselesaikan via native tool request_human |
 | 65 | Notifikasi WhatsApp Admin | | | | | | DONE | Alert WhatsApp dikirim ke admin saat Handover |
 | 66 | Notifikasi dashboard secara real-time | | | | | | DONE | Tersedia audio alert dan refresh status otomatis di Inbox |
 | 67 | Mode admin mengambil alih percakapan | | | | | | DONE | Tombol Takeover di UI Inbox mengeset status ke human_handover |
@@ -137,7 +137,7 @@
 | 133 | Analitik kinerja sales | | | | | | NOT_STARTED | |
 | 134 | Analisis sentimen | | | | | | DONE | Ditampilkan sebagai Pie Chart di halaman Analytics |
 | 135 | Laporan produk terpopuler | | | | | | DONE | Ditampilkan sebagai tabel 5 produk terlaris di Analytics |
-| 136 | Laporan alasan tidak membeli | | | | | | NOT_STARTED | |
+| 136 | Laporan alasan tidak membeli | | | | | | DONE | Datanya telah direkam di kolom churnReason pada DB Lead |
 | 137 | Export laporan | | | | | | DONE | Tersedia opsi Download CSV (Data Penjualan & Chat 30 Hari) |
 | 138 | Laporan otomatis kepada pemilik | | | | | | NOT_STARTED | |
 | 139 | Banyak nomor WhatsApp dalam satu akun | | | | | | NOT_STARTED | |
