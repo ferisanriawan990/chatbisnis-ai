@@ -1,7 +1,7 @@
 import { prisma } from './prisma';
 
 /**
- * Returns the global WAHA core mode.
+ * Returns the global WhatsApp core mode.
  * Default is 'true' if not set.
  */
 export function getWhatsappCoreMode(): boolean {
@@ -10,7 +10,7 @@ export function getWhatsappCoreMode(): boolean {
 }
 
 /**
- * Generates a unique, deterministic WAHA session name for a user or business profile.
+ * Generates a unique, deterministic WhatsApp session name for a user or business profile.
  * E.g., user-12345 or biz-67890
  */
 export function getActiveWhatsappSessionName(userId: string, businessProfileId?: string | null): string {
@@ -27,9 +27,9 @@ export function getActiveWhatsappSessionName(userId: string, businessProfileId?:
 }
 
 /**
- * Resolves the appropriate WAHA Server ID to use for a user.
+ * Resolves the appropriate WhatsApp Server ID to use for a user.
  * If the user has a specific server assigned via their active ChatbotSetting, it returns it.
- * Otherwise, it attempts to find a global or default WAHA Server.
+ * Otherwise, it attempts to find a global or default WhatsApp Server.
  */
 export async function resolveWhatsappServerForUser(userId: string): Promise<string | null> {
   const setting = await prisma.chatbotSetting.findFirst({
@@ -50,10 +50,10 @@ export async function resolveWhatsappServerForUser(userId: string): Promise<stri
 }
 
 /**
- * Asserts that a given user owns the specified WAHA session.
+ * Asserts that a given user owns the specified WhatsApp session.
  * This prevents cross-tenant actions like stopping another user's session.
  */
-export async function assertUserOwnsWahaSession(userId: string, sessionName: string): Promise<boolean> {
+export async function assertUserOwnsWhatsappSession(userId: string, sessionName: string): Promise<boolean> {
   const setting = await prisma.chatbotSetting.findFirst({
     where: { userId, whatsappSessionName: sessionName }
   });

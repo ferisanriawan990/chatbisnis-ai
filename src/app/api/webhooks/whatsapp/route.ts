@@ -189,7 +189,7 @@ export async function POST(req: NextRequest) {
     // Use the actual session name from DB if in core mode (since payload brings 'default')
     const actualSessionName = coreMode ? chatbotSetting.whatsappSessionName! : norm.sessionName;
 
-    // Instantiate WAHA Service for sending early replies if needed
+    // Instantiate WhatsApp Service for sending early replies if needed
     let whatsappInstance: WhatsappService | null = null;
     if (chatbotSetting?.whatsappServer?.apiKeyEncrypted) {
       whatsappInstance = WhatsappService.fromEncrypted(chatbotSetting.whatsappServer.baseUrl, chatbotSetting.whatsappServer.apiKeyEncrypted);
@@ -287,7 +287,7 @@ export async function POST(req: NextRequest) {
           });
         }
       } else {
-        console.error(`WAHA reply skipped: No configured server for session=${norm.sessionName}`);
+        console.error(`WhatsApp reply skipped: No configured server for session=${norm.sessionName}`);
       }
     }
 

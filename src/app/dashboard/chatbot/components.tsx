@@ -236,7 +236,7 @@ const SparklesIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-export const WhatsAppConnectionCard = ({ wahaStatus, isComplete }: any) => (
+export const WhatsAppConnectionCard = ({ whatsappStatus, isComplete }: any) => (
   <section className="bg-white/80 backdrop-blur-xl p-8 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60 hover:shadow-xl hover:shadow-emerald-100/50 transition-all duration-500 relative overflow-hidden group">
     <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-emerald-100/50 to-transparent rounded-bl-full pointer-events-none transition-transform duration-500 group-hover:scale-110"></div>
     <div className="absolute top-0 right-0 p-6 z-10">
@@ -251,12 +251,12 @@ export const WhatsAppConnectionCard = ({ wahaStatus, isComplete }: any) => (
     <div className="space-y-5 relative z-10">
       <div className="flex items-center gap-3 p-4 bg-slate-50 border border-slate-200 rounded-xl">
         <div className="relative flex h-3 w-3">
-          {wahaStatus === 'connected' && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>}
-          <span className={`relative inline-flex rounded-full h-3 w-3 ${wahaStatus === 'connected' ? 'bg-emerald-500' : 'bg-amber-500'}`}></span>
+          {whatsappStatus === 'connected' && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>}
+          <span className={`relative inline-flex rounded-full h-3 w-3 ${whatsappStatus === 'connected' ? 'bg-emerald-500' : 'bg-amber-500'}`}></span>
         </div>
-        <p className="text-sm font-semibold text-slate-700">Status WhatsApp Anda saat ini: <span className={`font-bold ${wahaStatus === 'connected' ? 'text-emerald-600' : 'text-amber-600 capitalize'}`}>{wahaStatus}</span></p>
+        <p className="text-sm font-semibold text-slate-700">Status WhatsApp Anda saat ini: <span className={`font-bold ${whatsappStatus === 'connected' ? 'text-emerald-600' : 'text-amber-600 capitalize'}`}>{whatsappStatus}</span></p>
       </div>
-      <Link href="/dashboard/waha" className="flex items-center justify-center gap-2 w-full px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold rounded-xl transition-all shadow-lg shadow-emerald-500/30 transform hover:-translate-y-0.5">
+      <Link href="/dashboard/whatsapp" className="flex items-center justify-center gap-2 w-full px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold rounded-xl transition-all shadow-lg shadow-emerald-500/30 transform hover:-translate-y-0.5">
         Kelola Koneksi WhatsApp
       </Link>
     </div>

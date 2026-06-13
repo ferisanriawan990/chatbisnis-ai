@@ -11,8 +11,8 @@ export default function AdminOverview() {
     totalChatsToday: 0,
     totalChatsThisMonth: 0,
     totalLeads: 0,
-    activeWahaSessions: 0,
-    failedWahaSessions: 0,
+    activeWhatsappSessions: 0,
+    failedWhatsappSessions: 0,
     totalAiUsage: 0,
   });
   const [loading, setLoading] = useState(true);
@@ -36,8 +36,8 @@ export default function AdminOverview() {
     { label: 'Chat Hari Ini', value: stats.totalChatsToday, icon: MessageSquare, color: 'indigo', bg: 'bg-indigo-50', text: 'text-indigo-600' },
     { label: 'Chat Bulan Ini', value: stats.totalChatsThisMonth, icon: Activity, color: 'purple', bg: 'bg-purple-50', text: 'text-purple-600' },
     { label: 'Total Leads', value: stats.totalLeads, icon: Database, color: 'cyan', bg: 'bg-cyan-50', text: 'text-cyan-600' },
-    { label: 'WhatsApp Connected', value: stats.activeWahaSessions, icon: Server, color: 'emerald', bg: 'bg-emerald-50', text: 'text-emerald-600' },
-    { label: 'WhatsApp Failed', value: stats.failedWahaSessions, icon: AlertTriangle, color: 'amber', bg: 'bg-amber-50', text: 'text-amber-600' },
+    { label: 'WhatsApp Connected', value: stats.activeWhatsappSessions, icon: Server, color: 'emerald', bg: 'bg-emerald-50', text: 'text-emerald-600' },
+    { label: 'WhatsApp Failed', value: stats.failedWhatsappSessions, icon: AlertTriangle, color: 'amber', bg: 'bg-amber-50', text: 'text-amber-600' },
     { label: 'AI Tokens (Bulan Ini)', value: stats.totalAiUsage.toLocaleString(), icon: Zap, color: 'violet', bg: 'bg-violet-50', text: 'text-violet-600' },
   ];
 

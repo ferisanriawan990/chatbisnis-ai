@@ -131,7 +131,7 @@ export default async function DashboardIndex() {
               <p className="font-semibold text-slate-700">Koneksi WhatsApp</p>
               <p className="text-xs text-slate-500">Scan QR Code agar bot bisa merespon pesan WhatsApp.</p>
             </div>
-            {!isWhatsappReady && <Link href="/dashboard/waha" className="text-sm text-blue-600 hover:underline font-medium">Hubungkan</Link>}
+            {!isWhatsappReady && <Link href="/dashboard/whatsapp" className="text-sm text-blue-600 hover:underline font-medium">Hubungkan</Link>}
           </div>
 
           <div className="flex items-center gap-3 p-4 border rounded-xl bg-slate-50">

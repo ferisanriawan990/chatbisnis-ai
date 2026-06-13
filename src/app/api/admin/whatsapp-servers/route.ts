@@ -57,7 +57,7 @@ export async function POST(req: Request) {
     }
 
     if (process.env.NODE_ENV === 'production' && !validatePublicHttpsUrl(parsed.data.baseUrl)) {
-      return NextResponse.json({ error: 'URL WAHA Server harus HTTPS publik dan bukan IP lokal (SSRF Protection).' }, { status: 400 });
+      return NextResponse.json({ error: 'URL WhatsApp Server harus HTTPS publik dan bukan IP lokal (SSRF Protection).' }, { status: 400 });
     }
 
     const apiKeyEncrypted = parsed.data.apiKey ? encrypt(parsed.data.apiKey) : null;

@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('Memulai perbaikan WAHA sessions aman...');
+  console.log('Memulai perbaikan WhatsApp sessions aman...');
   let fixedCount = 0;
   let disabledCount = 0;
   let sessionUpdateCount = 0;
@@ -62,7 +62,7 @@ async function main() {
     }
   }
 
-  console.log('--- Laporan Perbaikan WAHA Sessions ---');
+  console.log('--- Laporan Perbaikan WhatsApp Sessions ---');
   console.log(`- ChatbotSetting dinonaktifkan (karena whatsappServerId kosong): ${disabledCount}`);
   console.log(`- ChatbotSetting whatsappSessionName diperbaiki: ${fixedCount}`);
   console.log(`- WhatsAppSession sessionName disinkronkan: ${sessionUpdateCount}`);

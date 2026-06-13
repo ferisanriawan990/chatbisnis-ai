@@ -91,7 +91,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           </Link>
           <Link 
             href="/dashboard/products" 
-            className={`flex items-center px-4 py-3 mb-2 rounded-xl transition-all duration-200 ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
               pathname === '/dashboard/products' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
             }`}
           >
@@ -111,10 +111,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           </Link>
 
           <Link 
-            href="/dashboard/waha" 
+            href="/dashboard/whatsapp" 
             onClick={() => setMobileMenuOpen(false)}
             className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-              pathname === '/dashboard/waha' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+              pathname === '/dashboard/whatsapp' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
             }`}
           >
             <Settings className="w-5 h-5" />

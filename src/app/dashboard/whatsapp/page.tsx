@@ -4,8 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { Server, Power, RefreshCw, AlertCircle, QrCode } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 
-export default function WahaDashboard() {
-  const [wahaStatus, setWahaStatus] = useState('disconnected');
+export default function WhatsappDashboard() {
+  const [whatsappStatus, setWhatsappStatus] = useState('disconnected');
   const [qrCode, setQrCode] = useState<string | null>(null);
   
   const [sessionName, setSessionName] = useState('');
@@ -30,7 +30,7 @@ export default function WahaDashboard() {
       const res = await fetch('/api/dashboard/whatsapp/status');
       if (res.ok) {
         const { status, sessionName: sName } = await res.json();
-        setWahaStatus(status);
+        setWhatsappStatus(status);
         if (sName) setSessionName(sName);
 
         if (status === 'qr') {
@@ -53,42 +53,42 @@ export default function WahaDashboard() {
   // Auto-polling when starting
   useEffect(() => {
     let interval: NodeJS.Timeout;
-    if (wahaStatus === 'starting') {
+    if (whatsappStatus === 'starting') {
       interval = setInterval(() => {
         void fetchStatus();
       }, 3000);
     }
     return () => clearInterval(interval);
-  }, [wahaStatus, fetchStatus]);
+  }, [whatsappStatus, fetchStatus]);
 
   // Auto-refresh QR code every 15 seconds
   useEffect(() => {
     let interval: NodeJS.Timeout;
-    if (wahaStatus === 'qr') {
+    if (whatsappStatus === 'qr') {
       interval = setInterval(() => {
         void fetchQrCode();
         void fetchStatus(); // Also check if it became connected
       }, 15000);
     }
     return () => clearInterval(interval);
-  }, [wahaStatus, fetchStatus]);
+  }, [whatsappStatus, fetchStatus]);
 
   const handleStart = async () => {
     setLoading(true);
-    toast.loading('Memulai sesi WhatsApp...', { id: 'waha' });
+    toast.loading('Memulai sesi WhatsApp...', { id: 'whatsapp' });
     try {
       const res = await fetch('/api/dashboard/whatsapp/start', { method: 'POST' });
       if (res.ok) {
-        toast.success('Sesi berhasil dimulai!', { id: 'waha' });
+        toast.success('Sesi berhasil dimulai!', { id: 'whatsapp' });
         setTimeout(() => {
           fetchStatus();
         }, 3000);
       } else {
         const err = await res.json();
-        toast.error(err.error || 'Gagal memulai', { id: 'waha' });
+        toast.error(err.error || 'Gagal memulai', { id: 'whatsapp' });
       }
     } catch {
-      toast.error('Jaringan bermasalah', { id: 'waha' });
+      toast.error('Jaringan bermasalah', { id: 'whatsapp' });
     } finally {
       setLoading(false);
     }
@@ -96,18 +96,18 @@ export default function WahaDashboard() {
 
   const handleStop = async () => {
     setLoading(true);
-    toast.loading('Menghentikan sesi...', { id: 'waha' });
+    toast.loading('Menghentikan sesi...', { id: 'whatsapp' });
     try {
       const res = await fetch('/api/dashboard/whatsapp/stop', { method: 'POST' });
       if (res.ok) {
-        toast.success('Sesi dihentikan', { id: 'waha' });
+        toast.success('Sesi dihentikan', { id: 'whatsapp' });
         fetchStatus();
         setQrCode(null);
       } else {
-        toast.error('Gagal menghentikan sesi', { id: 'waha' });
+        toast.error('Gagal menghentikan sesi', { id: 'whatsapp' });
       }
     } catch {
-      toast.error('Jaringan bermasalah', { id: 'waha' });
+      toast.error('Jaringan bermasalah', { id: 'whatsapp' });
     } finally {
       setLoading(false);
     }
@@ -132,9 +132,9 @@ export default function WahaDashboard() {
           <div>
             <p className="text-sm font-medium text-slate-500">Status Koneksi</p>
             <div className="flex items-center gap-2 mt-1">
-              <span className={`w-3 h-3 rounded-full ${wahaStatus === 'connected' ? 'bg-emerald-500' : wahaStatus === 'qr' ? 'bg-blue-500 animate-pulse' : 'bg-red-500'}`}></span>
-              <span className={`text-xl font-bold capitalize ${wahaStatus === 'connected' ? 'text-emerald-700' : wahaStatus === 'qr' ? 'text-blue-700' : 'text-red-700'}`}>
-                {wahaStatus === 'disconnected' ? 'Terputus' : wahaStatus}
+              <span className={`w-3 h-3 rounded-full ${whatsappStatus === 'connected' ? 'bg-emerald-500' : whatsappStatus === 'qr' ? 'bg-blue-500 animate-pulse' : 'bg-red-500'}`}></span>
+              <span className={`text-xl font-bold capitalize ${whatsappStatus === 'connected' ? 'text-emerald-700' : whatsappStatus === 'qr' ? 'text-blue-700' : 'text-red-700'}`}>
+                {whatsappStatus === 'disconnected' ? 'Terputus' : whatsappStatus}
               </span>
             </div>
             {sessionName && <p className="text-xs text-slate-400 mt-1">Sesi: {sessionName}</p>}
@@ -144,19 +144,19 @@ export default function WahaDashboard() {
             <button onClick={fetchStatus} disabled={refreshing} className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg font-medium flex items-center gap-2 hover:bg-slate-50 disabled:opacity-50">
               <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} /> Refresh
             </button>
-            {wahaStatus === 'connected' ? (
+            {whatsappStatus === 'connected' ? (
               <button onClick={handleStop} disabled={loading} className="px-4 py-2 bg-red-100 text-red-700 rounded-lg font-medium flex items-center gap-2 hover:bg-red-200 disabled:opacity-50">
                 <Power className="w-4 h-4" /> Hentikan Sesi
               </button>
             ) : (
-              <button onClick={handleStart} disabled={loading || wahaStatus === 'starting'} className="px-4 py-2 bg-emerald-600 text-white rounded-lg font-medium flex items-center gap-2 hover:bg-emerald-700 disabled:opacity-50">
+              <button onClick={handleStart} disabled={loading || whatsappStatus === 'starting'} className="px-4 py-2 bg-emerald-600 text-white rounded-lg font-medium flex items-center gap-2 hover:bg-emerald-700 disabled:opacity-50">
                 <Power className="w-4 h-4" /> Mulai Sesi Baru
               </button>
             )}
           </div>
         </div>
 
-        {wahaStatus === 'qr' && qrCode && (
+        {whatsappStatus === 'qr' && qrCode && (
           <div className="mt-8 border border-blue-100 rounded-xl p-8 text-center bg-blue-50">
             <QrCode className="w-12 h-12 text-blue-500 mx-auto mb-4" />
             <h3 className="text-lg font-bold text-slate-800 mb-2">Scan QR Code Ini</h3>
@@ -169,7 +169,7 @@ export default function WahaDashboard() {
           </div>
         )}
 
-        {wahaStatus === 'disconnected' && (
+        {whatsappStatus === 'disconnected' && (
           <div className="flex items-start gap-3 p-4 bg-amber-50 text-amber-800 rounded-xl text-sm">
             <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
             <div>

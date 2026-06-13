@@ -1,7 +1,7 @@
 # ChatBisnis AI
 
 SaaS Platform Chatbot WhatsApp berbasis AI yang dirancang khusus untuk UMKM di Indonesia. 
-Menggunakan teknologi LLM (Claude/OpenAI) dan **WAHA (WhatsApp HTTP API)** untuk melayani pelanggan secara otomatis, merespon sesuai *Knowledge Base* (Excel, CSV, PDF, DOCX, Manual), dan mengotomatisasi *Lead Capture*.
+Menggunakan teknologi LLM (Claude/OpenAI) dan **WhatsApp (WhatsApp HTTP API)** untuk melayani pelanggan secara otomatis, merespon sesuai *Knowledge Base* (Excel, CSV, PDF, DOCX, Manual), dan mengotomatisasi *Lead Capture*.
 
 ## Status Proyek
 ⚠️ **MVP Final Hardening / Belum production-ready sampai seluruh checklist security dan build lolos.**
@@ -44,12 +44,12 @@ Agar Anda dapat mengakses Dashboard Super Admin (URL: `/admin`):
    npx ts-node scripts/create-admin.ts
    ```
 
-### 3. Cara Setup Server WAHA (WhatsApp HTTP API)
-ChatBisnis AI tidak menyimpan engine WhatsApp di dalam codebase ini. Anda wajib menyewa **VPS** untuk menjalankan WAHA Server:
+### 3. Cara Setup Server WhatsApp (WhatsApp HTTP API)
+ChatBisnis AI tidak menyimpan engine WhatsApp di dalam codebase ini. Anda wajib menyewa **VPS** untuk menjalankan WhatsApp Server:
 
 1. Admin login ke dashboard.
-2. Buka menu **Admin > WAHA Servers**.
-3. Tambah server baru, isi IP VPS / Domain WAHA Anda dan API Key (jika dikonfigurasi).
+2. Buka menu **Admin > WhatsApp Servers**.
+3. Tambah server baru, isi IP VPS / Domain WhatsApp Anda dan API Key (jika dikonfigurasi).
 4. Klik **Test Connection**.
 5. Setelah berhasil, user dapat membuka dashboard mereka, menuju menu WhatsApp, dan scan QR langsung dari sana.
 
@@ -73,7 +73,7 @@ Bagi pengguna *Enterprise*, platform ini mendukung *routing* *Webhook* melalui *
 
 ## PERINGATAN KEAMANAN (CRITICAL)
 
-- **Wajib Rotate WAHA API Key**: Jika WAHA API key Anda pernah masuk ke dalam *commit* repository (bocor), Anda **WAJIB** merotasi/mengganti API Key tersebut langsung di sisi VPS WAHA server Anda.
+- **Wajib Rotate WhatsApp API Key**: Jika WhatsApp API key Anda pernah masuk ke dalam *commit* repository (bocor), Anda **WAJIB** merotasi/mengganti API Key tersebut langsung di sisi VPS WhatsApp server Anda.
 - **Wajib Unlink WhatsApp Device**: Jika QR Code (`qr.html`, `.png`, dsb) pernah masuk repo, segera lakukan unlink (keluar perangkat) dari aplikasi WhatsApp di HP Anda.
 - **Wajib Set Env Production**: Sebelum melakukan deploy ke Vercel/VPS, seluruh variabel di `.env` WAJIB disiapkan di environment variables production. Jangan pernah menggunakan environment variables development/local.
 - **Enkripsi Kunci**: Semua API Keys tersimpan dalam format terenkripsi. Pastikan `ENCRYPTION_SECRET` dicadangkan di tempat yang aman.

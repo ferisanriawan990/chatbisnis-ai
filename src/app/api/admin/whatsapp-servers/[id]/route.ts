@@ -30,7 +30,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     }
 
     if (parsed.data.baseUrl && process.env.NODE_ENV === 'production' && !validatePublicHttpsUrl(parsed.data.baseUrl)) {
-      return NextResponse.json({ error: 'URL WAHA Server harus HTTPS publik dan bukan IP lokal (SSRF Protection).' }, { status: 400 });
+      return NextResponse.json({ error: 'URL WhatsApp Server harus HTTPS publik dan bukan IP lokal (SSRF Protection).' }, { status: 400 });
     }
 
     const { apiKey, baseUrl, ...rest } = parsed.data;

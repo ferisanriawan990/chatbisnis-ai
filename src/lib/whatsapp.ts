@@ -5,22 +5,22 @@ import { validatePublicHttpsUrl } from './security';
 import http from 'http';
 import https from 'https';
 
-export interface WAHAConfig {
+export interface WhatsappConfig {
   baseUrl: string;
   apiKey: string;
 }
 
-export type WAHASessionStatus = 'disconnected' | 'starting' | 'qr' | 'connected' | 'failed';
+export type WhatsappSessionStatus = 'disconnected' | 'starting' | 'qr' | 'connected' | 'failed';
 
-export interface WAHAMediaSendResult {
+export interface WhatsappMediaSendResult {
   mode: 'image' | 'link-preview';
   response: unknown;
 }
 
-class WAHAApiError extends Error {
+class WhatsappApiError extends Error {
   constructor(public readonly status: number | undefined, message: string) {
     super(message);
-    this.name = 'WAHAApiError';
+    this.name = 'WhatsappApiError';
   }
 }
 
@@ -29,7 +29,7 @@ export class WhatsappService {
   private baseUrl: string;
   private apiKey: string;
 
-  constructor(config: WAHAConfig) {
+  constructor(config: WhatsappConfig) {
     this.baseUrl = config.baseUrl.replace(/\/$/, '');
     this.apiKey = config.apiKey;
   }
@@ -70,7 +70,7 @@ export class WhatsappService {
             } catch {
               // ignore
             }
-            return reject(new WAHAApiError(res.statusCode, `WAHA API error ${res.statusCode}: ${errorDetail}`));
+            return reject(new WhatsappApiError(res.statusCode, `WhatsApp API error ${res.statusCode}: ${errorDetail}`));
           }
           
           try {
@@ -97,7 +97,7 @@ export class WhatsappService {
 
       req.on('timeout', () => {
         req.destroy();
-        reject(new Error('WAHA API timeout after 30 seconds'));
+        reject(new Error('WhatsApp API timeout after 30 seconds'));
       });
 
       if (options.body) {
@@ -160,7 +160,7 @@ export class WhatsappService {
     });
   }
 
-  async getStatus(sessionName: string): Promise<WAHASessionStatus> {
+  async getStatus(sessionName: string): Promise<WhatsappSessionStatus> {
     try {
       const data = await this.request(`/api/sessions/${this.getEffectiveSession(sessionName)}`);
       const status = data?.status?.toLowerCase() || 'disconnected';
@@ -240,12 +240,12 @@ export class WhatsappService {
   }
 
   private isPlusOnlyMediaError(error: unknown): boolean {
-    return error instanceof WAHAApiError
+    return error instanceof WhatsappApiError
       && error.status === 422
       && /only in Plus version/i.test(error.message);
   }
 
-  async sendImage(sessionName: string, phone: string, imageUrl: string, caption?: string, fallbackUrl?: string): Promise<WAHAMediaSendResult> {
+  async sendImage(sessionName: string, phone: string, imageUrl: string, caption?: string, fallbackUrl?: string): Promise<WhatsappMediaSendResult> {
     if (!validatePublicHttpsUrl(imageUrl)) {
       throw new Error('URL gambar harus berupa URL HTTPS publik.');
     }
@@ -289,7 +289,7 @@ export class WhatsappService {
         return { mode: 'link-preview', response };
       }
 
-      // Some WAHA installations cannot fetch remote files, so retry with base64.
+      // Some WhatsApp installations cannot fetch remote files, so retry with base64.
       const res = await fetch(imageUrl, { signal: AbortSignal.timeout(15000) });
       if (!res.ok) throw error;
 

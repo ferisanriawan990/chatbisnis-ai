@@ -16,7 +16,7 @@ export default function ChatbotDashboard() {
 
   const [knowledgeSources, setKnowledgeSources] = useState<any[]>([]); // eslint-disable-line @typescript-eslint/no-explicit-any
   const [chatLogs, setChatLogs] = useState<any[]>([]); // eslint-disable-line @typescript-eslint/no-explicit-any
-  const [wahaStatus, setWahaStatus] = useState('disconnected');
+  const [whatsappStatus, setWhatsappStatus] = useState('disconnected');
   const [manualForm, setManualForm] = useState({ type: 'qa', question: '', answer: '', productName: '', productCategory: '', price: 0, stockStatus: 'Tersedia', description: '', imageUrl: '' });
   const [googleSheetUrl, setGoogleSheetUrl] = useState('');
   const [syncingId, setSyncingId] = useState<string | null>(null);
@@ -39,7 +39,7 @@ export default function ChatbotDashboard() {
 
   const fetchInitialData = useCallback(async () => {
     try {
-      const [chatbotRes, knowledgeRes, logsRes, wahaStatusRes, templatesRes] = await Promise.all([
+      const [chatbotRes, knowledgeRes, logsRes, whatsappStatusRes, templatesRes] = await Promise.all([
         fetch('/api/dashboard/chatbot'),
         fetch('/api/dashboard/knowledge'),
         fetch('/api/dashboard/chat-logs?limit=5'),
@@ -78,9 +78,9 @@ export default function ChatbotDashboard() {
       if (knowledgeRes.ok) setKnowledgeSources((await knowledgeRes.json()).sources || []);
       if (logsRes.ok) setChatLogs((await logsRes.json()).logs || []);
       
-      if (wahaStatusRes.ok) {
-        const { status } = await wahaStatusRes.json();
-        setWahaStatus(status);
+      if (whatsappStatusRes.ok) {
+        const { status } = await whatsappStatusRes.json();
+        setWhatsappStatus(status);
       }
       
       if (templatesRes.ok) {
@@ -276,7 +276,7 @@ export default function ChatbotDashboard() {
   const stepsComplete = {
     profile: !!form.businessName,
     knowledge: true, // Knowledge base is now optional
-    waha: wahaStatus === 'connected'
+    waha: whatsappStatus === 'connected'
   };
 
   return (
@@ -483,7 +483,7 @@ export default function ChatbotDashboard() {
 
         <div className="space-y-8">
 
-          <WhatsAppConnectionCard wahaStatus={wahaStatus} isComplete={stepsComplete.waha} />
+          <WhatsAppConnectionCard whatsappStatus={whatsappStatus} isComplete={stepsComplete.waha} />
           
           <AiIntegrationPanel form={form} handleChange={handleChange} />
 

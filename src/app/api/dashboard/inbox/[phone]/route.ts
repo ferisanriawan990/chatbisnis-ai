@@ -104,10 +104,10 @@ export async function POST(req: Request, { params }: { params: { phone: string }
     }
 
     // Handle sending a message
-    // 1. You should integrate this with your WAHA instance to actually push the message.
+    // 1. You should integrate this with your WhatsApp instance to actually push the message.
     // For now, we simulate the log.
 
-    // Get ChatbotSetting to know which WAHA session
+    // Get ChatbotSetting to know which WhatsApp session
     const chatbotSetting = await prisma.chatbotSetting.findUnique({
       where: { id: convoState.chatbotSettingId }
     });
@@ -131,7 +131,7 @@ export async function POST(req: Request, { params }: { params: { phone: string }
         });
         
         if (!wahaRes.ok) {
-           console.error('Failed to send WAHA message', await wahaRes.text());
+           console.error('Failed to send WhatsApp message', await wahaRes.text());
         }
       } catch (err) {
         console.error('Error calling WAHA:', err);

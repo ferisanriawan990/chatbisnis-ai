@@ -53,7 +53,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       });
       return NextResponse.json({ 
         success: false, 
-        error: `Gagal terhubung ke WAHA Server: ${msg}` 
+        error: `Gagal terhubung ke WhatsApp Server: ${msg}` 
       }, { status: 500 });
     }
   } catch (error) {
