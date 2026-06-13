@@ -36,6 +36,7 @@ interface BillingData {
 export default function DashboardBillingPage() {
   const [data, setData] = useState<BillingData>({});
   const [loading, setLoading] = useState(true);
+  const [loadingCheckout, setLoadingCheckout] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -49,6 +50,27 @@ export default function DashboardBillingPage() {
       setLoading(false);
     }
   }, []);
+
+  const handleSubscribe = async (planId: string) => {
+    try {
+      setLoadingCheckout(planId);
+      const res = await fetch('/api/dashboard/billing/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ planId })
+      });
+      const result = await res.json();
+      if (result.redirect_url) {
+        window.location.href = result.redirect_url;
+      } else {
+        alert(result.error || 'Gagal memulai pembayaran.');
+      }
+    } catch (err) {
+      alert('Terjadi kesalahan jaringan.');
+    } finally {
+      setLoadingCheckout(null);
+    }
+  };
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { void fetchData(); }, []);
@@ -128,10 +150,8 @@ export default function DashboardBillingPage() {
       {/* Available Plans */}
       <div className="mt-4">
         <h2 className="text-xl font-bold text-slate-800 mb-6">Pilih Paket Upgrade</h2>
-        {/* TODO: Integrate payment gateway (Midtrans/etc.) for automated billing */}
-        <p className="text-sm text-slate-500 mb-4 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
-          💡 Pembayaran manual — silakan hubungi admin untuk melakukan upgrade paket.
-          Integrasi payment gateway akan tersedia di versi mendatang.
+        <p className="text-sm text-slate-500 mb-4 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3">
+          💡 Pembayaran berlangganan akan diarahkan ke Midtrans. Aktif secara otomatis 24/7.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {loading ? (
@@ -164,10 +184,15 @@ export default function DashboardBillingPage() {
                   )}
                 </ul>
                 <button
-                  disabled
-                  className="w-full py-3 rounded-xl font-medium border border-indigo-300 text-indigo-700 bg-indigo-50 cursor-not-allowed text-center text-sm"
+                  disabled={loadingCheckout === p.id}
+                  onClick={() => handleSubscribe(p.id)}
+                  className={`w-full py-3 rounded-xl font-medium border text-center text-sm transition-all ${
+                    loadingCheckout === p.id 
+                      ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
+                      : 'border-indigo-600 bg-indigo-600 text-white hover:bg-indigo-700 shadow-md'
+                  }`}
                 >
-                  Hubungi Admin untuk Upgrade
+                  {loadingCheckout === p.id ? 'Memproses...' : 'Langganan Sekarang'}
                 </button>
               </div>
             ))

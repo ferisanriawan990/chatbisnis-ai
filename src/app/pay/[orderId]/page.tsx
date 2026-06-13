@@ -10,6 +10,7 @@ export default function PublicInvoicePage() {
   const { orderId } = useParams();
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingCheckout, setLoadingCheckout] = useState(false);
 
   useEffect(() => {
     if (orderId) {
@@ -25,6 +26,23 @@ export default function PublicInvoicePage() {
         });
     }
   }, [orderId]);
+
+  const handleCheckout = async () => {
+    try {
+      setLoadingCheckout(true);
+      const res = await fetch(`/api/pay/${orderId}/checkout`, { method: 'POST' });
+      const result = await res.json();
+      if (result.redirect_url) {
+        window.location.href = result.redirect_url;
+      } else {
+        alert(result.error || 'Gagal memulai pembayaran.');
+      }
+    } catch (err) {
+      alert('Terjadi kesalahan jaringan.');
+    } finally {
+      setLoadingCheckout(false);
+    }
+  };
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center bg-slate-50"><p className="text-slate-500">Memuat Invoice...</p></div>;
@@ -191,14 +209,30 @@ export default function PublicInvoicePage() {
           ) : (
             <>
               <h3 className="font-bold text-slate-800 text-sm">Cara Pembayaran</h3>
-              <p className="text-sm text-slate-600">
-                Silakan lakukan transfer sebesar <strong className="text-blue-600">Rp {(Number(order.totalAmount) + Number(order.shippingFee) - Number(order.discountAmount)).toLocaleString('id-ID')}</strong>. 
-                Untuk mendapatkan informasi nomor rekening atau metode pembayaran e-wallet, silakan balas pesan di WhatsApp.
+              <p className="text-sm text-slate-600 mb-4">
+                Total Tagihan: <strong className="text-blue-600 text-lg">Rp {(Number(order.totalAmount) + Number(order.shippingFee) - Number(order.discountAmount)).toLocaleString('id-ID')}</strong>.
               </p>
-              <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-yellow-600 shrink-0 mt-0.5" />
-                <p className="text-xs text-yellow-800">
-                  Setelah melakukan transfer, mohon kirimkan bukti pembayaran (foto struk/screenshot) ke Admin kami via WhatsApp untuk verifikasi manual.
+              
+              <button
+                disabled={loadingCheckout}
+                onClick={handleCheckout}
+                className={`w-full py-3.5 rounded-xl font-bold border text-center text-sm transition-all flex items-center justify-center gap-2 ${
+                  loadingCheckout 
+                    ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
+                    : 'border-blue-600 bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-200'
+                }`}
+              >
+                {loadingCheckout ? 'Memproses...' : (
+                  <>
+                    <Banknote className="w-5 h-5" /> Bayar Sekarang (Otomatis)
+                  </>
+                )}
+              </button>
+
+              <div className="mt-4 p-4 bg-slate-50 border border-slate-200 rounded-lg flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-slate-500 shrink-0 mt-0.5" />
+                <p className="text-xs text-slate-500">
+                  Pembayaran diproses secara otomatis 24/7 menggunakan Payment Gateway. Anda dapat menggunakan transfer Virtual Account, E-Wallet (GoPay/OVO), atau Kartu Kredit.
                 </p>
               </div>
             </>
