@@ -90,13 +90,26 @@ export const BusinessProfileForm = ({ form, handleChange, isComplete, setForm }:
               <label className="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">Link Katalog Utama (PDF/Website)</label>
               <input name="catalogUrl" value={form.catalogUrl || ''} onChange={handleChange} className="w-full p-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none shadow-sm" placeholder="Cth: https://docs.google.com/..." />
             </div>
+            
+            <div className="md:col-span-2">
+              <label className="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">Link Toko / Marketplace (Shopee/Tokopedia)</label>
+              <input name="marketplaceUrl" value={form.marketplaceUrl || ''} onChange={handleChange} className="w-full p-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none shadow-sm" placeholder="Cth: https://shopee.co.id/tokoanda" />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">Link Website Toko</label>
+              <input name="websiteUrl" value={form.websiteUrl || ''} onChange={handleChange} className="w-full p-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none shadow-sm" placeholder="Cth: https://tokoanda.com" />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">Link Instagram Toko</label>
+              <input name="instagramUrl" value={form.instagramUrl || ''} onChange={handleChange} className="w-full p-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none shadow-sm" placeholder="Cth: https://instagram.com/tokoanda" />
+            </div>
 
             <div className="md:col-span-2 mt-2 pt-4 border-t border-slate-200/50">
-              <div className="flex items-center justify-between mb-3">
-                <label className="block text-sm font-semibold text-slate-700 ml-1">Link Tambahan (Opsional, misal Toko Shopee/Tokopedia)</label>
-                <button type="button" onClick={addLink} className="text-xs px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-lg font-medium hover:bg-indigo-100 transition-colors flex items-center gap-1">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 gap-2">
+                <label className="block text-sm font-semibold text-slate-700 ml-1">Link Toko Lainnya (Bisa ditambah/dikurangi opsional)</label>
+                <button type="button" onClick={addLink} className="text-xs px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-lg font-medium hover:bg-indigo-100 transition-colors flex items-center gap-1 w-fit">
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
-                  Tambah Link
+                  Tambah Link Toko
                 </button>
               </div>
               <div className="space-y-3">
