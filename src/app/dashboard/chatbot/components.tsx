@@ -220,8 +220,18 @@ export const AIStyleForm = ({ form, handleChange, activeModelDisplay }: any) => 
             <input type="checkbox" name="allowVision" checked={form.allowVision} onChange={handleChange} className="peer w-6 h-6 text-blue-600 bg-slate-100 border-slate-300 rounded focus:ring-blue-500 cursor-pointer transition-all" />
           </div>
           <div className="flex-1">
-            <span className="text-sm font-bold text-slate-800 group-hover:text-blue-700 transition-colors">Izinkan Bot Membaca Gambar (AI Vision) 👁️</span>
-            <p className="text-xs text-slate-500 mt-0.5">AI akan melihat dan membalas berdasarkan foto yang dikirim. Peringatan: Menggunakan lebih banyak token AI.</p>
+            <span className="text-sm font-bold text-slate-800 group-hover:text-blue-700 transition-colors">Vision AI (Membaca Gambar & Bukti Transfer) 👁️</span>
+            <p className="text-xs text-slate-500 mt-0.5">Izinkan AI untuk melihat dan menganalisis foto yang dikirimkan pelanggan.</p>
+          </div>
+        </label>
+        
+        <label className="flex items-center gap-4 p-4 bg-white border border-slate-200 rounded-2xl cursor-pointer hover:bg-indigo-50/50 hover:border-indigo-200 transition-all shadow-sm group">
+          <div className="relative flex items-center justify-center w-6 h-6">
+            <input type="checkbox" name="allowVoiceNote" checked={form.allowVoiceNote} onChange={handleChange} className="peer w-6 h-6 text-indigo-600 bg-slate-100 border-slate-300 rounded focus:ring-indigo-500 cursor-pointer transition-all" />
+          </div>
+          <div className="flex-1">
+            <span className="text-sm font-bold text-slate-800 group-hover:text-indigo-700 transition-colors">Terima Voice Note (Pesan Suara) 🎙️</span>
+            <p className="text-xs text-slate-500 mt-0.5">Izinkan AI untuk mendengarkan, mentranskripsikan, dan memahami pesan suara dari pelanggan.</p>
           </div>
         </label>
       </div>

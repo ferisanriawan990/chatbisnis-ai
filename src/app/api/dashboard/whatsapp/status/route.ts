@@ -33,7 +33,12 @@ export async function GET() {
       phoneNumber = info.phoneNumber;
       lastError = info.lastError;
     } catch (error) {
-      if (!(error instanceof BaileysApiError && error.status === 404)) throw error;
+      if (!(error instanceof BaileysApiError && error.status === 404)) {
+        // Only throw if it's not a generic 404, to prevent crashing the status check
+        if (error instanceof Error && !error.message.includes('404')) {
+           // We ignore the error and leave status as disconnected
+        }
+      }
     }
 
     if (storedSession && (storedSession.status !== status || storedSession.lastError !== lastError)) {

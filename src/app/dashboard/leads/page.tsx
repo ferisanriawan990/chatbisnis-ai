@@ -14,6 +14,7 @@ interface LeadRow {
   address?: string;
   status: 'cold' | 'warm' | 'hot' | 'converted' | 'lost';
   notes?: string;
+  assignedAdminId?: string | null;
   createdAt: string;
 }
 
@@ -29,8 +30,11 @@ export default function LeadsPage() {
 
   // Edit state
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState({ status: '', notes: '' });
+  const [editForm, setEditForm] = useState({ status: '', notes: '', assignedAdminId: '' });
   const [saving, setSaving] = useState(false);
+  
+  // Team members
+  const [teamMembers, setTeamMembers] = useState<any[]>([]);
 
   // Broadcast state
   const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
@@ -61,12 +65,22 @@ export default function LeadsPage() {
     }
   }, [page, search, status]);
 
+  const fetchTeamMembers = useCallback(async () => {
+    try {
+      const res = await fetch('/api/dashboard/team');
+      if (res.ok) {
+        const data = await res.json();
+        setTeamMembers(data.assignments || []);
+      }
+    } catch {}
+  }, []);
+
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { void fetchLeads(); }, [page, search, status]);
+  useEffect(() => { void fetchLeads(); void fetchTeamMembers(); }, [page, search, status]);
 
   const handleEditClick = (lead: LeadRow) => {
     setEditingId(lead.id);
-    setEditForm({ status: lead.status, notes: lead.notes || '' });
+    setEditForm({ status: lead.status, notes: lead.notes || '', assignedAdminId: lead.assignedAdminId || '' });
   };
 
   const handleSaveEdit = async () => {
@@ -205,14 +219,15 @@ export default function LeadsPage() {
                 <th className="px-6 py-4 font-semibold">Minat & Budget</th>
                 <th className="px-6 py-4 font-semibold">Alamat</th>
                 <th className="px-6 py-4 font-semibold">Status</th>
+                <th className="px-6 py-4 font-semibold">Assigned To</th>
                 <th className="px-6 py-4 font-semibold">Notes / Aksi</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={5} className="text-center py-10 animate-pulse">Memuat data...</td></tr>
+                <tr><td colSpan={6} className="text-center py-10 animate-pulse">Memuat data...</td></tr>
               ) : leads.length === 0 ? (
-                <tr><td colSpan={6} className="text-center py-10 text-slate-500">Tidak ada lead ditemukan.</td></tr>
+                <tr><td colSpan={7} className="text-center py-10 text-slate-500">Tidak ada lead ditemukan.</td></tr>
               ) : (
                 leads.map((lead) => (
                   <tr key={lead.id} className={`border-b border-slate-100 hover:bg-slate-50 transition-colors ${selectedLeads.includes(lead.id) ? 'bg-blue-50/50' : ''}`}>
@@ -247,6 +262,28 @@ export default function LeadsPage() {
                       ) : (
                         <span className={`px-2 py-1 rounded text-xs uppercase font-semibold ${getStatusColor(lead.status)}`}>
                           {lead.status}
+                        </span>
+                      )}
+                    </td>
+
+                    {/* Assigned To Column */}
+                    <td className="px-6 py-4">
+                      {editingId === lead.id ? (
+                        <select 
+                          value={editForm.assignedAdminId} 
+                          onChange={(e) => setEditForm(p => ({ ...p, assignedAdminId: e.target.value }))}
+                          className="w-full p-1 text-sm border rounded"
+                        >
+                          <option value="">-- Unassigned --</option>
+                          {teamMembers.map(t => (
+                            <option key={t.user.id} value={t.user.id}>{t.user.name}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span className="text-xs text-slate-700">
+                          {lead.assignedAdminId 
+                            ? teamMembers.find(t => t.user.id === lead.assignedAdminId)?.user?.name || 'Assigned' 
+                            : <span className="italic text-slate-400">Unassigned</span>}
                         </span>
                       )}
                     </td>

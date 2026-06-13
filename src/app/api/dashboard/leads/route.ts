@@ -73,3 +73,52 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
+
+const updateLeadSchema = z.object({
+  id: z.string().uuid(),
+  status: z.enum(VALID_LEAD_STATUSES).optional(),
+  notes: z.string().optional().nullable(),
+  assignedAdminId: z.string().uuid().optional().nullable(),
+});
+
+export async function PATCH(req: Request) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const userId = (session.user as { id: string }).id;
+    const body = await req.json();
+    const parsed = updateLeadSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Invalid input data' }, { status: 400 });
+    }
+
+    const { id, status, notes, assignedAdminId } = parsed.data;
+
+    // Verify ownership
+    const existing = await prisma.lead.findFirst({
+      where: { id, userId }
+    });
+
+    if (!existing) {
+      return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
+    }
+
+    const updated = await prisma.lead.update({
+      where: { id },
+      data: {
+        status: status !== undefined ? status : existing.status,
+        notes: notes !== undefined ? notes : existing.notes,
+        assignedAdminId: assignedAdminId !== undefined ? assignedAdminId : existing.assignedAdminId
+      }
+    });
+
+    return NextResponse.json({ success: true, lead: updated });
+  } catch (error) {
+    console.error('PATCH /api/dashboard/leads Error:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
+}

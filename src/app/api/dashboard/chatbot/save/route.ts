@@ -80,6 +80,7 @@ export async function POST(req: Request) {
       allowSelling: data.allowSelling,
       allowPromoOffer: data.allowPromoOffer,
       allowVision: data.allowVision,
+      allowVoiceNote: data.allowVoiceNote,
       fallbackMessage: data.fallbackMessage,
       handoverMessage: data.handoverMessage,
       handoverKeywords: data.handoverKeywords,

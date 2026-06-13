@@ -20,7 +20,8 @@ export async function POST() {
 
     const sessionName = getActiveWhatsappSessionName(userId, chatbot.businessProfileId);
     try {
-      const { gateway } = await BaileysService.resolveInstance(chatbot.id);
+      const resolved = await BaileysService.resolveInstance(chatbot.id);
+      const gateway = resolved.gateway;
       await gateway.logoutSession(sessionName);
     } catch (error) {
       if (!(error instanceof BaileysApiError && error.status === 404)) throw error;

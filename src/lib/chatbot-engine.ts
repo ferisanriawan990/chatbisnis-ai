@@ -137,13 +137,22 @@ export class ChatbotEngine {
       });
     }
 
-    // 6.7 Fetch Products (Catalog Integration)
+    // 6.7 Fetch Products & Cart & Lead
     const products = await prisma.product.findMany({
       where: { businessProfileId: profile.id, isAvailable: true }
     });
 
+    const existingLead = await prisma.lead.findUnique({
+      where: { businessProfileId_customerPhone: { businessProfileId: profile.id, customerPhone: params.customerPhone } }
+    });
+
+    const activeCart = await prisma.order.findFirst({
+      where: { businessProfileId: profile.id, customerPhone: params.customerPhone, status: 'draft' },
+      include: { items: true }
+    });
+
     // 7. Build Prompt & Call AI
-    const systemPrompt = this.buildPrompt(chatbotSetting, botConfig, profile, matchedItems, products);
+    const systemPrompt = this.buildPrompt(chatbotSetting, botConfig, profile, matchedItems, products, existingLead, activeCart);
     const { replyMessage, tokenUsage, usedCatalogUrl, promptSource, aiModelUsed } = await this.callAI(
       chatbotSetting,
       activePlan,
@@ -152,6 +161,9 @@ export class ChatbotEngine {
       chatHistory,
       params.imageUrl,
       botConfig?.catalogUrl,
+      profile.id,
+      params.customerPhone,
+      params.customerName
     );
 
     // Extract image tags: [SEND_IMAGE: url | caption]
@@ -268,6 +280,8 @@ export class ChatbotEngine {
       where: { chatbotSettingId_customerPhone: { chatbotSettingId: chatbotSetting.id, customerPhone } }
     });
 
+    const previousLastMessageAt = convoState?.lastMessageAt || new Date(0);
+
     if (!convoState) {
       convoState = await prisma.conversationState.create({
         data: { 
@@ -295,15 +309,27 @@ export class ChatbotEngine {
       });
     }
 
-    if (convoState.status === 'human_handover' && convoState.handoverUntil && convoState.handoverUntil > new Date()) {
-      // Allow customer to reset handover via chat
-      const lowerMsg = messageIn.toLowerCase().trim();
-      const resetKeywords = ['kembali ke ai', 'selesai', 'reset', 'batal', 'kembali'];
-      if (resetKeywords.includes(lowerMsg)) {
-        await prisma.conversationState.update({ where: { id: convoState.id }, data: { status: 'ai_active', handoverUntil: null } });
-        return { allowed: false, replyMessage: "✅ Sesi dengan admin telah diakhiri. Asisten AI kembali aktif! Ada yang bisa dibantu?", needsHuman: false };
+    const ONE_HOUR = 60 * 60 * 1000;
+    const isStale = (new Date().getTime() - new Date(previousLastMessageAt).getTime()) > ONE_HOUR;
+
+    if (convoState.status === 'human_handover' || convoState.status === 'waiting_admin') {
+      // Auto-return to AI if stale (Admin didn't reply or conversation went cold for > 1 hour)
+      if (isStale) {
+        await prisma.conversationState.update({ 
+          where: { id: convoState.id }, 
+          data: { status: 'ai_active', handoverUntil: null } 
+        });
+        // Let it fall through so AI can reply to the new message that just broke the silence
+      } else if (convoState.handoverUntil && convoState.handoverUntil > new Date()) {
+        // Allow customer to reset handover via chat
+        const lowerMsg = messageIn.toLowerCase().trim();
+        const resetKeywords = ['kembali ke ai', 'selesai', 'reset', 'batal', 'kembali'];
+        if (resetKeywords.includes(lowerMsg)) {
+          await prisma.conversationState.update({ where: { id: convoState.id }, data: { status: 'ai_active', handoverUntil: null } });
+          return { allowed: false, replyMessage: "✅ Sesi dengan admin telah diakhiri. Asisten AI kembali aktif! Ada yang bisa dibantu?", needsHuman: false };
+        }
+        return { allowed: false }; // Silently ignore other messages because admin is handling it
       }
-      return { allowed: false };
     }
 
     const allowHumanHandover = activePlan ? activePlan.allowHumanHandover : false;
@@ -314,6 +340,36 @@ export class ChatbotEngine {
         const until = new Date();
         until.setHours(until.getHours() + 24);
         await prisma.conversationState.update({ where: { id: convoState.id }, data: { status: 'waiting_admin', handoverUntil: until } });
+        
+        // Generate Smart Summary Asynchronously
+        (async () => {
+          try {
+            const credentials = await getAICredentialCandidates(chatbotSetting);
+            if (credentials.length > 0) {
+              const recentLogs = await prisma.chatLog.findMany({
+                where: { chatbotSettingId: chatbotSetting.id, customerPhone },
+                orderBy: { createdAt: 'desc' },
+                take: 5
+              });
+              const historyText = recentLogs.reverse().map((l: any) => `${l.messageIn ? 'user' : 'assistant'}: ${l.messageIn || l.messageOut}`).join('\n');
+              const summaryPrompt = "Rangkum percakapan berikut dalam 1-2 kalimat pendek untuk memberi tahu agen CS manusia apa masalah atau inti percakapan pelanggan saat ini. Hanya keluarkan ringkasan teks tanpa pembuka/penutup.\n\nRiwayat:\n" + historyText + `\nuser: ${messageIn}`;
+              const res = await AIService.generateReply({
+                systemPrompt: "Kamu adalah asisten ringkasan yang objektif, fokus, dan sangat singkat.",
+                userMessage: summaryPrompt,
+                provider: credentials[0].provider,
+                model: credentials[0].model,
+                apiKey: credentials[0].apiKey,
+                maxTokens: 100
+              });
+              if (res && res.reply) {
+                await prisma.conversationState.update({ where: { id: convoState.id }, data: { summary: res.reply } });
+              }
+            }
+          } catch (e) {
+            console.error('Failed to generate smart summary via keyword', e);
+          }
+        })();
+
         return { allowed: false, replyMessage: chatbotSetting.handoverMessage, needsHuman: true };
       }
     }
@@ -388,6 +444,12 @@ export class ChatbotEngine {
     try {
       const extracted = await LeadExtractor.extract(chatHistory, messageIn, apiKey, model);
       if (extracted && extracted.isLead) {
+        
+        let tagsStr: string | undefined = undefined;
+        if (extracted.tags && Array.isArray(extracted.tags) && extracted.tags.length > 0) {
+          tagsStr = extracted.tags.join(',');
+        }
+
         await prisma.lead.upsert({
           where: { businessProfileId_customerPhone: { businessProfileId, customerPhone } },
           update: {
@@ -396,6 +458,9 @@ export class ChatbotEngine {
             budget: extracted.budget || undefined,
             address: extracted.address || undefined,
             status: extracted.status,
+            notes: extracted.notes || undefined,
+            tags: tagsStr || undefined,
+            leadScore: extracted.leadScore || undefined,
             updatedAt: new Date()
           },
           create: {
@@ -406,7 +471,10 @@ export class ChatbotEngine {
             interest: extracted.interest,
             budget: extracted.budget,
             address: extracted.address,
-            status: extracted.status
+            status: extracted.status,
+            notes: extracted.notes,
+            tags: tagsStr,
+            leadScore: extracted.leadScore
           }
         });
       }
@@ -422,7 +490,9 @@ export class ChatbotEngine {
     botConfig: any,
     profile: any,
     matchedItems: any[],
-    products?: any[]
+    products?: any[],
+    existingLead?: any,
+    activeCart?: any
   ): string {
     let relevantKnowledge = '';
     let charCount = 0;
@@ -437,9 +507,9 @@ export class ChatbotEngine {
     }
 
     if (products && products.length > 0) {
-      let productText = '\n[KATALOG PRODUK & STOK]\nBerikut adalah daftar produk beserta harga dan stok real-time saat ini. Gunakan info ini untuk membalas ketersediaan atau harga:\n';
+      let productText = '\n[KATALOG PRODUK & STOK]\nBerikut adalah daftar produk beserta ID, harga, dan stok. Gunakan ID produk jika ingin menambahkannya ke keranjang:\n';
       products.forEach((p, i) => {
-        productText += `- ${p.name} (Kategori: ${p.category || '-'}) | Harga: Rp ${p.price} | Stok: ${p.stock} | Deskripsi: ${p.description || '-'}\n`;
+        productText += `- [ID: ${p.id}] ${p.name} (Kategori: ${p.category || '-'}) | Harga: Rp ${p.price} | Stok: ${p.stock}\n`;
       });
       relevantKnowledge += productText;
     }
@@ -478,6 +548,12 @@ export class ChatbotEngine {
       useEmoji: chatbotSetting.useEmoji ?? true,
       fallbackMessage: chatbotSetting.fallbackMessage || 'Mohon maaf, saya tidak mengerti.',
       maxReplyLength: chatbotSetting.maxReplyLength || 'sedang',
+      customerName: existingLead?.customerName,
+      isReturning: Boolean(existingLead),
+      cartItems: activeCart?.items,
+      cartTotal: activeCart?.totalAmount,
+      allowSelling: chatbotSetting.allowSelling ?? true,
+      allowPromoOffer: chatbotSetting.allowPromoOffer ?? true,
     });
   }
 
@@ -489,6 +565,9 @@ export class ChatbotEngine {
     chatHistory: { role: string; content: string }[] = [],
     imageUrl?: string,
     catalogUrl?: string | null,
+    businessProfileId?: string,
+    customerPhone?: string,
+    customerName?: string
   ) {
     const defaultModel = chatbotSetting.aiModel || 'gemini-2.5-flash-lite';
     const credentials = await getAICredentialCandidates(chatbotSetting);
@@ -497,28 +576,31 @@ export class ChatbotEngine {
       return { replyMessage: chatbotSetting.fallbackMessage, tokenUsage: 0, usedCatalogUrl: false, promptSource: 'error', aiModelUsed: defaultModel };
     }
 
-    const allowSelling = chatbotSetting.allowSelling ?? false;
-    const allowPromoOffer = chatbotSetting.allowPromoOffer ?? false;
-    
     let finalSystemPrompt = systemPrompt;
-    if (!allowSelling) {
-      finalSystemPrompt += '\n\nDILARANG keras melakukan hard-selling. Berikan informasi saja.';
-    }
-    if (!allowPromoOffer) {
-      finalSystemPrompt += '\n\nDILARANG keras memberikan promosi, diskon, atau janji penawaran yang tidak tertulis eksplisit.';
-    }
+
     const actionWebhookUrl = validatePublicHttpsUrl(chatbotSetting.actionWebhookUrl || '')
       ? chatbotSetting.actionWebhookUrl
       : null;
+
+    finalSystemPrompt += `\nKamu MEMILIKI native tool_call berikut:
+- {"tool_call": true, "action": "add_to_cart", "params": {"productId": "<ID>", "quantity": 1}} : Untuk memasukkan barang ke keranjang pembeli.
+- {"tool_call": true, "action": "checkout"} : Untuk memproses keranjang menjadi pesanan Pending.
+- {"tool_call": true, "action": "verify_payment"} : PANGGIL INI JIKA pelanggan baru saja mengirimkan FOTO BUKTI TRANSFER dan kamu bisa memvalidasi bahwa foto tersebut memang bukti transfer.
+- {"tool_call": true, "action": "check_availability", "params": {"date": "YYYY-MM-DD", "hour": "HH:00"}} : Cek apakah slot jam tersebut kosong untuk layanan.
+- {"tool_call": true, "action": "create_booking", "params": {"date": "YYYY-MM-DD", "hour": "HH:00", "serviceName": "Nama Layanan"}} : Buat reservasi / booking ke dalam sistem jika slot kosong.
+- {"tool_call": true, "action": "record_testimonial", "params": {"rating": 5, "review": "Teks ulasan..."}} : PANGGIL INI otomatis jika pelanggan memberikan balasan rating angka (1-5) beserta komentarnya, sebagai umpan balik pasca-pembelian.
+- {"tool_call": true, "action": "request_human"} : PANGGIL INI JIKA pelanggan benar-benar kebingungan, marah, atau meminta eksplisit berbicara dengan admin/manusia/agen, dan kamu tidak bisa menyelesaikannya.
+
+Sistem akan langsung memproses JSON tersebut dan memberimu hasil.`;
+
     if (actionWebhookUrl) {
-      finalSystemPrompt += `\n\nAKSI EKSTERNAL:\nJika kamu butuh mengecek data dinamis ke sistem pihak ketiga (seperti cek stok real-time, buat invoice, dll), balas pesan ini HANYA dengan output JSON berformat: {"tool_call": true, "action": "nama_aksi", "params": {"key": "value"}}. Jangan tambahkan teks lain. Sistem akan memproses dan mengembalikan data kepadamu.`;
+      finalSystemPrompt += `\nJika kamu butuh memanggil sistem luar (webhook): {"tool_call": true, "action": "webhook", "params": {"key": "value"}}.`;
     }
     
-    finalSystemPrompt += `\n\nPENGIRIMAN GAMBAR PRODUK (SANGAT PENTING):
-Hanya jika pengguna secara eksplisit meminta gambar/foto produk yang memiliki data "URL Gambar Tersedia", KAMU WAJIB MENYELIPKAN TAG GAMBAR INI di akhir atau di tengah balasanmu:
+    finalSystemPrompt += `\n\nPENGIRIMAN GAMBAR PRODUK:
+Hanya jika pengguna secara eksplisit meminta gambar/foto produk yang memiliki data "URL Gambar Tersedia", KAMU WAJIB MENYELIPKAN TAG GAMBAR INI di balasanmu:
 [SEND_IMAGE: <url_gambar> | <caption_singkat>]
-CONTOH BENAR: [SEND_IMAGE: https://imgur.com/xyz.jpg | Ini adalah gambar sepatu]
-JANGAN mengirim tag gambar untuk pertanyaan harga, stok, atau detail biasa jika pengguna tidak meminta gambar. JANGAN gunakan format markdown seperti ![gambar](url). WAJIB gunakan format kurung siku [SEND_IMAGE: url | caption] persis seperti contoh.`;
+CONTOH BENAR: [SEND_IMAGE: https://imgur.com/xyz.jpg | Ini adalah gambar sepatu]`;
 
     try {
       const maxTokens = chatbotSetting.maxReplyLength === 'pendek' ? 150 : chatbotSetting.maxReplyLength === 'panjang' ? 800 : 450;
@@ -560,28 +642,188 @@ JANGAN mengirim tag gambar untuk pertanyaan harga, stok, atau detail biasa jika 
       let totalTokens = aiResult.tokenUsage || 0;
 
       // Tool Call Execution Loop
-      if (actionWebhookUrl && finalReply.includes('"tool_call":')) {
+      if (finalReply.includes('"tool_call":')) {
         try {
           const jsonMatch = finalReply.match(/\{[\s\S]*"tool_call"[\s\S]*\}/);
           if (jsonMatch) {
             const toolData = JSON.parse(jsonMatch[0]);
             if (toolData.tool_call === true) {
-              const webhookRes = await fetch(actionWebhookUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: toolData.action, params: toolData.params, customerMessage: messageIn }),
-                signal: AbortSignal.timeout(15000),
-              });
-              let webhookResultString = 'Gagal memanggil sistem eksternal.';
-              if (webhookRes.ok) {
-                webhookResultString = (await webhookRes.text()).slice(0, 20000);
+              let toolResultString = 'Aksi tidak diketahui atau gagal.';
+
+              if (toolData.action === 'add_to_cart' && businessProfileId && customerPhone) {
+                const quantity = Math.max(1, Math.min(Number(toolData.params.quantity) || 1, 100)); // Limit 1-100
+                const product = await prisma.product.findUnique({ 
+                  where: { id: toolData.params.productId, businessProfileId } 
+                });
+                if (product) {
+                  let order = await prisma.order.findFirst({ where: { businessProfileId, customerPhone, status: 'draft' } });
+                  if (!order) {
+                    order = await prisma.order.create({
+                      data: { businessProfileId, customerPhone, customerName: customerName || 'Customer', orderNumber: 'ORD-' + Date.now() }
+                    });
+                  }
+                  await prisma.orderItem.create({
+                    data: { orderId: order.id, productId: product.id, productName: product.name, quantity, price: product.price }
+                  });
+                  // Recalculate total
+                  const items = await prisma.orderItem.findMany({ where: { orderId: order.id } });
+                  const total = items.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
+                  await prisma.order.update({ where: { id: order.id }, data: { totalAmount: total } });
+                  toolResultString = `Berhasil ditambahkan ke keranjang. Total keranjang saat ini: Rp ${total}. Berikan konfirmasi santai ke pelanggan.`;
+                } else {
+                  toolResultString = 'Gagal: Produk tidak ditemukan.';
+                }
+              } else if (toolData.action === 'checkout' && businessProfileId && customerPhone) {
+                const order = await prisma.order.findFirst({ where: { businessProfileId, customerPhone, status: 'draft' }, include: { items: true } });
+                if (order && order.items.length > 0) {
+                  await prisma.order.update({ where: { id: order.id }, data: { status: 'pending_payment' } });
+                  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+                  const invoiceLink = `${baseUrl}/pay/${order.id}`;
+                  toolResultString = `Checkout berhasil. Order ID: ${order.orderNumber}. Total: Rp ${order.totalAmount}. BERIKAN LINK INVOICE INI KE PELANGGAN UNTUK MEMBAYAR: ${invoiceLink}`;
+                } else {
+                  toolResultString = 'Gagal checkout: Keranjang kosong.';
+                }
+              } else if (toolData.action === 'verify_payment' && businessProfileId && customerPhone) {
+                const order = await prisma.order.findFirst({ where: { businessProfileId, customerPhone, status: 'pending_payment' }, orderBy: { createdAt: 'desc' } });
+                if (order) {
+                  toolResultString = `Sistem mencatat pesanan ${order.orderNumber} sedang menunggu pembayaran. Katakan kepada pelanggan bahwa pembayaran akan diverifikasi manual oleh Admin kami. Jangan menyebut lunas jika belum dikonfirmasi Admin.`;
+                } else {
+                  toolResultString = 'Gagal verifikasi: Tidak ada pesanan berstatus pending_payment untuk nomor ini.';
+                }
+              } else if (toolData.action === 'check_availability' && businessProfileId) {
+                // Fix Timezone: Append +07:00 (WIB) before parsing
+                const requestedDateTime = new Date(`${toolData.params.date}T${toolData.params.hour}:00+07:00`);
+                const existing = await prisma.booking.findFirst({
+                  where: {
+                    businessProfileId,
+                    bookingDate: requestedDateTime,
+                    status: { not: 'cancelled' }
+                  }
+                });
+                if (existing) {
+                  toolResultString = `Jadwal penuh: Sudah ada pesanan di jam ${toolData.params.hour} pada ${toolData.params.date}. Tawarkan jam lain ke pelanggan.`;
+                } else {
+                  toolResultString = `Tersedia: Slot jam ${toolData.params.hour} pada ${toolData.params.date} KOSONG. Tanyakan apakah pelanggan ingin dibookingkan.`;
+                }
+              } else if (toolData.action === 'create_booking' && businessProfileId && customerPhone) {
+                // Fix Timezone: Append +07:00 (WIB) before parsing
+                const requestedDateTime = new Date(`${toolData.params.date}T${toolData.params.hour}:00+07:00`);
+                
+                try {
+                  // Atomic check and create to prevent double booking race condition
+                  const newBooking = await prisma.$transaction(async (tx) => {
+                    const existing = await tx.booking.findFirst({
+                      where: {
+                        businessProfileId,
+                        bookingDate: requestedDateTime,
+                        status: { not: 'cancelled' }
+                      }
+                    });
+                    if (existing) {
+                      throw new Error('SLOT_TAKEN');
+                    }
+                    return await tx.booking.create({
+                      data: {
+                        businessProfileId,
+                        customerPhone,
+                        customerName: customerName || 'Customer',
+                        serviceName: toolData.params.serviceName || 'Layanan Umum',
+                        bookingDate: requestedDateTime,
+                        status: 'pending'
+                      }
+                    });
+                  });
+                  toolResultString = `Booking BERHASIL DIBUAT (Kode: ${newBooking.id.substring(0,6)}). Konfirmasikan ini ke pelanggan dengan ramah.`;
+                } catch (err: any) {
+                  if (err.message === 'SLOT_TAKEN') {
+                    toolResultString = 'Gagal: Maaf, pada jam tersebut slot sudah terisi (double-booking). Silakan tawarkan jam lain.';
+                  } else {
+                    toolResultString = 'Gagal: Terjadi kesalahan saat menyimpan booking.';
+                  }
+                }
+              } else if (toolData.action === 'record_testimonial' && businessProfileId && customerPhone) {
+                const ratingNum = Number(toolData.params.rating) || 5;
+                const reviewText = toolData.params.review || '';
+                
+                // Cari order terakhir yang completed
+                const lastCompletedOrder = await prisma.order.findFirst({
+                  where: { businessProfileId, customerPhone, status: 'completed' },
+                  orderBy: { createdAt: 'desc' }
+                });
+
+                if (lastCompletedOrder) {
+                  // Cek apakah sudah memberikan review
+                  const existingReview = await prisma.testimonial.findUnique({
+                    where: { orderId: lastCompletedOrder.id }
+                  });
+                  if (!existingReview) {
+                    await prisma.testimonial.create({
+                      data: {
+                        businessProfileId,
+                        orderId: lastCompletedOrder.id,
+                        customerName: customerName || lastCompletedOrder.customerName || 'Customer',
+                        customerPhone,
+                        rating: Math.max(1, Math.min(5, ratingNum)),
+                        reviewText
+                      }
+                    });
+                    toolResultString = `Ulasan berhasil direkam. Sampaikan terima kasih kepada pelanggan atas penilaian ${ratingNum} bintangnya!`;
+                  } else {
+                    toolResultString = `Pelanggan sudah pernah memberikan ulasan untuk pesanan terakhirnya. Sampaikan terima kasih atas tambahan masukannya.`;
+                  }
+                } else {
+                  toolResultString = `Gagal: Tidak ditemukan pesanan yang sudah 'completed' untuk nomor ini. Ucapkan terima kasih saja.`;
+                }
+              } else if (toolData.action === 'request_human' && businessProfileId && customerPhone) {
+                const convoState = await prisma.conversationState.findFirst({
+                  where: { businessProfileId, customerPhone, status: 'ai_active' }
+                });
+                if (convoState) {
+                  const until = new Date();
+                  until.setHours(until.getHours() + 24);
+                  await prisma.conversationState.update({ where: { id: convoState.id }, data: { status: 'waiting_admin', handoverUntil: until } });
+                  
+                  // Generate Smart Summary Asynchronously
+                  (async () => {
+                    try {
+                      const credentials = await getAICredentialCandidates(chatbotSetting);
+                      if (credentials.length > 0) {
+                        const summaryPrompt = "Rangkum percakapan berikut dalam 1-2 kalimat pendek untuk memberi tahu agen CS manusia apa masalah atau inti percakapan pelanggan saat ini. Hanya keluarkan ringkasan teks tanpa pembuka/penutup.\n\nRiwayat:\n" + chatHistory.slice(-6).map(c => `${c.role}: ${c.content}`).join('\n') + `\nuser: ${messageIn}`;
+                        const res = await AIService.generateReply({
+                          systemPrompt: "Kamu adalah asisten ringkasan yang objektif, fokus, dan sangat singkat.",
+                          userMessage: summaryPrompt,
+                          provider: credentials[0].provider,
+                          model: credentials[0].model,
+                          apiKey: credentials[0].apiKey,
+                          maxTokens: 100
+                        });
+                        if (res && res.reply) {
+                          await prisma.conversationState.update({ where: { id: convoState.id }, data: { summary: res.reply } });
+                        }
+                      }
+                    } catch (e) {
+                      console.error('Failed to generate smart summary via tool', e);
+                    }
+                  })();
+
+                  toolResultString = `Percakapan berhasil dialihkan ke Admin. Katakan kepada pelanggan: "${chatbotSetting.handoverMessage || 'Baik, mohon tunggu sebentar. Saya akan menyambungkan Anda dengan CS kami.'}" dan BERHENTILAH MEMBALAS.`;
+                } else {
+                  toolResultString = 'Sudah dalam status menunggu admin.';
+                }
+              } else if (toolData.action === 'webhook' && actionWebhookUrl) {
+                const webhookRes = await fetch(chatbotSetting.actionWebhookUrl, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ action: toolData.action, params: toolData.params, customerMessage: messageIn }),
+                  signal: AbortSignal.timeout(15000),
+                });
+                if (webhookRes.ok) toolResultString = (await webhookRes.text()).slice(0, 20000);
               }
 
               const updatedHistory = [...chatHistory, { role: 'user', content: messageIn }, { role: 'assistant', content: finalReply }];
-              const followUpUserMsg = `[SYSTEM RESPONSE FROM ACTION ${toolData.action}]:\n${webhookResultString}\n\nBerikan jawaban akhir kepada pelanggan berdasarkan data tersebut.`;
+              const followUpUserMsg = `[SYSTEM RESPONSE FROM ACTION ${toolData.action}]:\n${toolResultString}\n\nBerikan balasan natural kepada pelanggan sesuai info sistem ini. JANGAN tampilkan JSON tool call lagi.`;
 
               const followUpResult = await generateWithCredential(activeCredential, followUpUserMsg, updatedHistory, undefined);
-
               finalReply = followUpResult.reply;
               totalTokens += followUpResult.tokenUsage || 0;
             }

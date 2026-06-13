@@ -29,6 +29,39 @@ export interface AICredentialValidationResult {
 }
 
 export class AIService {
+  static async transcribeAudio(apiKey: string, base64Audio: string, mimeType: string): Promise<string> {
+    try {
+      if (!apiKey) throw new AIServiceError('API Key tidak ditemukan.');
+      const baseUrl = process.env.AI_BASE_URL || 'https://ai.flaz.id/v1';
+      const url = `${baseUrl.replace(/\/$/, '')}/audio/transcriptions`;
+
+      const buffer = Buffer.from(base64Audio, 'base64');
+      const blob = new Blob([buffer], { type: mimeType });
+      const formData = new FormData();
+      const extension = mimeType.includes('ogg') ? 'ogg' : 'mp3';
+      formData.append('file', blob, `audio.${extension}`);
+      formData.append('model', 'whisper-1');
+
+      const signal = AbortSignal.timeout(30000);
+      const res = await fetch(url, {
+        method: 'POST',
+        signal,
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: formData,
+      });
+
+      if (!res.ok) throw new AIServiceError(`Gagal mentranskripsi suara (HTTP ${res.status})`, res.status);
+
+      const data = await res.json();
+      return data.text || '';
+    } catch (error: any) {
+      console.error('Transcription Error:', error);
+      throw new AIServiceError('Gagal memproses pesan suara.');
+    }
+  }
+
   /**
    * Panggil LLM provider (Flaz Cloud / OpenAI-compatible endpoint)
    */

@@ -25,6 +25,26 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'URL tidak valid' }, { status: 400 });
     }
 
+    let parsedUrl;
+    try {
+      parsedUrl = new URL(url);
+    } catch {
+      return NextResponse.json({ error: 'Format URL tidak valid' }, { status: 400 });
+    }
+
+    if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+      return NextResponse.json({ error: 'Protokol tidak diizinkan' }, { status: 400 });
+    }
+
+    const hostname = parsedUrl.hostname;
+    const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1';
+    const isInternalIp = hostname.startsWith('10.') || hostname.startsWith('192.168.') || hostname.startsWith('172.'); 
+    const hasPort = parsedUrl.port && parsedUrl.port !== '80' && parsedUrl.port !== '443';
+    
+    if (isLocalhost || isInternalIp || hasPort || hostname.includes('internal') || hostname.endsWith('.local')) {
+       return NextResponse.json({ error: 'URL tidak diizinkan untuk alasan keamanan (SSRF protection)' }, { status: 403 });
+    }
+
     const profile = await prisma.businessProfile.findFirst({
       where: { userId },
       include: {

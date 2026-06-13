@@ -5,7 +5,9 @@ import { prisma } from '@/lib/prisma';
 import { validatePublicHttpsUrl } from '@/lib/security';
 
 type Props = {
-  params: Promise<{ id: string }>;
+  params: Promise<{
+    id: string;
+  }>;
 };
 
 const getKnowledgeItem = cache(async (id: string) => {

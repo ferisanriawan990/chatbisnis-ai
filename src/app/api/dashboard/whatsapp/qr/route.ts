@@ -19,9 +19,10 @@ export async function GET() {
     }
 
     const sessionName = getActiveWhatsappSessionName(userId, chatbot.businessProfileId);
-    const { gateway } = await BaileysService.resolveInstance(chatbot.id);
-    const qr = await gateway.getQR(sessionName);
-    return NextResponse.json({ qr: qr.qrDataUrl, updatedAt: qr.updatedAt });
+    const resolved = await BaileysService.resolveInstance(chatbot.id);
+    const gateway = resolved.gateway;
+    const info = await gateway.getQR(sessionName);
+    return NextResponse.json({ qr: info?.qrDataUrl || info?.qr, updatedAt: info?.updatedAt });
   } catch (error) {
     if (error instanceof BaileysApiError && error.code === 'QR_NOT_AVAILABLE') {
       return NextResponse.json({ qr: null }, { status: 202 });

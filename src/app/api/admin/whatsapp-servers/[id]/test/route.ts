@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getRequiredAdminOrResponse } from '@/lib/admin-helper';
 import { prisma } from '@/lib/prisma';
-import { WhatsappService } from '@/lib/whatsapp';
+import { BaileysService } from '@/lib/baileys';
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -22,7 +22,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     }
 
     try {
-      const whatsapp = WhatsappService.fromEncrypted(server.baseUrl, server.apiKeyEncrypted);
+      const whatsapp = BaileysService.fromEncrypted(server.baseUrl, server.apiKeyEncrypted);
       const isOk = await whatsapp.testConnection();
       
       if (!isOk) throw new Error('Cannot connect to server');

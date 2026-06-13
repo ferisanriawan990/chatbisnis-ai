@@ -50,6 +50,10 @@ export class BaileysService {
     return new BaileysService(baseUrl.replace(/\/$/, ''), apiKey);
   }
 
+  static fromEncrypted(baseUrl: string, encryptedApiKey: string): BaileysService {
+    return new BaileysService(baseUrl.replace(/\/$/, ''), decrypt(encryptedApiKey));
+  }
+
   static fromEnv() {
     const baseUrl = process.env.BAILEYS_BASE_URL?.trim().replace(/\/$/, '');
     const apiKey = process.env.BAILEYS_API_KEY?.trim();
@@ -215,10 +219,11 @@ export class BaileysService {
   }
 
   private normalizeStatus(status: string): BaileysSessionStatus {
-    if (status === 'connected') return 'connected';
-    if (status === 'qr') return 'qr';
-    if (status === 'starting' || status === 'reconnecting') return 'starting';
-    if (status === 'error') return 'failed';
+    const s = status.toLowerCase();
+    if (s === 'connected' || s === 'working') return 'connected';
+    if (s === 'qr' || s === 'scan_qr_code') return 'qr';
+    if (s === 'starting' || s === 'reconnecting') return 'starting';
+    if (s === 'error' || s === 'failed') return 'failed';
     return 'disconnected';
   }
 }

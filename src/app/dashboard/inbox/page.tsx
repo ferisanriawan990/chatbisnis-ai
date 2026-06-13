@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { Bot, User, Send, CheckCircle, AlertTriangle, UserPlus, ArrowLeft } from 'lucide-react';
+import { Bot, User, Send, CheckCircle, AlertTriangle, UserPlus, ArrowLeft, Sparkles, UserCheck } from 'lucide-react';
 
 export default function InboxPage() {
   const { data: session } = useSession();
@@ -14,15 +14,30 @@ export default function InboxPage() {
   const [messages, setMessages] = useState<any[]>([]);
   const [replyText, setReplyText] = useState('');
   const [loading, setLoading] = useState(false);
+  const [teamMembers, setTeamMembers] = useState<any[]>([]);
+  const [suggesting, setSuggesting] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
 
   useEffect(() => {
     if (activeTenantId) {
       fetchConversations();
+      fetchTeamMembers();
       // Poll every 10s
       const interval = setInterval(fetchConversations, 10000);
       return () => clearInterval(interval);
     }
   }, [activeTenantId]);
+
+  const fetchTeamMembers = async () => {
+    try {
+      const res = await fetch('/api/dashboard/team');
+      if (res.ok) {
+        const data = await res.json();
+        setTeamMembers(data.assignments || []);
+      }
+    } catch (e) {}
+  };
 
   useEffect(() => {
     if (activeChat && activeTenantId) {
@@ -38,8 +53,26 @@ export default function InboxPage() {
       const res = await fetch(`/api/dashboard/inbox?tenantId=${activeTenantId}`);
       if (res.ok) {
         const data = await res.json();
+        
+        // Check for new unread messages or waiting_admin to play sound
+        const hasNewUnread = data.conversations.some((newC: any) => {
+          const oldC = conversations.find(c => c.id === newC.id);
+          return newC.unreadCount > (oldC?.unreadCount || 0) || (newC.status === 'waiting_admin' && oldC?.status !== 'waiting_admin');
+        });
+
+        if (hasNewUnread && conversations.length > 0) {
+          playNotificationSound();
+        }
+
         setConversations(data.conversations);
       }
+    } catch (e) {}
+  };
+
+  const playNotificationSound = () => {
+    try {
+      const audio = new Audio('/notification.mp3');
+      audio.play().catch(() => {});
     } catch (e) {}
   };
 
@@ -53,14 +86,21 @@ export default function InboxPage() {
     } catch (e) {}
   };
 
-  const handleAction = async (action: 'takeover' | 'return') => {
+  const [filterMode, setFilterMode] = useState<'all'|'waiting'>('all');
+
+  const filteredConversations = conversations.filter(c => {
+    if (filterMode === 'waiting') return c.status === 'waiting_admin' || c.status === 'human_handover';
+    return true;
+  });
+
+  const handleAction = async (action: 'takeover' | 'return' | 'assign', adminId?: string) => {
     if (!activeChat || !activeTenantId) return;
     setLoading(true);
     try {
       const res = await fetch(`/api/dashboard/inbox/${activeChat.customerPhone}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tenantId: activeTenantId, action })
+        body: JSON.stringify({ tenantId: activeTenantId, action, assignedAdminId: adminId })
       });
       if (res.ok) {
         const data = await res.json();
@@ -69,6 +109,25 @@ export default function InboxPage() {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSuggest = async () => {
+    if (!activeChat) return;
+    setSuggesting(true);
+    try {
+      const res = await fetch(`/api/dashboard/inbox/${activeChat.customerPhone}/suggest`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chatHistory: messages })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setAiSuggestions(data.suggestions || []);
+        setShowSuggestions(true);
+      }
+    } finally {
+      setSuggesting(false);
     }
   };
 
@@ -104,12 +163,27 @@ export default function InboxPage() {
         <div className="p-4 border-b bg-gray-50">
           <h2 className="text-lg font-bold text-gray-800">Inbox</h2>
           <p className="text-xs text-gray-500">Live Chat & AI Oversight</p>
+          
+          <div className="flex gap-2 mt-4">
+            <button 
+              onClick={() => setFilterMode('all')}
+              className={`flex-1 text-xs py-1.5 rounded-md font-medium transition ${filterMode === 'all' ? 'bg-blue-100 text-blue-700' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}
+            >
+              Semua Chat
+            </button>
+            <button 
+              onClick={() => setFilterMode('waiting')}
+              className={`flex-1 text-xs py-1.5 rounded-md font-medium transition ${filterMode === 'waiting' ? 'bg-orange-100 text-orange-700' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}
+            >
+              Perlu Admin
+            </button>
+          </div>
         </div>
         <div className="flex-1 overflow-y-auto">
-          {conversations.length === 0 ? (
-            <div className="p-4 text-center text-gray-500">Belum ada percakapan.</div>
+          {filteredConversations.length === 0 ? (
+            <div className="p-4 text-center text-gray-500 text-sm">Belum ada percakapan.</div>
           ) : (
-            conversations.map((c) => (
+            filteredConversations.map((c) => (
               <div
                 key={c.id}
                 onClick={() => setActiveChat(c)}
@@ -124,8 +198,8 @@ export default function InboxPage() {
                   </span>
                 </div>
                 <div className="flex justify-between items-center text-xs mt-2">
-                  <span className={`px-2 py-0.5 rounded-full ${c.status === 'ai_active' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
-                    {c.status === 'ai_active' ? '🤖 AI Aktif' : '👤 Human'}
+                  <span className={`px-2 py-0.5 rounded-full ${c.status === 'ai_active' ? 'bg-green-100 text-green-700' : c.status === 'waiting_admin' ? 'bg-red-100 text-red-700 font-bold animate-pulse' : 'bg-orange-100 text-orange-700'}`}>
+                    {c.status === 'ai_active' ? '🤖 AI Aktif' : c.status === 'waiting_admin' ? '🚨 Minta Admin' : '👤 Human'}
                   </span>
                   {c.unreadCount > 0 && (
                     <span className="bg-red-500 text-white rounded-full px-2 py-0.5 font-bold">
@@ -134,7 +208,7 @@ export default function InboxPage() {
                   )}
                 </div>
                 {c.sentimentScore === 'marah' && (
-                  <div className="mt-2 text-xs text-red-600 flex items-center gap-1">
+                  <div className="mt-2 text-xs text-red-600 flex items-center gap-1 font-medium">
                     <AlertTriangle size={12} /> Terdeteksi Marah
                   </div>
                 )}
@@ -158,6 +232,18 @@ export default function InboxPage() {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <select
+                className="text-xs border-gray-300 rounded px-2 py-1.5 focus:ring-blue-500 focus:border-blue-500"
+                value={activeChat.assignedAdminId || ''}
+                onChange={(e) => handleAction('assign', e.target.value)}
+                disabled={loading}
+              >
+                <option value="">-- Assign To --</option>
+                {teamMembers.map(t => (
+                  <option key={t.user.id} value={t.user.id}>{t.user.name}</option>
+                ))}
+              </select>
+
               {activeChat.status === 'ai_active' ? (
                 <button
                   onClick={() => handleAction('takeover')}
@@ -177,6 +263,16 @@ export default function InboxPage() {
               )}
             </div>
           </div>
+          
+          {activeChat.summary && activeChat.status !== 'ai_active' && (
+            <div className="bg-amber-50 border-b border-amber-200 p-3 text-sm flex items-start gap-2 shadow-inner">
+              <Sparkles className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold text-amber-800 mb-0.5">Ringkasan Masalah (AI Handover Summary):</p>
+                <p className="text-amber-900">{activeChat.summary}</p>
+              </div>
+            </div>
+          )}
 
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {messages.map((msg, idx) => (
@@ -211,9 +307,29 @@ export default function InboxPage() {
             ))}
           </div>
 
-          <div className="p-4 bg-white border-t">
+          <div className="p-4 bg-white border-t relative">
+            {showSuggestions && (
+              <div className="absolute bottom-full left-0 w-full p-4 pb-2 z-10">
+                <div className="bg-white shadow-xl rounded-xl border border-gray-100 p-3 flex flex-col gap-2">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-xs font-bold text-gray-500 flex items-center gap-1"><Sparkles size={12} className="text-purple-500"/> Saran AI Berdasarkan Konteks</span>
+                    <button onClick={() => setShowSuggestions(false)} className="text-gray-400 hover:text-gray-600"><ArrowLeft size={14}/></button>
+                  </div>
+                  {aiSuggestions.map((s, i) => (
+                    <button 
+                      key={i} 
+                      onClick={() => { setReplyText(s); setShowSuggestions(false); }}
+                      className="text-left text-sm bg-gray-50 hover:bg-purple-50 border border-transparent hover:border-purple-200 text-gray-700 p-2 rounded-lg transition"
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {activeChat.status !== 'ai_active' ? (
-              <div className="flex gap-2">
+              <div className="flex gap-2 relative">
                 <input
                   type="text"
                   value={replyText}
@@ -222,6 +338,13 @@ export default function InboxPage() {
                   placeholder="Ketik balasan admin..."
                   className="flex-1 border rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 />
+                <button
+                  onClick={handleSuggest}
+                  disabled={suggesting || loading}
+                  className="bg-purple-100 text-purple-700 p-2 rounded-lg hover:bg-purple-200 transition px-3 flex items-center gap-1 font-medium text-sm"
+                >
+                  {suggesting ? 'Mikir...' : <><Sparkles size={16}/> Saran AI</>}
+                </button>
                 <button
                   onClick={handleSend}
                   disabled={!replyText.trim() || loading}

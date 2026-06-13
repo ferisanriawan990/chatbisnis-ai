@@ -1,10 +1,12 @@
 "use client";
 
+import React, { useState } from 'react';
 import Link from 'next/link';
-import { Bot, Zap, MessageCircle, TrendingUp, ShieldCheck } from 'lucide-react';
-import { motion, Variants } from 'framer-motion';
+import { Bot, Zap, MessageCircle, TrendingUp, ShieldCheck, Menu, X } from 'lucide-react';
+import { motion, Variants, AnimatePresence } from 'framer-motion';
 
 export default function Home() {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const fadeInUp: Variants = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } }
@@ -36,10 +38,38 @@ export default function Home() {
             <Link href="/contact" className="hover:text-blue-600">Kontak</Link>
           </nav>
           <div className="flex items-center gap-4">
-            <Link href="/login" className="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors">Masuk</Link>
-            <Link href="/register" className="px-5 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-full hover:bg-blue-700 hover:shadow-lg hover:-translate-y-0.5 transition-all shadow-md shadow-blue-200/50">Coba Gratis</Link>
+            <Link href="/login" className="hidden md:block text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors">Masuk</Link>
+            <Link href="/register" className="hidden md:block px-5 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-full hover:bg-blue-700 hover:shadow-lg hover:-translate-y-0.5 transition-all shadow-md shadow-blue-200/50">Coba Gratis</Link>
+            <button 
+              className="md:hidden text-slate-600 focus:outline-none" 
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            >
+              {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
           </div>
         </div>
+
+        {/* Mobile Navigation Dropdown */}
+        <AnimatePresence>
+          {isMobileMenuOpen && (
+            <motion.div 
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="md:hidden bg-white border-b border-slate-100 overflow-hidden"
+            >
+              <nav className="flex flex-col px-4 py-6 space-y-4 text-center text-slate-700 font-medium">
+                <Link href="#fitur" onClick={() => setIsMobileMenuOpen(false)}>Fitur</Link>
+                <Link href="#cara-kerja" onClick={() => setIsMobileMenuOpen(false)}>Cara Kerja</Link>
+                <Link href="/pricing" onClick={() => setIsMobileMenuOpen(false)}>Harga</Link>
+                <Link href="/contact" onClick={() => setIsMobileMenuOpen(false)}>Kontak</Link>
+                <hr className="border-slate-100" />
+                <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>Masuk</Link>
+                <Link href="/register" onClick={() => setIsMobileMenuOpen(false)} className="px-5 py-2.5 bg-blue-600 text-white rounded-full inline-block mx-auto">Coba Gratis</Link>
+              </nav>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </header>
 
       {/* Hero Section */}

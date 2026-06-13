@@ -73,7 +73,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ phone: 
     const body = await req.json();
     const { tenantId, message, action } = body;
 
-    if (!tenantId || (!message && action !== 'takeover' && action !== 'return')) {
+    if (!tenantId || (!message && action !== 'takeover' && action !== 'return' && action !== 'assign')) {
       return NextResponse.json({ error: 'tenantId and message/action are required' }, { status: 400 });
     }
 
@@ -109,38 +109,45 @@ export async function POST(req: Request, { params }: { params: Promise<{ phone: 
       return NextResponse.json({ success: true, convoState });
     }
 
-    // Handle sending a message
-    // 1. You should integrate this with your WhatsApp instance to actually push the message.
-    // For now, we simulate the log.
+    // Handle Assign Action
+    if (action === 'assign') {
+      const { assignedAdminId } = body;
+      convoState = await prisma.conversationState.update({
+        where: { id: convoState.id },
+        data: { assignedAdminId: assignedAdminId || null }
+      });
+      return NextResponse.json({ success: true, convoState });
+    }
 
-    // Get ChatbotSetting to know which WhatsApp session
+    // Handle sending a message
     const chatbotSetting = await prisma.chatbotSetting.findUnique({
       where: { id: convoState.chatbotSettingId }
     });
 
     if (chatbotSetting && chatbotSetting.whatsappSessionName) {
-      const whatsappUrl = process.env.WHATSAPP_API_URL || 'http://localhost:3000';
       try {
-        const payload: any = {
-          session: chatbotSetting.whatsappSessionName,
-          chatId: phone.includes('@') ? phone : `${phone}@c.us`,
-          text: message
-        };
+        const { BaileysService } = await import('@/lib/baileys');
+        const resolved = await BaileysService.resolveInstance(chatbotSetting.id);
+        const gateway = resolved.gateway;
 
-        const whatsappRes = await fetch(`${whatsappUrl.replace(/\/$/, '')}/api/sendText`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
-          body: JSON.stringify(payload)
-        });
+        await gateway.sendMessage(
+          chatbotSetting.whatsappSessionName,
+          phone,
+          message
+        );
         
-        if (!whatsappRes.ok) {
-           console.error('Failed to send WhatsApp message', await whatsappRes.text());
+        // Auto-takeover when admin replies
+        if (convoState.status !== 'human_handover') {
+          const until = new Date();
+          until.setHours(until.getHours() + 24);
+          await prisma.conversationState.update({
+            where: { id: convoState.id },
+            data: { status: 'human_handover', handoverUntil: until, assignedAdminId: userId }
+          });
         }
       } catch (err) {
-        console.error('Error calling WhatsApp:', err);
+        console.error('Error calling WhatsApp gateway:', err);
+        return NextResponse.json({ error: 'Failed to send WhatsApp message' }, { status: 500 });
       }
     }
 

@@ -63,7 +63,9 @@ export async function POST() {
       });
     }
 
-    const { gateway, serverId } = await BaileysService.resolveInstance(chatbot.id);
+    const resolved = await BaileysService.resolveInstance(chatbot.id);
+    const gateway = resolved.gateway;
+    const serverId = resolved.serverId;
     const info = await gateway.startSession(sessionName);
     const status = info.status === 'connected' ? 'connected' : info.status === 'qr' ? 'qr' : 'starting';
 

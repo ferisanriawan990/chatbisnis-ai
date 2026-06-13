@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ChatbotEngine } from '@/lib/chatbot-engine';
 import { BaileysService } from '@/lib/baileys';
+import { AIService } from '@/lib/ai';
+import { getAICredentialCandidates } from '@/lib/ai-config';
 import {
   BaileysWebhookPayload,
   normalizeWhatsAppRecipient,
@@ -28,29 +30,22 @@ export async function POST(req: NextRequest) {
     }
 
     const envSecret = process.env.BAILEYS_WEBHOOK_SECRET;
-    const fallbackSecret = '1d2ff29e6bf9888e9c8f32624ab901d4a4c1f9a7f458070fb590de4c37d9d502';
-    const possibleSecrets = [envSecret, fallbackSecret].filter(Boolean);
     
-    if (possibleSecrets.length > 0) {
-      let verified = false;
-      for (const secret of possibleSecrets) {
-        if (
-          verifyBaileysWebhook(
-            rawBody,
-            req.headers.get('x-webhook-timestamp'),
-            req.headers.get('x-webhook-signature'),
-            req.headers.get('x-webhook-secret'),
-            secret
-          )
-        ) {
-          verified = true;
-          break;
-        }
-      }
+    if (!envSecret) {
+      console.error('CRITICAL ERROR: BAILEYS_WEBHOOK_SECRET is not configured');
+      return NextResponse.json({ error: 'Webhook configuration error' }, { status: 500 });
+    }
+
+    const verified = verifyBaileysWebhook(
+      rawBody,
+      req.headers.get('x-webhook-timestamp'),
+      req.headers.get('x-webhook-signature'),
+      req.headers.get('x-webhook-secret'),
+      envSecret
+    );
       
-      if (!verified) {
-        return NextResponse.json({ error: 'Invalid webhook signature' }, { status: 401 });
-      }
+    if (!verified) {
+      return NextResponse.json({ error: 'Invalid webhook signature' }, { status: 401 });
     }
 
     let event: BaileysWebhookPayload;
@@ -89,6 +84,9 @@ export async function POST(req: NextRequest) {
         whatsappSessionName: event.sessionId,
         isActive: true,
       },
+      include: {
+        businessProfile: true,
+      }
     });
     if (!chatbot) {
       return NextResponse.json({ received: true, ignored: 'chatbot_not_active' });
@@ -126,7 +124,34 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    if (!messageForAI && !isImage) {
+    const isAudio = (event.type === 'ptt' || event.type === 'audio') && Boolean(event.media?.base64);
+
+    if (isAudio) {
+      if (!chatbot.allowVoiceNote) {
+        await gateway.sendMessage(
+          event.sessionId,
+          customerPhone,
+          'Maaf, saya tidak dapat mendengarkan pesan suara saat ini. Silakan ketik pesan Anda.',
+          webhookIdempotencyKey(event.messageId, 'voice-disabled'),
+        );
+        return NextResponse.json({ received: true, handled: 'voice_disabled' });
+      }
+
+      try {
+        const credentials = await getAICredentialCandidates(chatbot);
+        if (credentials.length > 0) {
+          const transcribedText = await AIService.transcribeAudio(credentials[0].apiKey, event.media!.base64, event.media!.mimeType);
+          messageForAI = transcribedText;
+        } else {
+          throw new Error('No AI credentials available for transcription');
+        }
+      } catch (err) {
+        console.error('Transcription error:', err);
+        return NextResponse.json({ received: true, error: 'transcription_failed' });
+      }
+    }
+
+    if (!messageForAI && !isImage && !isAudio) {
       return NextResponse.json({ received: true, ignored: 'empty_or_unsupported_message' });
     }
 
@@ -182,6 +207,24 @@ export async function POST(req: NextRequest) {
         reply,
         webhookIdempotencyKey(event.messageId, 'reply'),
       );
+    }
+
+    // Handover Admin Alert
+    if (result.metadata?.promptSource === 'handover' || result.metadata?.needsHuman) {
+      if (chatbot.businessProfile?.adminPhone) {
+        try {
+          const adminPhoneNum = normalizeWhatsAppRecipient(chatbot.businessProfile.adminPhone);
+          const alertMsg = `🚨 *NOTIFIKASI HANDOVER CHATBISNIS AI*\n\nAda pelanggan yang butuh bantuan Admin Manusia!\n\nNomor Pelanggan: wa.me/${customerPhone.split('@')[0]}\nNama: ${event.senderName || 'Tanpa Nama'}\n\nSilakan segera merespon pelanggan tersebut. AI saat ini dinonaktifkan sementara untuk nomor ini.`;
+          await gateway.sendMessage(
+            event.sessionId,
+            adminPhoneNum,
+            alertMsg,
+            webhookIdempotencyKey(event.messageId, 'admin-alert'),
+          );
+        } catch(e) {
+          console.error("Failed to send admin alert", e);
+        }
+      }
     }
 
     return NextResponse.json({ received: true });

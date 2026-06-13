@@ -4,7 +4,11 @@ import { ReactNode, useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
 import { usePathname } from 'next/navigation';
-import { BotMessageSquare, Menu, X, Settings, FileJson, Users, MessageSquare, CreditCard, LayoutDashboard, Inbox, Database, Box } from 'lucide-react';
+import { 
+  Bot, Settings, BookOpen, Package, MessageSquare, Phone, 
+  Users, CreditCard, LayoutDashboard, Send, Inbox, Database, 
+  Box, X, Menu, BotMessageSquare, BarChart3, Shield, ShoppingCart, Star
+} from 'lucide-react';
 import Link from 'next/link';
 import LogoutButton from '@/components/LogoutButton';
 
@@ -95,8 +99,85 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               pathname === '/dashboard/products' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
             }`}
           >
-            <Box className="w-5 h-5 mr-3" />
+            <Box className="w-5 h-5" />
             <span className="font-medium">Katalog Produk</span>
+          </Link>
+          <Link 
+            href="/dashboard/orders" 
+            className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+              pathname === '/dashboard/orders' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+            }`}
+          >
+            <ShoppingCart className="w-5 h-5" />
+            <span className="font-medium">Daftar Pesanan</span>
+          </Link>
+          <Link 
+            href="/dashboard/testimonials" 
+            className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+              pathname === '/dashboard/testimonials' ? 'bg-amber-50 text-amber-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+            }`}
+          >
+            <Star className="w-5 h-5 text-amber-500" />
+            <span className="font-medium">Testimoni</span>
+          </Link>
+          <Link 
+            href="/dashboard/bookings" 
+            className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+              pathname === '/dashboard/bookings' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+            }`}
+          >
+            <BookOpen className="w-5 h-5" />
+            <span className="font-medium">Reservasi (Booking)</span>
+          </Link>
+
+          <Link 
+            href="/dashboard/chat-logs" 
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors ${
+              pathname === '/dashboard/chat-logs' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+            }`}
+          >
+            <MessageSquare className="w-5 h-5" />
+            <span className="font-medium text-sm">Log Chat</span>
+          </Link>
+
+          <Link 
+            href="/dashboard/analytics" 
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors ${
+              pathname === '/dashboard/analytics' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+            }`}
+          >
+            <BarChart3 className="w-5 h-5" />
+            <span className="font-medium text-sm">Analytics</span>
+          </Link>
+
+          <Link 
+            href="/dashboard/leads" 
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors ${
+              pathname === '/dashboard/leads' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+            }`}
+          >
+            <Users className="w-5 h-5" />
+            <span className="font-medium">Data Pelanggan</span>
+          </Link>
+
+          <Link 
+            href="/dashboard/team" 
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors ${
+              pathname === '/dashboard/team' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+            }`}
+          >
+            <Shield className="w-5 h-5" />
+            <span className="font-medium">Tim & Akses</span>
+          </Link>
+
+          <Link 
+            href="/dashboard/broadcast" 
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors ${
+              pathname === '/dashboard/broadcast' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+            }`}
+          >
+            <Send className="w-5 h-5" />
+            <span className="font-medium text-sm">Broadcast</span>
           </Link>
 
           <Link 

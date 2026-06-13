@@ -35,6 +35,12 @@ interface BuildPromptParams {
   useEmoji: boolean;
   fallbackMessage: string;
   maxReplyLength: string;
+  customerName?: string | null;
+  isReturning?: boolean;
+  cartItems?: any[];
+  cartTotal?: any;
+  allowSelling: boolean;
+  allowPromoOffer: boolean;
 }
 
 /**
@@ -61,6 +67,12 @@ export function buildSystemPrompt(params: BuildPromptParams): string {
     useEmoji,
     fallbackMessage,
     maxReplyLength,
+    customerName,
+    isReturning,
+    cartItems,
+    cartTotal,
+    allowSelling,
+    allowPromoOffer,
   } = params;
 
   const bd = businessData;
@@ -82,7 +94,7 @@ Tujuan utama:
 2. Membantu customer memahami produk/layanan
 3. Mengumpulkan data customer jika dibutuhkan
 4. Mengarahkan ke admin manusia jika pertanyaan kompleks
-5. Membantu meningkatkan peluang closing`;
+5. ${allowSelling ? 'Membantu meningkatkan peluang closing dan proaktif berjualan' : 'Hanya berikan informasi secara pasif dan objektif tanpa membujuk atau berjualan'}`;
 
   // ── Layer 2: Template Prompt ──
   const templateSection = `\n\nINSTRUKSI KHUSUS JENIS USAHA:\n${templatePrompt}`;
@@ -110,6 +122,23 @@ Tujuan utama:
   }
   if (bd.productsOrServices) dataLines.push(`- Produk/Layanan: ${bd.productsOrServices}`);
   if (bd.pricingInfo) dataLines.push(`- Info Harga: ${bd.pricingInfo}`);
+
+  if (isReturning) {
+    dataLines.push(`\n[INFO PELANGGAN CRM]`);
+    dataLines.push(`- Pelanggan ini sudah pernah order / menghubungi kita sebelumnya (Returning Customer). Berikan sambutan hangat sebagai pelanggan setia.`);
+    if (customerName && customerName !== 'Pelanggan Baru' && customerName !== 'Customer') {
+      dataLines.push(`- Nama Pelanggan: ${customerName}. Panggil atau sapa dia dengan nama ini secara natural!`);
+    }
+  }
+
+  if (cartItems && cartItems.length > 0) {
+    dataLines.push(`\n[KERANJANG BELANJA PELANGGAN SAAT INI]`);
+    cartItems.forEach((item: any) => {
+      dataLines.push(`- ${item.productName} (Qty: ${item.quantity}) - Harga: Rp ${item.price}`);
+    });
+    dataLines.push(`Total Keranjang Sementara: Rp ${cartTotal}`);
+    dataLines.push(`Sebutkan atau ingatkan isi keranjang ini jika relevan.`);
+  }
 
   let catalogSection = '';
   if (bd.catalogUrl) {
@@ -169,7 +198,7 @@ PANJANG BALASAN: ${lengthMap[maxReplyLength.toLowerCase()] || lengthMap.sedang}
 MODE: ${modeMap[botMode.toLowerCase()] || modeMap.auto_reply}`;
 
   // ── Layer 7: Safety Rules ──
-  const safetyRules = `\n\nATURAN KEAMANAN MUTLAK:
+  let safetyRules = `\n\nATURAN KEAMANAN MUTLAK:
 - JANGAN mengarang harga, stok, alamat, promo, warna, spesifikasi atau kebijakan yang tidak ada di data bisnis.
 - Jika pelanggan bertanya spesifik tentang informasi yang sama sekali tidak ada di KNOWLEDGE BASE atau DATA BISNIS, JANGAN MENGARANG. Kamu WAJIB membalas persis dengan kalimat berikut: "${fallbackMessage}"
 - Jika pelanggan memberikan gambar/foto, kamu BOLEH mendeskripsikan dan menanggapi isi gambar tersebut, serta menghubungkannya dengan produk/layanan kita jika memungkinkan.
@@ -180,6 +209,13 @@ MODE: ${modeMap[botMode.toLowerCase()] || modeMap.auto_reply}`;
 - JANGAN menyebut dirimu Claude Code, ChatGPT, Gemini, AI developer, atau asisten coding.
 - Selalu bawa percakapan kembali ke produk/layanan bisnis.
 - Untuk sapaan ("halo", "hai", "p"), jawab salam dengan sopan sebagai CS bernama ${botName}, bukan sebagai bot.`;
+
+  if (!allowSelling) {
+    safetyRules += '\n- DILARANG keras melakukan hard-selling. Berikan informasi saja.';
+  }
+  if (!allowPromoOffer) {
+    safetyRules += '\n- DILARANG keras memberikan promosi, diskon, atau janji penawaran yang tidak tertulis eksplisit di KNOWLEDGE BASE.';
+  }
 
   // ── Layer 8: Out of Hours ──
   let oohSection = '';

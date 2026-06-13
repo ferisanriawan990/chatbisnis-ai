@@ -59,7 +59,8 @@ model User {
   knowledgeSources      KnowledgeSource[]
   knowledgeItems        KnowledgeItem[]
   chatLogs              ChatLog[]
-  leads                 Lead[]
+  leads                 Lead[]               @relation("OwnerLeads")
+  assignedLeads         Lead[]               @relation("AssignedLeadAdmin")
   whatsappSessions      WhatsAppSession[]
   subscriptions         Subscription[]
   usageCounters         UsageCounter[]
@@ -101,6 +102,10 @@ model BusinessProfile {
   userRoleAssignments   UserRoleAssignment[]
   tenantFeatureSettings TenantFeatureSetting[]
   products              Product[]
+  orders                Order[]
+  broadcasts            BroadcastCampaign[]
+  bookings              Booking[]
+  Testimonial           Testimonial[]
 }
 
 model ChatbotSetting {
@@ -116,6 +121,7 @@ model ChatbotSetting {
   allowSelling            Boolean  @default(true)
   allowPromoOffer         Boolean  @default(true)
   allowVision             Boolean  @default(false)
+  allowVoiceNote          Boolean  @default(false)
   fallbackMessage         String   @db.Text
   handoverMessage         String   @db.Text
   handoverKeywords        String   @db.Text
@@ -231,10 +237,15 @@ model Lead {
   address           String?    @db.Text
   status            LeadStatus @default(cold)
   notes             String?    @db.Text
+  tags              String?    @db.Text
+  leadScore         Int?       // 1-100 score of purchase intent
+  isReturning       Boolean    @default(false)
+  assignedAdminId   String?
   createdAt         DateTime   @default(now())
   updatedAt         DateTime   @updatedAt
 
-  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user            User            @relation("OwnerLeads", fields: [userId], references: [id], onDelete: Cascade)
+  assignedAdmin   User?           @relation("AssignedLeadAdmin", fields: [assignedAdminId], references: [id], onDelete: SetNull)
   businessProfile BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
 
   @@unique([businessProfileId, customerPhone])
@@ -484,6 +495,20 @@ model Branch {
   @@index([businessProfileId])
 }
 
+model Testimonial {
+  id                String   @id @default(uuid())
+  businessProfileId String
+  orderId           String?  @unique
+  customerName      String?
+  customerPhone     String?
+  rating            Int // 1 to 5
+  reviewText        String?  @db.Text
+  isPublished       Boolean  @default(false)
+  createdAt         DateTime @default(now())
+
+  businessProfile BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+}
+
 model Role {
   id                String   @id @default(uuid())
   businessProfileId String? // If null, it's a global system role. If set, it's a tenant-specific custom role.
@@ -554,8 +579,80 @@ model Product {
   updatedAt DateTime @updatedAt
 
   businessProfile BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+  orderItems      OrderItem[]
 
   @@index([businessProfileId])
+}
+
+// ─── E-Commerce & Shopping Cart ──────────────────────────
+
+model Order {
+  id                String      @id @default(uuid())
+  businessProfileId String
+  customerPhone     String
+  customerName      String?
+  orderNumber       String      @unique
+  status            String      @default("draft") // draft, pending_payment, paid, processing, shipped, completed, cancelled
+  totalAmount       Decimal     @default(0.0)
+  notes             String?     @db.Text
+  shippingAddress   String?     @db.Text
+  shippingCourier   String?
+  shippingResi      String?
+  reminderSentAt    DateTime?
+  items             OrderItem[]
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  businessProfile BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+
+  @@index([businessProfileId, customerPhone])
+}
+
+model OrderItem {
+  id          String  @id @default(uuid())
+  orderId     String
+  productId   String?
+  productName String
+  quantity    Int     @default(1)
+  price       Decimal @default(0.0)
+
+  order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+}
+
+// ─── Broadcast & Marketing ───────────────────────────────
+
+model BroadcastCampaign {
+  id                String    @id @default(uuid())
+  businessProfileId String
+  name              String
+  messageTemplate   String    @db.Text
+  targetTags        String?   @db.Text
+  status            String    @default("draft") // draft, scheduled, processing, completed, failed
+  scheduledAt       DateTime?
+  completedAt       DateTime?
+  imageUrl          String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  businessProfile BusinessProfile      @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+  recipients      BroadcastRecipient[]
+
+  @@index([businessProfileId, status])
+}
+
+model BroadcastRecipient {
+  id            String    @id @default(uuid())
+  campaignId    String
+  customerPhone String
+  customerName  String?
+  status        String    @default("pending") // pending, sent, failed
+  errorMessage  String?   @db.Text
+  sentAt        DateTime?
+
+  campaign BroadcastCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId, status])
 }
 
 // ─── Feature Flags ───────────────────────────────────────
@@ -588,4 +685,21 @@ model TenantFeatureSetting {
 
   @@unique([businessProfileId, featureId])
   @@index([businessProfileId])
+}
+
+model Booking {
+  id                String   @id @default(uuid())
+  businessProfileId String
+  customerPhone     String
+  customerName      String?
+  serviceName       String // Misal: "Konsultasi Dokter", "Potong Rambut"
+  bookingDate       DateTime
+  status            String   @default("pending") // pending, confirmed, cancelled, completed
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  businessProfile BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+
+  @@index([businessProfileId])
+  @@index([customerPhone])
 }

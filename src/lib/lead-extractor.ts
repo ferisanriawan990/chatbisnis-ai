@@ -7,6 +7,9 @@ export interface ExtractedLead {
   budget?: number;
   address?: string;
   status: 'cold' | 'warm' | 'hot';
+  leadScore?: number;
+  notes?: string;
+  tags?: string[];
 }
 
 export class LeadExtractor {
@@ -28,7 +31,10 @@ Jika pelanggan menunjukkan indikasi bertanya harga, ketersediaan produk, alamat,
   "interest": "Nama barang/layanan spesifik yang diminati (contoh: Kemeja Merah M)",
   "budget": 150000, // Angka integer saja tanpa simbol mata uang
   "address": "Alamat pengiriman jika disebutkan",
-  "status": "hot" // 'hot' jika ingin segera bayar/beli, 'warm' jika banyak bertanya detail, 'cold' jika hanya menyapa/tanya harga dasar.
+  "status": "hot", // 'hot' jika ingin segera bayar/beli, 'warm' jika banyak bertanya detail, 'cold' jika hanya menyapa/tanya harga dasar.
+  "leadScore": 85, // Angka 1-100 merepresentasikan probabilitas pelanggan akan membeli berdasarkan antusiasme mereka.
+  "notes": "Rangkuman singkat aktivitas pelanggan (contoh: Pelanggan bertanya tentang stok sepatu lari, namun ragu soal harga)",
+  "tags": ["tanya-stok", "ragu-harga", "sepatu-lari"] // Array of string, berisi kata kunci segmentasi pendek (tanpa spasi, gunakan strip).
 }
 
 Anda harus merespon HANYA dengan JSON object tunggal.
