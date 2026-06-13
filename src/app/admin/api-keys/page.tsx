@@ -3,11 +3,12 @@
 
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { Key, Plus, Trash2, Bot, Save } from 'lucide-react';
+import { Key, Plus, Trash2, Bot, Save, CreditCard } from 'lucide-react';
 import ConfirmModal from '@/components/ConfirmModal';
 import InputModal from '@/components/InputModal';
 
 export default function AdminApiKeysPage() {
+  const [keys, setKeys] = useState<any[]>([]) // eslint-disable-line @typescript-eslint/no-explicit-any
   const [loading, setLoading] = useState(true);
   const [globalModel, setGlobalModel] = useState('gemini-2.5-flash-lite');
   const [savingModel, setSavingModel] = useState(false);
