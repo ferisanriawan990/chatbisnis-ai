@@ -25,7 +25,7 @@ export async function POST(req: Request) {
     }
 
     const sessionName = getActiveWhatsappSessionName(userId, chatbot.businessProfileId);
-    const gateway = BaileysService.fromEnv();
+    const { gateway } = await BaileysService.resolveInstance(chatbot.id);
     const status = await gateway.getStatus(sessionName).catch(() => null);
     if (status?.normalizedStatus !== 'connected') {
       return NextResponse.json({ error: 'WhatsApp belum terhubung.' }, { status: 409 });

@@ -58,7 +58,8 @@ export default async function DashboardIndex() {
   if (chatbotSetting && businessProfile) {
     const activeSessionName = getActiveWhatsappSessionName(userId, businessProfile.id);
     try {
-      whatsappStatus = (await BaileysService.fromEnv().getStatus(activeSessionName)).normalizedStatus;
+      const { gateway } = await BaileysService.resolveInstance(chatbotSetting.id);
+      whatsappStatus = (await gateway.getStatus(activeSessionName)).normalizedStatus;
     } catch {
       whatsappStatus = 'disconnected';
     }
