@@ -190,7 +190,7 @@ export async function POST(req: NextRequest) {
     let failedReason = '';
     for (const [index, media] of (result.mediaToSend || []).entries()) {
       try {
-        let imageUrl = media.url;
+        const imageUrl = media.url;
         // Fetch the image on Vercel and send as Base64 to bypass VPS datacenter blocks
         const imgRes = await fetch(imageUrl);
         if (!imgRes.ok) {

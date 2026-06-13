@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Users, UserPlus, Trash2, Shield, User, X } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -16,7 +16,7 @@ export default function TeamManagementPage() {
   const [password, setPassword] = useState('');
   const [roleName, setRoleName] = useState('Customer Service');
 
-  const fetchTeam = () => {
+  const fetchTeam = useCallback(() => {
     setLoading(true);
     fetch('/api/dashboard/team')
       .then(res => res.json())
@@ -28,11 +28,11 @@ export default function TeamManagementPage() {
         console.error(err);
         setLoading(false);
       });
-  };
+  }, []);
 
   useEffect(() => {
     fetchTeam();
-  }, []);
+  }, [fetchTeam]);
 
   const handleAddStaff = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -61,7 +61,7 @@ Anda harus merespon HANYA dengan JSON object tunggal.
       });
 
       // Hapus backticks kalau LLM bandel
-      let cleanJson = response.reply.replace(/```json/gi, '').replace(/```/g, '').trim();
+      const cleanJson = response.reply.replace(/```json/gi, '').replace(/```/g, '').trim();
       
       const parsed = JSON.parse(cleanJson);
       

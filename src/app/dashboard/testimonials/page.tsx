@@ -99,7 +99,7 @@ export default function TestimonialsPage() {
           ) : testimonials.length === 0 ? (
             <div className="p-12 text-center text-slate-500">
               <Star className="w-12 h-12 text-slate-200 fill-slate-200 mx-auto mb-3" />
-              Belum ada ulasan yang terkumpul. Ubah status pesanan menjadi 'Completed' untuk memicu pesan ulasan ke WhatsApp pelanggan.
+              Belum ada ulasan yang terkumpul. Ubah status pesanan menjadi &apos;Completed&apos; untuk memicu pesan ulasan ke WhatsApp pelanggan.
             </div>
           ) : (
             <div className="divide-y divide-slate-100">
@@ -114,7 +114,7 @@ export default function TestimonialsPage() {
                       {renderStars(testi.rating)}
                     </div>
                   </div>
-                  <p className="text-slate-700 italic">"{testi.reviewText || 'Memberikan rating tanpa komentar.'}"</p>
+                  <p className="text-slate-700 italic">&quot;{testi.reviewText || 'Memberikan rating tanpa komentar.'}&quot;</p>
                 </div>
               ))}
             </div>

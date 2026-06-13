@@ -49,7 +49,7 @@ export default function ProductsPage() {
   };
 
   // We intentionally disable exhaustive-deps so fetchProducts doesn't trigger loops
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   useEffect(() => {
     if (activeTenantId) {
       const timeoutId = setTimeout(() => {
