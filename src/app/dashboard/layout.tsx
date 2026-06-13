@@ -87,7 +87,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             }`}
           >
             <Settings className="w-5 h-5" />
-            <span className="font-medium">Status WAHA</span>
+            <span className="font-medium">Status WhatsApp</span>
           </Link>
           <Link 
             href="/dashboard/leads" 
@@ -118,16 +118,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           >
             <CreditCard className="w-5 h-5" />
             <span className="font-medium">Billing</span>
-          </Link>
-          <Link 
-            href="/dashboard/n8n-templates" 
-            onClick={() => setMobileMenuOpen(false)}
-            className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-              pathname === '/dashboard/n8n-templates' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-            }`}
-          >
-            <FileJson className="w-5 h-5" />
-            <span className="font-medium">Template n8n</span>
           </Link>
         </nav>
         <div className="p-4 border-t border-slate-200">

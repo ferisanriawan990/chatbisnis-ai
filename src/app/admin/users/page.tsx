@@ -198,7 +198,7 @@ export default function AdminUsersPage() {
                 <tr className="border-b border-slate-200 text-slate-500">
                   <th className="pb-3 font-medium">Nama</th>
                   <th className="pb-3 font-medium">Role</th>
-                  <th className="pb-3 font-medium">Status Bot & WAHA</th>
+                  <th className="pb-3 font-medium">Status Bot Status Bot & WAHA WA</th>
                   <th className="pb-3 font-medium">Data (Knowledge/Leads)</th>
                   <th className="pb-3 font-medium">Plan & Chats</th>
                   <th className="pb-3 font-medium">Tanggal Daftar</th>

@@ -8,8 +8,8 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "ChatBisnis AI - Chatbot WhatsApp AI untuk UMKM",
-  description: "Platform chatbot WhatsApp AI untuk UMKM Indonesia dengan WAHA, n8n, knowledge base, dan otomatisasi customer service.",
-  keywords: "chatbot whatsapp, ai customer service, umkm digital, waha, n8n chatbot, whatsapp otomatis, chatbisnis ai",
+  description: "Platform chatbot WhatsApp AI untuk UMKM Indonesia dengan Baileys, n8n, knowledge base, dan otomatisasi customer service.",
+  keywords: "chatbot whatsapp, ai customer service, umkm digital, baileys, n8n chatbot, whatsapp otomatis, chatbisnis ai",
   robots: "index, follow",
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://chatbisnis-ai.vercel.app'),
   openGraph: {

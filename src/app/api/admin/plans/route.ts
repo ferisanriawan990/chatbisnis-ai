@@ -11,10 +11,8 @@ const planSchema = z.object({
   maxKnowledgeItems: z.coerce.number().min(1).default(50),
   dailyChatLimit: z.coerce.number().min(1).default(100),
   monthlyChatLimit: z.coerce.number().min(1).default(3000),
-  allowN8nTemplates: z.boolean().default(false),
   allowLeadCapture: z.boolean().default(false),
   allowHumanHandover: z.boolean().default(false),
-  allowCustomApiKey: z.boolean().default(false),
   isActive: z.boolean().default(true),
 });
 

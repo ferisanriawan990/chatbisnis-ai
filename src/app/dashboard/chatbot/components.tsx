@@ -1,10 +1,21 @@
 import React from 'react';
-import { CheckCircle2, Database, Bot, MessageSquare, Key, ShieldAlert } from 'lucide-react';
+import { CheckCircle2, Database, Bot, MessageSquare, Key, ShieldAlert, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-export const BusinessProfileForm = ({ form, handleChange, isComplete }: any) => (
+export const BusinessProfileForm = ({ form, handleChange, isComplete, setForm }: any) => {
+  const addLink = () => setForm((prev: any) => ({ ...prev, customLinks: [...(prev.customLinks || []), { title: '', url: '' }] }));
+  const removeLink = (index: number) => setForm((prev: any) => ({ ...prev, customLinks: prev.customLinks.filter((_: any, i: number) => i !== index) }));
+  const handleLinkChange = (index: number, field: string, value: string) => {
+    setForm((prev: any) => {
+      const newLinks = [...(prev.customLinks || [])];
+      newLinks[index] = { ...newLinks[index], [field]: value };
+      return { ...prev, customLinks: newLinks };
+    });
+  };
+
+  return (
   <section className="bg-white/80 backdrop-blur-xl p-8 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60 hover:shadow-xl hover:shadow-indigo-100/50 transition-all duration-500 relative overflow-hidden group">
     <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-indigo-100/50 to-transparent rounded-bl-full pointer-events-none transition-transform duration-500 group-hover:scale-110"></div>
     <div className="absolute top-0 right-0 p-6 z-10">
@@ -79,12 +90,42 @@ export const BusinessProfileForm = ({ form, handleChange, isComplete }: any) => 
               <label className="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">Link Katalog Utama (PDF/Website)</label>
               <input name="catalogUrl" value={form.catalogUrl || ''} onChange={handleChange} className="w-full p-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none shadow-sm" placeholder="Cth: https://docs.google.com/..." />
             </div>
+
+            <div className="md:col-span-2 mt-2 pt-4 border-t border-slate-200/50">
+              <div className="flex items-center justify-between mb-3">
+                <label className="block text-sm font-semibold text-slate-700 ml-1">Link Tambahan (Opsional, misal Toko Shopee/Tokopedia)</label>
+                <button type="button" onClick={addLink} className="text-xs px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-lg font-medium hover:bg-indigo-100 transition-colors flex items-center gap-1">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
+                  Tambah Link
+                </button>
+              </div>
+              <div className="space-y-3">
+                {form.customLinks?.map((link: any, idx: number) => (
+                  <div key={idx} className="flex gap-2 items-start">
+                    <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-2">
+                      <input value={link.title} onChange={(e) => handleLinkChange(idx, 'title', e.target.value)} className="w-full p-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 outline-none shadow-sm text-sm" placeholder="Judul (Cth: Shopee Kami)" />
+                      <input value={link.url} onChange={(e) => handleLinkChange(idx, 'url', e.target.value)} className="w-full p-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 outline-none shadow-sm text-sm" placeholder="URL (Cth: https://shopee.co.id/...)" />
+                    </div>
+                    <button type="button" onClick={() => removeLink(idx)} className="p-2.5 bg-red-50 text-red-500 hover:bg-red-100 rounded-lg transition-colors border border-red-100">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+                {(!form.customLinks || form.customLinks.length === 0) && (
+                  <div className="text-center p-4 bg-slate-50 border border-dashed border-slate-200 rounded-xl text-slate-400 text-sm">
+                    Belum ada link tambahan.
+                  </div>
+                )}
+              </div>
+            </div>
+
           </div>
         </details>
       </div>
     </div>
   </section>
-);
+  );
+};
 
 export const AIStyleForm = ({ form, handleChange, activeModelDisplay }: any) => (
   <section className="bg-white/80 backdrop-blur-xl p-8 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60 hover:shadow-xl hover:shadow-purple-100/50 transition-all duration-500 relative overflow-hidden group">
@@ -224,9 +265,9 @@ export const AdvancedRulesPanel = ({ form, handleChange }: any) => (
         <div><label className="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">Batas Baca Knowledge Base (Karakter)</label><input type="number" min="1000" max="20000" step="500" name="knowledgeCharLimit" value={form.knowledgeCharLimit || 3500} onChange={handleChange} className="w-full p-3.5 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-amber-500/10 focus:border-amber-500 outline-none transition-all shadow-sm" /></div>
       </div>
       <div>
-        <label className="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">Webhook URL Aksi Dinamis (Fungsi Eksternal / N8N)</label>
+        <label className="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">Webhook URL Aksi Dinamis (Fungsi Eksternal)</label>
         <p className="text-xs text-slate-500 mb-2 ml-1">Berikan kemampuan AI untuk memanggil URL ini (POST JSON) saat pelanggan membutuhkan aksi spesifik (contoh: cek stok). AI akan menunggu hasil dari URL ini untuk membalas pelanggan.</p>
-        <input type="url" name="actionWebhookUrl" value={form.actionWebhookUrl || ''} onChange={handleChange} className="w-full p-3.5 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-amber-500/10 focus:border-amber-500 outline-none transition-all shadow-sm" placeholder="https://hook.n8n.com/..." />
+        <input type="url" name="actionWebhookUrl" value={form.actionWebhookUrl || ''} onChange={handleChange} className="w-full p-3.5 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-amber-500/10 focus:border-amber-500 outline-none transition-all shadow-sm" placeholder="https://hook.eu1.make.com/..." />
       </div>
       <div><label className="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">Fallback Message (Bila bot tidak tahu)</label><textarea name="fallbackMessage" value={form.fallbackMessage} onChange={handleChange} rows={2} className="w-full p-3.5 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-amber-500/10 focus:border-amber-500 outline-none transition-all shadow-sm hover:border-amber-300 resize-none"></textarea></div>
       <div><label className="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">Pesan Handover (Saat diteruskan ke Admin)</label><textarea name="handoverMessage" value={form.handoverMessage} onChange={handleChange} rows={2} className="w-full p-3.5 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-amber-500/10 focus:border-amber-500 outline-none transition-all shadow-sm hover:border-amber-300 resize-none"></textarea></div>
@@ -259,7 +300,7 @@ export const AiIntegrationPanel = ({ form, handleChange }: any) => {
         Integrasi AI & API Key
       </h2>
       <div className="space-y-5 relative z-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-1 gap-5">
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">AI Model (Flaz Cloud)</label>
             <select name="aiModel" value={form.aiModel} onChange={handleChange} className="w-full p-3.5 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all shadow-sm cursor-pointer">
@@ -267,11 +308,6 @@ export const AiIntegrationPanel = ({ form, handleChange }: any) => {
                 <option key={model} value={model}>{model}</option>
               ))}
             </select>
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">Custom API Key</label>
-            <input type="password" name="aiApiKey" value={form.aiApiKey} onChange={handleChange} placeholder="sk-flaz-..." className="w-full p-3.5 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all shadow-sm" />
-            <p className="text-xs text-slate-500 mt-2 ml-1">Kosongkan jika menggunakan Global Key.</p>
           </div>
         </div>
       </div>

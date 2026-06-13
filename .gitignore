@@ -42,3 +42,4 @@ qr.html
 get_qr.js
 fix-db.js
 dist/
+.env*

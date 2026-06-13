@@ -80,6 +80,7 @@ model BusinessProfile {
   websiteUrl          String?
   instagramUrl        String?
   marketplaceUrl      String?
+  customLinks         String?  @db.Text
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
@@ -113,7 +114,6 @@ model ChatbotSetting {
   outOfHoursMessage     String   @db.Text
   aiProvider            String   @default("Flaz Cloud")
   aiModel               String   @default("claude-haiku-4-5")
-  aiApiKeyEncrypted     String?
   dailyChatLimit        Int      @default(1000)
   monthlyChatLimit      Int      @default(30000)
   historyMessageCount   Int      @default(6)
@@ -123,8 +123,6 @@ model ChatbotSetting {
   wahaApiKeyEncrypted   String?
   wahaServerId          String?
   wahaSessionName       String
-  n8nWebhookUrl         String?
-  internalWebhookSecret String?
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 
@@ -310,10 +308,8 @@ model Plan {
   maxKnowledgeItems   Int      @default(50)
   dailyChatLimit      Int      @default(100)
   monthlyChatLimit    Int      @default(3000)
-  allowN8nTemplates   Boolean  @default(false)
   allowLeadCapture    Boolean  @default(false)
   allowHumanHandover  Boolean  @default(false)
-  allowCustomApiKey   Boolean  @default(false)
   isActive            Boolean  @default(true)
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt

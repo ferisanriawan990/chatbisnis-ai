@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { encrypt } from '@/lib/crypto';
 import { saveChatbotSchema } from '@/lib/validations';
 import { getActiveWahaSessionName } from '@/lib/waha-helpers';
 import { validatePublicHttpsUrl } from '@/lib/security';
@@ -28,9 +27,6 @@ export async function POST(req: Request) {
     if (data.actionWebhookUrl && !validatePublicHttpsUrl(data.actionWebhookUrl)) {
       return NextResponse.json({ error: 'Webhook aksi harus berupa URL HTTPS publik.' }, { status: 400 });
     }
-    if (data.n8nWebhookUrl && !validatePublicHttpsUrl(data.n8nWebhookUrl)) {
-      return NextResponse.json({ error: 'Webhook n8n harus berupa URL HTTPS publik.' }, { status: 400 });
-    }
 
     // Save Business Profile
     let profile = await prisma.businessProfile.findFirst({ where: { userId } });
@@ -47,6 +43,7 @@ export async function POST(req: Request) {
           websiteUrl: data.websiteUrl || null,
           instagramUrl: data.instagramUrl || null,
           marketplaceUrl: data.marketplaceUrl || null,
+          customLinks: data.customLinks ? JSON.stringify(data.customLinks) : null,
         },
       });
     } else {
@@ -62,32 +59,10 @@ export async function POST(req: Request) {
           websiteUrl: data.websiteUrl || null,
           instagramUrl: data.instagramUrl || null,
           marketplaceUrl: data.marketplaceUrl || null,
+          customLinks: data.customLinks ? JSON.stringify(data.customLinks) : null,
         },
       });
     }
-
-    // Encrypt keys if provided (and not masked)
-    let encryptedAiApiKey: string | null | undefined = undefined;
-    if (data.aiApiKey && data.aiApiKey !== '••••••••' && data.aiApiKey.length > 0) {
-      const subscription = await prisma.subscription.findFirst({
-        where: { userId, status: 'active' },
-        include: { plan: true },
-        orderBy: { createdAt: 'desc' },
-      });
-      const activePlan = subscription?.plan;
-      const allowCustomApiKey = activePlan?.allowCustomApiKey ?? false;
-      
-      if (!allowCustomApiKey) {
-        return NextResponse.json({ error: 'Plan Anda tidak mengizinkan Custom API Key. Silakan upgrade plan.' }, { status: 403 });
-      }
-      
-      encryptedAiApiKey = encrypt(data.aiApiKey);
-    } else if (data.aiApiKey === '') {
-      // An explicitly empty field means the user wants to use the global key.
-      encryptedAiApiKey = null;
-    }
-
-    
 
     const chatbot = await prisma.chatbotSetting.findFirst({ where: { userId, businessProfileId: profile.id } });
 
@@ -111,7 +86,6 @@ export async function POST(req: Request) {
       outOfHoursMessage: data.outOfHoursMessage,
       aiProvider: data.aiProvider,
       aiModel: data.aiModel,
-      ...(encryptedAiApiKey !== undefined && { aiApiKeyEncrypted: encryptedAiApiKey }),
       dailyChatLimit: data.dailyChatLimit !== undefined ? Number(data.dailyChatLimit) : undefined,
       monthlyChatLimit: data.monthlyChatLimit !== undefined ? Number(data.monthlyChatLimit) : undefined,
       historyMessageCount: data.historyMessageCount !== undefined ? Number(data.historyMessageCount) : undefined,
@@ -119,7 +93,6 @@ export async function POST(req: Request) {
       actionWebhookUrl: data.actionWebhookUrl || null,
       // wahaSessionName is preserved — never overwritten from user input
       wahaSessionName: sessionName,
-      n8nWebhookUrl: data.n8nWebhookUrl || null,
       // wahaBaseUrl, wahaApiKeyEncrypted, wahaServerId are NEVER set from user save
     };
 

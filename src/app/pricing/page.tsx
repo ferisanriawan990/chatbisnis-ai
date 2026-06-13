@@ -32,8 +32,6 @@ export default async function PricingPage() {
                   <li>✅ {plan.maxWhatsappSessions} Sesi WhatsApp</li>
                   {plan.allowLeadCapture ? <li>✅ Auto Lead Capture</li> : <li>❌ Tidak ada Auto Lead Capture</li>}
                   {plan.allowHumanHandover && <li>✅ Human Handover</li>}
-                  {plan.allowN8nTemplates && <li>✅ Akses n8n Webhook</li>}
-                  {plan.allowCustomApiKey && <li>✅ Custom API Key AI</li>}
                 </ul>
                 <Link href="/register" className={`mt-8 block w-full py-3 text-center rounded-xl font-bold shadow-md transition-colors ${isPopular ? 'bg-white text-blue-600 hover:bg-slate-100' : 'border border-blue-600 text-blue-600 hover:bg-blue-50'}`}>
                   {plan.priceMonthly === 0 ? 'Coba Gratis' : 'Berlangganan'}

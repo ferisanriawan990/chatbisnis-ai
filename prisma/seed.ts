@@ -15,10 +15,8 @@ async function main() {
       maxKnowledgeItems: 20,
       dailyChatLimit: 30,
       monthlyChatLimit: 300,
-      allowN8nTemplates: false,
       allowLeadCapture: false,
       allowHumanHandover: false,
-      allowCustomApiKey: false,
     },
     {
       name: 'Starter',
@@ -28,10 +26,8 @@ async function main() {
       maxKnowledgeItems: 100,
       dailyChatLimit: 200,
       monthlyChatLimit: 3000,
-      allowN8nTemplates: true,
       allowLeadCapture: true,
       allowHumanHandover: true,
-      allowCustomApiKey: false,
     },
     {
       name: 'Pro',
@@ -41,10 +37,8 @@ async function main() {
       maxKnowledgeItems: 500,
       dailyChatLimit: 1000,
       monthlyChatLimit: 15000,
-      allowN8nTemplates: true,
       allowLeadCapture: true,
       allowHumanHandover: true,
-      allowCustomApiKey: true,
     },
     {
       name: 'Business',
@@ -54,10 +48,8 @@ async function main() {
       maxKnowledgeItems: 2000,
       dailyChatLimit: 5000,
       monthlyChatLimit: 100000,
-      allowN8nTemplates: true,
       allowLeadCapture: true,
       allowHumanHandover: true,
-      allowCustomApiKey: true,
     }
   ];
 

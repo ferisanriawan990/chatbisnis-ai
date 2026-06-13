@@ -21,7 +21,7 @@ export interface AICredentialCandidate {
   source: 'global' | 'environment' | 'custom';
 }
 
-type ChatbotAICredentialFields = Pick<ChatbotSetting, 'aiApiKeyEncrypted' | 'aiModel'>;
+type ChatbotAICredentialFields = Pick<ChatbotSetting, 'aiModel'>;
 
 export async function getConfiguredGlobalAIModel(): Promise<string> {
   const credential = await prisma.secretCredential.findUnique({
@@ -41,7 +41,6 @@ export async function getConfiguredGlobalAIModel(): Promise<string> {
 
 export async function getAICredentialCandidates(
   chatbotSetting?: ChatbotAICredentialFields | null,
-  allowCustomApiKey = false,
 ): Promise<AICredentialCandidate[]> {
   const credentials: AICredentialCandidate[] = [];
   const globalCredentials = await prisma.secretCredential.findMany({
@@ -85,21 +84,7 @@ export async function getAICredentialCandidates(
     });
   }
 
-  if (allowCustomApiKey && chatbotSetting?.aiApiKeyEncrypted) {
-    try {
-      const customKey = decrypt(chatbotSetting.aiApiKeyEncrypted);
-      if (customKey.startsWith('sk-') && !credentials.some((credential) => credential.apiKey === customKey)) {
-        credentials.push({
-          apiKey: customKey,
-          provider: 'Flaz Cloud',
-          model: chatbotSetting.aiModel || globalModel,
-          source: 'custom',
-        });
-      }
-    } catch (error) {
-      console.error('Failed to decrypt custom AI credential:', error);
-    }
-  }
+
 
   return credentials;
 }

@@ -84,14 +84,20 @@ export class ChatbotEngine {
       await this.captureLead(chatbotSetting.userId, profile.id, params.customerPhone, params.customerName, sanitizedMessageIn);
     }
 
-    // 4. n8n Bypass
-    if (!isTest && activePlan?.allowN8nTemplates && chatbotSetting.n8nWebhookUrl) {
-      const sent = await this.triggerN8N(chatbotSetting.n8nWebhookUrl, params.wahaSessionName, params.customerPhone, params.customerName, sanitizedMessageIn, profile.id);
-      if (sent) return null; // Wait for n8n to reply
-    }
+    // 4. (N8N Bypass Removed)
 
     // 5. Retrieve Knowledge
-    const matchedItems = await searchKnowledgeItems(sanitizedMessageIn, profile.id);
+    let matchedItems = await searchKnowledgeItems(sanitizedMessageIn, profile.id);
+    
+    // Jika ada gambar namun tidak ada kecocokan text, berikan konteks beberapa produk 
+    // agar AI bisa mencocokkan visual gambar dengan deskripsi produk di database.
+    if (params.imageUrl && matchedItems.length === 0) {
+      matchedItems = await prisma.knowledgeItem.findMany({
+        where: { businessProfileId: profile.id, isActive: true },
+        take: 15,
+      });
+    }
+
     const knowledgeMatchCount = matchedItems.length;
 
     // 6. Retrieve Chat History
@@ -332,15 +338,7 @@ export class ChatbotEngine {
     }
   }
 
-  private static async triggerN8N(url: string, sessionName: string, customerPhone: string, customerName: string | undefined, messageIn: string, businessProfileId: string) {
-    try {
-      const { N8NService } = await import('./n8n');
-      await N8NService.sendWebhook(url, { sessionName, customerPhone, customerName: customerName || '', messageIn, businessProfileId });
-      return true;
-    } catch {
-      return false;
-    }
-  }
+
 
   private static buildPrompt(chatbotSetting: any, botConfig: any, profile: any, matchedItems: any[]) {
     let relevantKnowledge = '';
@@ -378,6 +376,7 @@ export class ChatbotEngine {
         websiteUrl: profile.websiteUrl,
         instagramUrl: profile.instagramUrl,
         marketplaceUrl: profile.marketplaceUrl,
+        customLinks: profile.customLinks ? JSON.parse(profile.customLinks) : null,
       },
       customFAQ,
       tone: chatbotSetting.toneStyle || botConfig?.tone || 'Profesional',
@@ -401,10 +400,7 @@ export class ChatbotEngine {
     catalogUrl?: string | null,
   ) {
     const defaultModel = chatbotSetting.aiModel || 'gpt-4o-mini';
-    const credentials = await getAICredentialCandidates(
-      chatbotSetting,
-      activePlan?.allowCustomApiKey === true,
-    );
+    const credentials = await getAICredentialCandidates(chatbotSetting);
 
     if (credentials.length === 0) {
       return { replyMessage: chatbotSetting.fallbackMessage, tokenUsage: 0, usedCatalogUrl: false, promptSource: 'error', aiModelUsed: defaultModel };

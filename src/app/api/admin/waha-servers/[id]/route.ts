@@ -91,9 +91,15 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
     }
 
     if (server.currentSessions > 0 || server._count.chatbotSettings > 0 || server._count.whatsappSessions > 0) {
-      return NextResponse.json({ 
-        error: 'Cannot delete server because it is currently in use by one or more chatbots or sessions.' 
-      }, { status: 409 });
+      // Force unlink instead of blocking
+      await prisma.whatsAppSession.updateMany({
+        where: { wahaServerId: serverId },
+        data: { status: 'disconnected', wahaServerId: null },
+      });
+      await prisma.chatbotSetting.updateMany({
+        where: { wahaServerId: serverId },
+        data: { isActive: false, wahaServerId: null },
+      });
     }
 
     await prisma.wahaServer.delete({

@@ -29,6 +29,10 @@ export const businessProfileSchema = z.object({
   websiteUrl: z.string().url().optional().or(z.literal('')).nullable(),
   instagramUrl: z.string().max(200).optional().or(z.literal('')).nullable(),
   marketplaceUrl: z.string().max(200).optional().or(z.literal('')).nullable(),
+  customLinks: z.array(z.object({
+    title: z.string().min(1, 'Judul link wajib diisi'),
+    url: z.string().url('URL tidak valid'),
+  })).optional().nullable(),
 });
 
 // ─── Chatbot Setting Schema ─────────────────────────────
@@ -49,17 +53,11 @@ export const chatbotSettingSchema = z.object({
   outOfHoursMessage: z.string().max(1000).default('Mohon maaf, saat ini kami sedang di luar jam operasional.'),
   aiProvider: z.literal('Flaz Cloud').default('Flaz Cloud'),
   aiModel: z.string().max(100).default('gpt-4o-mini'),
-  aiApiKey: z.string().max(500).optional().or(z.literal('')).or(z.literal('••••••••'))
-    .refine((val) => {
-      if (!val || val === '' || val === '••••••••') return true;
-      return val.startsWith('sk-');
-    }, { message: 'Custom API Key wajib diawali dengan sk-' }),
   dailyChatLimit: z.coerce.number().int().min(1).max(100000).default(1000),
   monthlyChatLimit: z.coerce.number().int().min(1).max(10000000).default(30000),
   historyMessageCount: z.coerce.number().int().min(2).max(50).default(6),
   knowledgeCharLimit: z.coerce.number().int().min(1000).max(20000).default(3500),
   actionWebhookUrl: z.string().url().optional().or(z.literal('')).nullable(),
-  n8nWebhookUrl: z.string().url().optional().or(z.literal('')).nullable(),
   templateId: z.string().optional().nullable(),
   // Advanced bot config fields
   productsOrServices: z.string().max(2000).optional().nullable(),

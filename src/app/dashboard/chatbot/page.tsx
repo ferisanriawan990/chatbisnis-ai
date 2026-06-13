@@ -32,6 +32,7 @@ export default function ChatbotDashboard() {
     isActive: false,
     templateId: '',
     productsOrServices: '', pricingInfo: '', paymentMethods: '', deliveryMethods: '', serviceArea: '', catalogUrl: '', mapsUrl: '', customFAQ: '',
+    customLinks: [] as { title: string, url: string }[],
   });
 
   const [activeModelDisplay, setActiveModelDisplay] = useState('gpt-4o-mini');
@@ -63,13 +64,12 @@ export default function ChatbotDashboard() {
             catalogUrl: json.botConfig?.catalogUrl || '',
             mapsUrl: json.botConfig?.mapsUrl || '',
             customFAQ: json.botConfig?.customFAQ || '',
+            customLinks: json.businessProfile.customLinks ? JSON.parse(json.businessProfile.customLinks) : [],
           });
           
           if (json.hasGlobalKey && json.globalAiModel) {
             setActiveModelDisplay(`${json.globalAiModel} (Global)`);
-          } else if (json.hasCustomAiKey && json.chatbotSetting.aiModel) {
-            setActiveModelDisplay(`${json.chatbotSetting.aiModel} (Custom)`);
-          } else if (json.chatbotSetting.aiModel) {
+          } else if (json.chatbotSetting?.aiModel) {
             setActiveModelDisplay(json.chatbotSetting.aiModel);
           }
         }
@@ -325,7 +325,7 @@ export default function ChatbotDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
           
-          <BusinessProfileForm form={form} handleChange={handleChange} isComplete={stepsComplete.profile} />
+          <BusinessProfileForm form={form} handleChange={handleChange} isComplete={stepsComplete.profile} setForm={setForm} />
           
           <AIStyleForm form={form} handleChange={handleChange} activeModelDisplay={activeModelDisplay} />
 

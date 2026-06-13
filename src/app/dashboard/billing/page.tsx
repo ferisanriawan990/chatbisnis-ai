@@ -12,7 +12,6 @@ interface PlanRow {
   maxWhatsappSessions: number;
   maxKnowledgeItems: number;
   dailyChatLimit: number;
-  allowN8nTemplates: boolean;
   allowLeadCapture: boolean;
 }
 
@@ -158,11 +157,6 @@ export default function DashboardBillingPage() {
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-500" /> {p.dailyChatLimit} Chat / Hari
                   </li>
-                  {p.allowN8nTemplates && (
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-500" /> Custom n8n Webhook
-                    </li>
-                  )}
                   {p.allowLeadCapture && (
                     <li className="flex items-center gap-2">
                       <CheckCircle2 className="w-4 h-4 text-emerald-500" /> Auto Lead Capture

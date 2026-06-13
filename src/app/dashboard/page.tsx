@@ -3,8 +3,8 @@ import Link from 'next/link';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { getActiveWahaSessionName, assertUserOwnsWahaSession } from '@/lib/waha-helpers';
-import { WAHAService } from '@/lib/waha';
+import { getActiveWahaSessionName } from '@/lib/waha-helpers';
+import { BaileysService } from '@/lib/baileys';
 
 export default async function DashboardIndex() {
   const session = await getServerSession(authOptions);
@@ -34,8 +34,6 @@ export default async function DashboardIndex() {
     orderBy: { createdAt: 'desc' },
   });
   const planName = subscription?.plan?.name || 'Free';
-  const allowCustomKey = !!subscription?.plan?.allowCustomApiKey;
-  const hasCustomKey = !!chatbotSetting?.aiApiKeyEncrypted;
 
   const globalKey = await prisma.secretCredential.findUnique({ where: { key: 'FLAZ_API_KEY_GLOBAL' } });
   const hasGlobalKey = globalKey !== null && globalKey.isActive === true;
@@ -55,27 +53,21 @@ export default async function DashboardIndex() {
     ]);
   }
 
-  // 5. WAHA Status
-  let wahaStatus = 'disconnected';
+  // 5. WhatsApp Gateway Status
+  let whatsappStatus = 'disconnected';
   if (chatbotSetting && businessProfile) {
     const activeSessionName = getActiveWahaSessionName(userId, businessProfile.id);
-    const ownsSession = await assertUserOwnsWahaSession(userId, activeSessionName);
-    const wahaServer = chatbotSetting.wahaServer;
-    
-    if (ownsSession && wahaServer?.apiKeyEncrypted) {
-      try {
-        const waha = WAHAService.fromEncrypted(wahaServer.baseUrl, wahaServer.apiKeyEncrypted);
-        wahaStatus = await waha.getStatus(activeSessionName);
-      } catch {
-        wahaStatus = 'disconnected';
-      }
+    try {
+      whatsappStatus = (await BaileysService.fromEnv().getStatus(activeSessionName)).normalizedStatus;
+    } catch {
+      whatsappStatus = 'disconnected';
     }
   }
 
   // 6. Compute Ready Status
-  const isAiKeyReady = hasGlobalKey || (allowCustomKey && hasCustomKey);
-  const isWahaReady = wahaStatus === 'connected';
-  const allSetupReady = hasProf && isWahaReady && isAiKeyReady;
+  const isAiKeyReady = hasGlobalKey;
+  const isWhatsappReady = whatsappStatus === 'connected';
+  const allSetupReady = hasProf && isWhatsappReady && isAiKeyReady;
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-20">
@@ -105,8 +97,8 @@ export default async function DashboardIndex() {
         <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex items-center gap-4">
            <div className="bg-purple-50 p-3 rounded-lg"><Bot className="w-6 h-6 text-purple-600" /></div>
            <div>
-            <p className="text-sm text-slate-500">Status WAHA</p>
-            <p className={`text-xl font-bold ${isWahaReady ? 'text-emerald-600' : 'text-amber-600 capitalize'}`}>{wahaStatus}</p>
+            <p className="text-sm text-slate-500">Status WhatsApp</p>
+            <p className={`text-xl font-bold ${isWhatsappReady ? 'text-emerald-600' : 'text-amber-600 capitalize'}`}>{whatsappStatus}</p>
           </div>
         </div>
       </div>
@@ -134,19 +126,19 @@ export default async function DashboardIndex() {
           </div>
 
           <div className="flex items-center gap-3 p-4 border rounded-xl bg-slate-50">
-            {isWahaReady ? <CheckCircle2 className="w-6 h-6 text-emerald-500" /> : <Circle className="w-6 h-6 text-slate-300" />}
+            {isWhatsappReady ? <CheckCircle2 className="w-6 h-6 text-emerald-500" /> : <Circle className="w-6 h-6 text-slate-300" />}
             <div className="flex-1">
               <p className="font-semibold text-slate-700">Koneksi WhatsApp</p>
               <p className="text-xs text-slate-500">Scan QR Code agar bot bisa merespon pesan WhatsApp.</p>
             </div>
-            {!isWahaReady && <Link href="/dashboard/waha" className="text-sm text-blue-600 hover:underline font-medium">Hubungkan</Link>}
+            {!isWhatsappReady && <Link href="/dashboard/waha" className="text-sm text-blue-600 hover:underline font-medium">Hubungkan</Link>}
           </div>
 
           <div className="flex items-center gap-3 p-4 border rounded-xl bg-slate-50">
             {isAiKeyReady ? <CheckCircle2 className="w-6 h-6 text-emerald-500" /> : <Circle className="w-6 h-6 text-amber-500" />}
             <div className="flex-1">
               <p className="font-semibold text-slate-700">Akses AI</p>
-              <p className="text-xs text-slate-500">{hasGlobalKey ? 'Akses Global Aktif' : allowCustomKey ? 'Gunakan API Key Sendiri' : 'Global API Key belum diset Admin'}</p>
+              <p className="text-xs text-slate-500">{hasGlobalKey ? 'Akses Global Aktif' : 'Global API Key belum diset Admin'}</p>
             </div>
           </div>
         </div>

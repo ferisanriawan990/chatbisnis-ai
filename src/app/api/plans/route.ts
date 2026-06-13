@@ -16,10 +16,8 @@ export async function GET() {
         maxWhatsappSessions: true,
         maxKnowledgeItems: true,
         monthlyChatLimit: true,
-        allowN8nTemplates: true,
         allowLeadCapture: true,
         allowHumanHandover: true,
-        allowCustomApiKey: true,
       }
     });
 

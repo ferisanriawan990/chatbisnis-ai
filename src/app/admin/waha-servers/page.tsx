@@ -83,7 +83,7 @@ export default function AdminWahaServersPage() {
       const res = await fetch(`/api/admin/waha-servers/${id}/test`, { method: 'POST' });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to test connection');
-      toast.success('Koneksi berhasil! Status WAHA online.');
+      toast.success('Koneksi berhasil! Status Gateway online.');
     } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
       toast.error(error.message);
     } finally {
@@ -109,9 +109,9 @@ export default function AdminWahaServersPage() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
             <Server className="w-6 h-6 text-indigo-600" />
-            WAHA Servers
+            WhatsApp Servers
           </h1>
-          <p className="text-slate-500 mt-1">Kelola instance WhatsApp HTTP API (WAHA) yang melayani traffic chatbot.</p>
+          <p className="text-slate-500 mt-1">Kelola instance WhatsApp Gateway yang melayani traffic chatbot.</p>
         </div>
         <button 
           onClick={() => handleOpenModal()}
@@ -187,7 +187,7 @@ export default function AdminWahaServersPage() {
         <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-lg">
             <div className="flex justify-between items-center p-6 border-b border-slate-100">
-              <h3 className="text-xl font-bold">{editingServer ? 'Edit WAHA Server' : 'Tambah WAHA Server'}</h3>
+              <h3 className="text-xl font-bold">{editingServer ? 'Edit WhatsApp Server' : 'Tambah WhatsApp Server'}</h3>
               <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600">
                 <X className="w-5 h-5" />
               </button>
@@ -195,7 +195,7 @@ export default function AdminWahaServersPage() {
             <form onSubmit={handleSave} className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Nama Server</label>
-                <input type="text" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full p-2 border border-slate-200 rounded-lg" placeholder="Contoh: WAHA Node 1 (SG)" />
+                <input type="text" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full p-2 border border-slate-200 rounded-lg" placeholder="Contoh: Gateway Node 1 (SG)" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Base URL</label>
@@ -236,7 +236,7 @@ export default function AdminWahaServersPage() {
         isOpen={deleteModal.isOpen}
         onClose={() => setDeleteModal({ ...deleteModal, isOpen: false })}
         onConfirm={() => handleDelete(deleteModal.serverId)}
-        title="Hapus WAHA Server"
+        title="Hapus WhatsApp Server"
         message={`Apakah Anda yakin ingin menghapus server "${deleteModal.name}"?`}
       />
     </div>

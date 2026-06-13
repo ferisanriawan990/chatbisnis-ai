@@ -49,10 +49,7 @@ export async function POST() {
         missing.push('Tidak ada paket berlangganan yang aktif');
       }
 
-      const credentials = await getAICredentialCandidates(
-        chatbot,
-        subscription?.plan?.allowCustomApiKey === true,
-      );
+      const credentials = await getAICredentialCandidates(chatbot);
       if (credentials.length === 0) {
         missing.push(
           'Global AI Key belum aktif dan Anda tidak memiliki AI Key custom yang valid',

@@ -55,7 +55,6 @@ export async function GET() {
     // Don't expose decrypted keys to frontend
     const safeChatbotSetting = {
       ...chatbotSetting,
-      aiApiKeyEncrypted: chatbotSetting.aiApiKeyEncrypted ? '••••••••' : null,
       wahaApiKeyEncrypted: null, // Never expose
     };
 
@@ -71,7 +70,7 @@ export async function GET() {
       orderBy: { createdAt: 'desc' },
     });
 
-    const hasCustomAiKey = Boolean(chatbotSetting.aiApiKeyEncrypted);
+
 
     // Get BotConfig (if any)
     const botConfig = await prisma.businessBotConfig.findUnique({ where: { userId } });
@@ -95,7 +94,6 @@ export async function GET() {
       knowledgeCount,
       subscription,
       activePlan: subscription?.plan || null,
-      hasCustomAiKey,
       hasGlobalKey,
       globalAiModel,
     });

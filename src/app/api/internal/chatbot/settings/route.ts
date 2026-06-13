@@ -38,18 +38,16 @@ export async function GET(req: Request) {
 
     // DO NOT return decrypted API keys
     // Just return boolean flags
-    const aiApiKeyConfigured = !!chatbotSetting.aiApiKeyEncrypted;
     const wahaApiKeyConfigured = !!chatbotSetting.wahaApiKeyEncrypted;
 
     // Remove encrypted keys from response
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { aiApiKeyEncrypted, wahaApiKeyEncrypted, ...safeSettings } = chatbotSetting;
+    const { wahaApiKeyEncrypted, ...safeSettings } = chatbotSetting;
 
     return Response.json({
       chatbotSetting: safeSettings,
       businessProfile: chatbotSetting.businessProfile,
       knowledgeItems,
-      aiApiKeyConfigured,
       wahaApiKeyConfigured,
     });
   } catch (error) {

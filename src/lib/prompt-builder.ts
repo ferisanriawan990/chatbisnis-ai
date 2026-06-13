@@ -18,6 +18,7 @@ interface BusinessData {
   websiteUrl?: string | null;
   instagramUrl?: string | null;
   marketplaceUrl?: string | null;
+  customLinks?: Array<{ title: string; url: string }> | null;
 }
 
 interface BuildPromptParams {
@@ -102,6 +103,11 @@ Tujuan utama:
   if (bd.instagramUrl) dataLines.push(`- Instagram: ${bd.instagramUrl}`);
   if (bd.marketplaceUrl) dataLines.push(`- Link Marketplace: ${bd.marketplaceUrl}`);
   if (bd.mapsUrl) dataLines.push(`- Google Maps: ${bd.mapsUrl}`);
+  if (bd.customLinks && bd.customLinks.length > 0) {
+    bd.customLinks.forEach(link => {
+      dataLines.push(`- ${link.title}: ${link.url}`);
+    });
+  }
   if (bd.productsOrServices) dataLines.push(`- Produk/Layanan: ${bd.productsOrServices}`);
   if (bd.pricingInfo) dataLines.push(`- Info Harga: ${bd.pricingInfo}`);
 
