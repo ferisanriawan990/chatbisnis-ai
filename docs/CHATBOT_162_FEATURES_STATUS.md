@@ -144,7 +144,7 @@
 | 140 | QR Code untuk menghubungkan WhatsApp | | | | | | DONE | Tombol "Start Session" dan Scan QR terintegrasi via Dashboard |
 | 141 | Status koneksi WhatsApp | | | | | | DONE | Indikator Connected / Disconnected di Dashboard |
 | 142 | Reconnect otomatis | | | | | | DONE | Ditangani secara native oleh Baileys / WAHA service |
-| 143 | Notifikasi sesi terputus | | | | | | NOT_STARTED | |
+| 143 | Notifikasi sesi terputus | | | | | | DONE | Spanduk Visual Merah `<SessionAlertBanner>` di Dasbor Admin |
 | 144 | Prompt berbeda setiap nomor | | | | | | NOT_STARTED | |
 | 145 | Banyak admin dalam satu bisnis | | | | | | DONE | Diimplementasikan melalui dashboard "Tim & Akses" |
 | 146 | Hak akses berdasarkan peran | | | | | | DONE | Mendukung peran Admin dan Customer Service (RBAC) |
@@ -155,8 +155,8 @@
 | 151 | Pemisahan data setiap bisnis | | | | | | DONE | Setiap data dipisahkan via businessProfileId (Multi-tenant) |
 | 152 | Enkripsi kredensial WhatsApp | | | | | | DONE | Data Whatsapp Server Session diisolasi |
 | 153 | Enkripsi API key | | | | | | DONE | Menggunakan fitur encrypt/decrypt AES256 di utilitas security |
-| 154 | Validasi webhook | | | | | | NOT_STARTED | |
-| 155 | Rate limit pesan | | | | | | NOT_STARTED | |
+| 154 | Validasi webhook | | | | | | DONE | Implementasi kriptografi HMAC SHA-256 pada _header_ Payload Baileys |
+| 155 | Rate limit pesan | | | | | | DONE | Algoritma *Rate Limiting* (Upstash) di `baileys/route.ts` membatasi pesan beruntun |
 | 156 | Batas penggunaan AI | | | | | | DONE | Ditegakkan di dalam `chatbot-engine.ts` |
 | 157 | Peringatan kuota hampir habis | | | | | | DONE | Notifikasi via WhatsApp jika menyentuh 90% batas kuota |
 | 158 | Audit log keamanan | | | | | | DONE | Tersedia UI 'Audit Log' di Sidebar Dasbor untuk Pemilik |

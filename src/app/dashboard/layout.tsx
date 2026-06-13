@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import LogoutButton from '@/components/LogoutButton';
+import SessionAlertBanner from '@/components/dashboard/SessionAlertBanner';
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const { data: session, status } = useSession({
@@ -243,6 +244,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             <h1 className="text-xl font-bold text-blue-600">ChatBisnis AI</h1>
           </div>
         </header>
+
+        <SessionAlertBanner />
 
         <div className="flex-1 p-4 md:p-8 overflow-x-hidden">
           {children}
