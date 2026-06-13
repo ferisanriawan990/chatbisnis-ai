@@ -46,3 +46,30 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
+
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const admin = await getRequiredAdminOrResponse();    
+    if (admin instanceof NextResponse) return admin;
+
+    const planId = (await params).id;
+
+    // Prevent deleting the last plan or active plans if needed, but for now just delete
+    const plan = await prisma.plan.delete({
+      where: { id: planId },
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        actorUserId: admin.id,
+        action: 'DELETE_PLAN',
+        entityType: 'Plan',
+        entityId: plan.id,
+      }
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
+    return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+  }
+}

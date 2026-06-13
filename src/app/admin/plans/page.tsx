@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
-import { CreditCard, Edit2, Plus, X, Check, EyeOff, Sparkles, Server, MessageSquare, Briefcase } from 'lucide-react';
+import { CreditCard, Edit2, Plus, X, Check, EyeOff, Sparkles, Server, MessageSquare, Briefcase, Trash2 } from 'lucide-react';
 
 export default function AdminPlansPage() {
   const [plans, setPlans] = useState<any[]>([]) // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -72,6 +72,23 @@ export default function AdminPlansPage() {
       if (!res.ok) throw new Error(data.error || 'Failed to save plan');
       
       toast.success(`Plan berhasil ${editingPlan ? 'diperbarui' : 'dibuat'}`);
+      setIsModalOpen(false);
+      void fetchPlans();
+    } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
+      toast.error(error.message);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!editingPlan) return;
+    if (!confirm('Apakah Anda yakin ingin menghapus paket ini? Tindakan ini tidak dapat dibatalkan.')) return;
+    
+    try {
+      const res = await fetch(`/api/admin/plans/${editingPlan.id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to delete plan');
+      
+      toast.success('Paket berhasil dihapus');
       setIsModalOpen(false);
       void fetchPlans();
     } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -201,15 +218,20 @@ export default function AdminPlansPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-sm font-semibold text-slate-700 mb-1.5">Nama Plan</label>
-                      <input type="text" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white focus:outline-none transition-colors" placeholder="e.g. Pro, Premium" />
+                      <input type="text" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white focus:outline-none transition-colors" placeholder="e.g. Pro, Premium" />
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">Slug Unik (Tanpa Spasi)</label>
-                      <input type="text" required value={formData.slug} onChange={e => setFormData({...formData, slug: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white focus:outline-none transition-colors font-mono text-sm" placeholder="e.g. pro" />
+                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">Slug Unik (URL)</label>
+                      <input type="text" required value={formData.slug} onChange={e => setFormData({...formData, slug: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white focus:outline-none transition-colors font-mono text-sm" placeholder="e.g. pro" />
                     </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">Harga Berlangganan per Bulan (Rp)</label>
-                      <input type="number" required value={formData.priceMonthly} onChange={e => setFormData({...formData, priceMonthly: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white focus:outline-none transition-colors font-mono" placeholder="99000" />
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">Harga Berlangganan per Bulan</label>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                          <span className="text-slate-500 font-bold">Rp</span>
+                        </div>
+                        <input type="number" required value={formData.priceMonthly} onChange={e => setFormData({...formData, priceMonthly: e.target.value})} className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white focus:outline-none transition-colors font-mono font-bold text-lg text-slate-800" placeholder="99000" />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -219,20 +241,40 @@ export default function AdminPlansPage() {
                   <h4 className="text-sm font-bold text-indigo-600 uppercase tracking-wider mb-4 border-b border-slate-100 pb-2">Batas Kuota Sistem</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">Maksimal Sesi WhatsApp (Device)</label>
-                      <input type="number" required value={formData.maxWhatsappSessions} onChange={e => setFormData({...formData, maxWhatsappSessions: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white focus:outline-none transition-colors" />
+                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">Sesi WhatsAppAktif</label>
+                      <div className="relative">
+                        <input type="number" required value={formData.maxWhatsappSessions} onChange={e => setFormData({...formData, maxWhatsappSessions: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white focus:outline-none transition-colors pr-20 font-bold" />
+                        <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                          <span className="text-slate-400 text-sm font-medium">Device</span>
+                        </div>
+                      </div>
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">Maksimal Dokumen Pengetahuan (KB)</label>
-                      <input type="number" required value={formData.maxKnowledgeItems} onChange={e => setFormData({...formData, maxKnowledgeItems: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white focus:outline-none transition-colors" />
+                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">Kapasitas Knowledge Base</label>
+                      <div className="relative">
+                        <input type="number" required value={formData.maxKnowledgeItems} onChange={e => setFormData({...formData, maxKnowledgeItems: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white focus:outline-none transition-colors pr-20 font-bold" />
+                        <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                          <span className="text-slate-400 text-sm font-medium">Items</span>
+                        </div>
+                      </div>
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">Limit Chat / Hari (FUP Harian)</label>
-                      <input type="number" required value={formData.dailyChatLimit} onChange={e => setFormData({...formData, dailyChatLimit: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white focus:outline-none transition-colors" />
+                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">Limit Chat / Hari (FUP)</label>
+                      <div className="relative">
+                        <input type="number" required value={formData.dailyChatLimit} onChange={e => setFormData({...formData, dailyChatLimit: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white focus:outline-none transition-colors pr-20 font-bold" />
+                        <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                          <span className="text-slate-400 text-sm font-medium">Pesan</span>
+                        </div>
+                      </div>
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-slate-700 mb-1.5">Total Kuota Chat / Bulan</label>
-                      <input type="number" required value={formData.monthlyChatLimit} onChange={e => setFormData({...formData, monthlyChatLimit: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white focus:outline-none transition-colors" />
+                      <div className="relative">
+                        <input type="number" required value={formData.monthlyChatLimit} onChange={e => setFormData({...formData, monthlyChatLimit: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white focus:outline-none transition-colors pr-20 font-bold" />
+                        <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                          <span className="text-slate-400 text-sm font-medium">Pesan</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -268,11 +310,20 @@ export default function AdminPlansPage() {
               </div>
 
               {/* Modal Footer */}
-              <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3 rounded-b-3xl mt-auto">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="px-6 py-3 bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 rounded-xl font-bold transition-colors">Batal</button>
-                <button type="submit" className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-lg shadow-indigo-600/30 transition-all hover:-translate-y-0.5 flex items-center gap-2">
-                  <Check className="w-5 h-5" /> Simpan Konfigurasi
-                </button>
+              <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-between gap-3 rounded-b-3xl mt-auto">
+                <div>
+                  {editingPlan && (
+                    <button type="button" onClick={handleDelete} className="px-6 py-3 bg-red-50 text-red-600 hover:bg-red-100 rounded-xl font-bold transition-colors flex items-center gap-2">
+                      <Trash2 className="w-5 h-5" /> Hapus Paket
+                    </button>
+                  )}
+                </div>
+                <div className="flex gap-3">
+                  <button type="button" onClick={() => setIsModalOpen(false)} className="px-6 py-3 bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 rounded-xl font-bold transition-colors">Batal</button>
+                  <button type="submit" className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-lg shadow-indigo-600/30 transition-all hover:-translate-y-0.5 flex items-center gap-2">
+                    <Check className="w-5 h-5" /> Simpan Konfigurasi
+                  </button>
+                </div>
               </div>
             </form>
           </div>
