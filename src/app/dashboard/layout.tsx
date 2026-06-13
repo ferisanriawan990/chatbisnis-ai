@@ -2,12 +2,11 @@
 
 import { ReactNode, useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { redirect } from 'next/navigation';
-import { usePathname } from 'next/navigation';
+import { redirect, usePathname } from 'next/navigation';
 import { 
   Bot, Settings, BookOpen, Package, MessageSquare, Phone, 
   Users, CreditCard, LayoutDashboard, Send, Inbox, Database, 
-  Box, X, Menu, BotMessageSquare, BarChart3, Shield, ShoppingCart, Star, History, Megaphone
+  Box, X, Menu, BotMessageSquare, BarChart3, Shield, ShoppingCart, Star, History, Megaphone, Sparkles, UserCircle
 } from 'lucide-react';
 import Link from 'next/link';
 import LogoutButton from '@/components/LogoutButton';
@@ -37,7 +36,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     pingServer(); // initial ping
     const interval = setInterval(pingServer, 30000); // every 30s
     return () => clearInterval(interval);
-  }, [status]);  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  }, [status]);  
+
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Prevent scrolling when mobile menu is open
   useEffect(() => {
@@ -50,231 +51,130 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   if (status === 'loading') {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <span className="animate-pulse text-blue-600 font-medium">Memuat dashboard...</span>
+      <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center space-y-4">
+        <Sparkles className="w-8 h-8 text-indigo-500 animate-spin" />
+        <span className="text-slate-500 font-medium tracking-wide">Memuat workspace Anda...</span>
       </div>
     );
   }
 
+  const NavItem = ({ href, icon: Icon, label, colorClass = "text-indigo-600", bgClass = "bg-indigo-50" }: { href: string, icon: any, label: string, colorClass?: string, bgClass?: string }) => {
+    const isActive = pathname === href;
+    return (
+      <Link 
+        href={href} 
+        onClick={() => setMobileMenuOpen(false)}
+        className={`flex items-center gap-3.5 px-4 py-3 rounded-xl transition-all duration-200 group ${
+          isActive 
+            ? `${bgClass} ${colorClass} font-bold shadow-sm border border-slate-200/40` 
+            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 font-medium border border-transparent'
+        }`}
+      >
+        <Icon className={`w-5 h-5 transition-transform duration-300 group-hover:scale-110 ${isActive ? colorClass : 'text-slate-400 group-hover:text-slate-700'}`} />
+        <span>{label}</span>
+      </Link>
+    );
+  };
+
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    <div className="min-h-screen bg-[#F8FAFC] flex font-sans">
+      <SessionAlertBanner />
+
       {/* Mobile Sidebar Overlay */}
       {mobileMenuOpen && (
         <div 
-          className="fixed inset-0 bg-slate-900/50 z-40 md:hidden"
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 md:hidden transition-opacity"
           onClick={() => setMobileMenuOpen(false)}
         />
       )}
 
       {/* Sidebar (Desktop & Mobile) */}
-      <aside className={`fixed md:sticky top-0 left-0 z-50 w-64 h-screen bg-white border-r border-slate-200 flex flex-col transition-transform duration-300 md:translate-x-0 ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className="p-6 flex items-center justify-between">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-            ChatBisnis AI
-          </h1>
-          <button className="md:hidden text-slate-500" onClick={() => setMobileMenuOpen(false)}>
-            <X className="w-6 h-6" />
+      <aside className={`fixed md:sticky top-0 left-0 z-50 w-[280px] h-screen bg-white border-r border-slate-200/80 shadow-[4px_0_24px_rgba(0,0,0,0.02)] flex flex-col transition-transform duration-300 ease-in-out md:translate-x-0 ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        
+        {/* Logo Area */}
+        <div className="p-6 md:p-8 flex items-center justify-between border-b border-slate-100/50">
+          <Link href="/dashboard" className="flex items-center gap-3 group">
+            <div className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white p-2 rounded-xl shadow-md shadow-indigo-600/20 group-hover:shadow-lg group-hover:-translate-y-0.5 transition-all">
+              <Bot className="w-6 h-6" />
+            </div>
+            <div>
+              <h1 className="text-xl font-extrabold text-slate-900 tracking-tight leading-none">ChatBisnis</h1>
+              <span className="text-[10px] uppercase font-bold tracking-widest text-indigo-500">AI Workspace</span>
+            </div>
+          </Link>
+          <button className="md:hidden text-slate-400 hover:text-slate-600 bg-slate-50 hover:bg-slate-100 p-2 rounded-full transition-colors" onClick={() => setMobileMenuOpen(false)}>
+            <X className="w-5 h-5" />
           </button>
         </div>
-        <nav className="flex-1 px-4 space-y-2">
-          <Link 
-            href="/dashboard" 
-            onClick={() => setMobileMenuOpen(false)}
-            className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-              pathname === '/dashboard' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-            }`}
-          >
-            <LayoutDashboard className="w-5 h-5" />
-            <span className="font-medium">Overview</span>
-          </Link>
-          <Link 
-            href="/dashboard/chatbot" 
-            onClick={() => setMobileMenuOpen(false)}
-            className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-              pathname === '/dashboard/chatbot' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-            }`}
-          >
-            <BotMessageSquare className="w-5 h-5" />
-            <span className="font-medium">AI Chatbot</span>
-          </Link>
 
-          <Link 
-            href="/dashboard/knowledge" 
-            onClick={() => setMobileMenuOpen(false)}
-            className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-              pathname === '/dashboard/knowledge' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-            }`}
-          >
-            <Database className="w-5 h-5 mr-3" />
-            <span className="font-medium">Knowledge Base</span>
-          </Link>
-          <Link 
-            href="/dashboard/products" 
-            className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-              pathname === '/dashboard/products' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-            }`}
-          >
-            <Box className="w-5 h-5" />
-            <span className="font-medium">Katalog Produk</span>
-          </Link>
-          <Link 
-            href="/dashboard/orders" 
-            className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-              pathname === '/dashboard/orders' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-            }`}
-          >
-            <ShoppingCart className="w-5 h-5" />
-            <span className="font-medium">Daftar Pesanan</span>
-          </Link>
-          <Link 
-            href="/dashboard/testimonials" 
-            className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-              pathname === '/dashboard/testimonials' ? 'bg-amber-50 text-amber-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-            }`}
-          >
-            <Star className="w-5 h-5 text-amber-500" />
-            <span className="font-medium">Testimoni</span>
-          </Link>
-          <Link 
-            href="/dashboard/bookings" 
-            className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-              pathname === '/dashboard/bookings' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-            }`}
-          >
-            <BookOpen className="w-5 h-5" />
-            <span className="font-medium">Reservasi (Booking)</span>
-          </Link>
+        {/* Navigation Area */}
+        <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200">
+          <div className="px-4 mb-3 mt-2 text-[11px] font-black tracking-widest text-slate-400 uppercase">Core Systems</div>
+          <NavItem href="/dashboard" icon={LayoutDashboard} label="Overview" colorClass="text-blue-700" bgClass="bg-blue-50" />
+          <NavItem href="/dashboard/chatbot" icon={BotMessageSquare} label="AI Chatbot" colorClass="text-indigo-700" bgClass="bg-indigo-50" />
+          <NavItem href="/dashboard/knowledge" icon={Database} label="Knowledge Base" colorClass="text-emerald-700" bgClass="bg-emerald-50" />
+          <NavItem href="/dashboard/whatsapp" icon={Phone} label="WhatsApp Device" colorClass="text-teal-700" bgClass="bg-teal-50" />
+          
+          <div className="px-4 mb-3 mt-8 text-[11px] font-black tracking-widest text-slate-400 uppercase">E-Commerce</div>
+          <NavItem href="/dashboard/products" icon={Box} label="Katalog Produk" colorClass="text-amber-700" bgClass="bg-amber-50" />
+          <NavItem href="/dashboard/orders" icon={ShoppingCart} label="Daftar Pesanan" colorClass="text-orange-700" bgClass="bg-orange-50" />
+          <NavItem href="/dashboard/bookings" icon={BookOpen} label="Reservasi (Booking)" colorClass="text-pink-700" bgClass="bg-pink-50" />
+          <NavItem href="/dashboard/testimonials" icon={Star} label="Testimoni" colorClass="text-yellow-700" bgClass="bg-yellow-50" />
 
-          <Link 
-            href="/dashboard/campaigns" 
-            className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-              pathname === '/dashboard/campaigns' ? 'bg-fuchsia-50 text-fuchsia-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-            }`}
-          >
-            <Megaphone className="w-5 h-5" />
-            <span className="font-medium">Pemasaran (Campaign)</span>
-          </Link>
+          <div className="px-4 mb-3 mt-8 text-[11px] font-black tracking-widest text-slate-400 uppercase">Engagement & Logs</div>
+          <NavItem href="/dashboard/inbox" icon={Inbox} label="Live Inbox" colorClass="text-sky-700" bgClass="bg-sky-50" />
+          <NavItem href="/dashboard/chat-logs" icon={MessageSquare} label="History Chat" colorClass="text-slate-700" bgClass="bg-slate-100" />
+          <NavItem href="/dashboard/leads" icon={Users} label="Lead CRM" colorClass="text-cyan-700" bgClass="bg-cyan-50" />
+          <NavItem href="/dashboard/campaigns" icon={Megaphone} label="Campaigns" colorClass="text-rose-700" bgClass="bg-rose-50" />
+          <NavItem href="/dashboard/broadcast" icon={Send} label="Broadcast" colorClass="text-violet-700" bgClass="bg-violet-50" />
+          <NavItem href="/dashboard/analytics" icon={BarChart3} label="Analytics" colorClass="text-blue-700" bgClass="bg-blue-50" />
 
-          <Link 
-            href="/dashboard/chat-logs" 
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors ${
-              pathname === '/dashboard/chat-logs' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-            }`}
-          >
-            <MessageSquare className="w-5 h-5" />
-            <span className="font-medium text-sm">Riwayat Chat</span>
-          </Link>
-
-          <Link 
-            href="/dashboard/analytics" 
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors ${
-              pathname === '/dashboard/analytics' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-            }`}
-          >
-            <BarChart3 className="w-5 h-5" />
-            <span className="font-medium text-sm">Analytics</span>
-          </Link>
-
-          <Link 
-            href="/dashboard/leads" 
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors ${
-              pathname === '/dashboard/leads' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-            }`}
-          >
-            <Users className="w-5 h-5" />
-            <span className="font-medium">Data Pelanggan</span>
-          </Link>
-
-          <Link 
-            href="/dashboard/team" 
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors ${
-              pathname === '/dashboard/team' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-            }`}
-          >
-            <Shield className="w-5 h-5" />
-            <span className="font-medium">Tim & Akses</span>
-          </Link>
-
-          <Link 
-            href="/dashboard/broadcast" 
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors ${
-              pathname === '/dashboard/broadcast' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-            }`}
-          >
-            <Send className="w-5 h-5" />
-            <span className="font-medium text-sm">Broadcast</span>
-          </Link>
-
-          <Link 
-            href="/dashboard/inbox" 
-            onClick={() => setMobileMenuOpen(false)}
-            className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-              pathname === '/dashboard/inbox' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-            }`}
-          >
-            <Inbox className="w-5 h-5" />
-            <span className="font-medium">Live Chat Inbox</span>
-          </Link>
-
-          <Link 
-            href="/dashboard/whatsapp" 
-            onClick={() => setMobileMenuOpen(false)}
-            className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-              pathname === '/dashboard/whatsapp' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-            }`}
-          >
-            <Settings className="w-5 h-5" />
-            <span className="font-medium">Status WhatsApp</span>
-          </Link>
-
-          <Link 
-            href="/dashboard/billing" 
-            onClick={() => setMobileMenuOpen(false)}
-            className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-              pathname === '/dashboard/billing' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-            }`}
-          >
-            <CreditCard className="w-5 h-5" />
-            <span className="font-medium">Billing</span>
-          </Link>
-
-          <Link 
-            href="/dashboard/settings/audit" 
-            onClick={() => setMobileMenuOpen(false)}
-            className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-              pathname === '/dashboard/settings/audit' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-            }`}
-          >
-            <History className="w-5 h-5" />
-            <span className="font-medium">Audit Log</span>
-          </Link>
+          <div className="px-4 mb-3 mt-8 text-[11px] font-black tracking-widest text-slate-400 uppercase">Organization</div>
+          <NavItem href="/dashboard/team" icon={Shield} label="Manajemen Tim" colorClass="text-fuchsia-700" bgClass="bg-fuchsia-50" />
+          <NavItem href="/dashboard/billing" icon={CreditCard} label="Billing & Plan" colorClass="text-green-700" bgClass="bg-green-50" />
+          <NavItem href="/dashboard/settings/privacy" icon={Settings} label="Settings" colorClass="text-slate-700" bgClass="bg-slate-100" />
         </nav>
-        <div className="p-4 border-t border-slate-200">
-          <div className="mb-4 px-3 text-sm text-slate-500 truncate">
-            {session?.user?.email}
+
+        {/* User Profile Footer */}
+        <div className="p-4 border-t border-slate-100 bg-slate-50/50">
+          <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-slate-200 shadow-sm mb-3">
+            <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center text-indigo-700 font-bold">
+              {session?.user?.name?.[0]?.toUpperCase() || <UserCircle className="w-5 h-5" />}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-slate-900 truncate">{session?.user?.name || 'User'}</p>
+              <p className="text-xs text-slate-500 truncate">{session?.user?.email}</p>
+            </div>
           </div>
-          <LogoutButton />
+          <div className="px-1">
+            <LogoutButton />
+          </div>
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col min-h-screen w-full md:w-[calc(100%-16rem)]">
-        {/* Mobile Header */}
-        <header className="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-4 sticky top-0 z-30 md:hidden">
-          <div className="flex items-center gap-3">
-            <button className="text-slate-500 hover:text-slate-700" onClick={() => setMobileMenuOpen(true)}>
-              <Menu className="w-6 h-6" />
-            </button>
-            <h1 className="text-xl font-bold text-blue-600">ChatBisnis AI</h1>
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+        {/* Background Decor */}
+        <div className="absolute top-0 left-0 w-full h-80 bg-indigo-500/5 blur-[120px] rounded-b-full pointer-events-none z-0"></div>
+
+        {/* Mobile Header (Sticky) */}
+        <header className="md:hidden sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="bg-indigo-600 p-1.5 rounded-lg"><Bot className="w-5 h-5 text-white" /></div>
+            <span className="font-bold text-slate-900">ChatBisnis</span>
           </div>
+          <button onClick={() => setMobileMenuOpen(true)} className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-full transition-colors">
+            <Menu className="w-6 h-6" />
+          </button>
         </header>
 
-        <SessionAlertBanner />
-
-        <div className="flex-1 p-4 md:p-8 overflow-x-hidden">
-          {children}
-        </div>
-      </main>
+        {/* Page Content */}
+        <main className="flex-1 overflow-y-auto p-4 md:p-8 lg:p-10 z-10">
+          <div className="max-w-7xl mx-auto">
+            {children}
+          </div>
+        </main>
+      </div>
     </div>
   );
 }
