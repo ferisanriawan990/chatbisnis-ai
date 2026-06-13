@@ -166,6 +166,21 @@ export const AIStyleForm = ({ form, handleChange, activeModelDisplay }: any) => 
           <option value="Sales / Soft Selling">🔥 Sales / Persuasif</option>
         </select>
       </div>
+      <div>
+        <label className="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">Bahasa Utama</label>
+        <select name="language" value={form.language} onChange={handleChange} className="w-full p-3.5 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 outline-none transition-all shadow-sm hover:border-purple-300 font-medium text-slate-700 appearance-none cursor-pointer">
+          <option value="id">🇮🇩 Bahasa Indonesia</option>
+          <option value="en">🇬🇧 English</option>
+        </select>
+      </div>
+      <div>
+        <label className="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">Panjang Balasan</label>
+        <select name="maxReplyLength" value={form.maxReplyLength} onChange={handleChange} className="w-full p-3.5 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 outline-none transition-all shadow-sm hover:border-purple-300 font-medium text-slate-700 appearance-none cursor-pointer">
+          <option value="pendek">⚡ Singkat & Padat</option>
+          <option value="sedang">💬 Sedang (Normal)</option>
+          <option value="panjang">📝 Detail & Panjang</option>
+        </select>
+      </div>
       
       <div className="md:col-span-2 flex flex-col gap-3 mt-2">
         <label className="block text-sm font-semibold text-slate-700 ml-1">Karakteristik & Perilaku Bot</label>
@@ -285,6 +300,7 @@ export const AdvancedRulesPanel = ({ form, handleChange }: any) => (
       <div><label className="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">Fallback Message (Bila bot tidak tahu)</label><textarea name="fallbackMessage" value={form.fallbackMessage} onChange={handleChange} rows={2} className="w-full p-3.5 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-amber-500/10 focus:border-amber-500 outline-none transition-all shadow-sm hover:border-amber-300 resize-none"></textarea></div>
       <div><label className="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">Pesan Handover (Saat diteruskan ke Admin)</label><textarea name="handoverMessage" value={form.handoverMessage} onChange={handleChange} rows={2} className="w-full p-3.5 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-amber-500/10 focus:border-amber-500 outline-none transition-all shadow-sm hover:border-amber-300 resize-none"></textarea></div>
       <div><label className="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">Keyword Handover (Dipisah koma)</label><input name="handoverKeywords" value={form.handoverKeywords} onChange={handleChange} className="w-full p-3.5 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-amber-500/10 focus:border-amber-500 outline-none transition-all shadow-sm hover:border-amber-300" placeholder="cth: admin, manusia, cs" /></div>
+      <div><label className="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">Pesan Di Luar Jam Operasional</label><textarea name="outOfHoursMessage" value={form.outOfHoursMessage} onChange={handleChange} rows={2} className="w-full p-3.5 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-amber-500/10 focus:border-amber-500 outline-none transition-all shadow-sm hover:border-amber-300 resize-none" placeholder="Mohon maaf, saat ini kami sedang tutup..."></textarea></div>
     </div>
   </section>
 );
