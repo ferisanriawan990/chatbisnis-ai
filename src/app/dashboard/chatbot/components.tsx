@@ -131,6 +131,18 @@ export const BusinessProfileForm = ({ form, handleChange, isComplete, setForm }:
                 )}
               </div>
             </div>
+            
+            <label className="flex items-start gap-3 p-4 bg-white border border-slate-200 rounded-xl hover:border-blue-300 transition-colors cursor-pointer group">
+              <input type="checkbox" name="allowVoiceNote" checked={form.allowVoiceNote} onChange={handleChange} className="peer w-6 h-6 text-blue-600 bg-slate-100 border-slate-300 rounded focus:ring-blue-500 cursor-pointer transition-all mt-1" />
+              <div className="flex-1">
+                <span className="font-semibold text-slate-800 peer-checked:text-blue-700 block text-base flex items-center gap-2">
+                  Terima Voice Note (Pesan Suara) 🎙️
+                </span>
+                <p className="text-slate-500 text-sm mt-1 leading-relaxed">
+                  Izinkan AI untuk mendengarkan, mentranskripsikan, dan memahami pesan suara dari pelanggan. Mengonsumsi lebih banyak token.
+                </p>
+              </div>
+            </label>
 
           </div>
         </details>
