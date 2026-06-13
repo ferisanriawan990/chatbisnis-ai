@@ -150,7 +150,7 @@
 | 146 | Hak akses berdasarkan peran | | | | | | DONE | Mendukung peran Admin dan Customer Service (RBAC) |
 | 147 | Pembatasan data berdasarkan cabang | | | | | | NOT_STARTED | |
 | 148 | Log aktivitas pengguna | | | | | | NOT_STARTED | |
-| 149 | Pembagian chat otomatis | | | | | | NOT_STARTED | |
+| 149 | Pembagian chat otomatis | | | | | | DONE | Algoritma Round-Robin (Beban CS Terendah) diterapkan di Mesin AI |
 | 150 | Dashboard Super Admin | | | | | | NOT_STARTED | |
 | 151 | Pemisahan data setiap bisnis | | | | | | DONE | Setiap data dipisahkan via businessProfileId (Multi-tenant) |
 | 152 | Enkripsi kredensial WhatsApp | | | | | | DONE | Data Whatsapp Server Session diisolasi |

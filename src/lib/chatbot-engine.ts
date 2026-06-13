@@ -459,6 +459,26 @@ export class ChatbotEngine {
           tagsStr = extracted.tags.join(',');
         }
 
+        // Phase 29: Auto-Assign Leads (Round-Robin)
+        // Find all staff members for this business
+        const staffMembers = await prisma.userRoleAssignment.findMany({
+          where: { businessProfileId },
+          include: { 
+            user: { 
+              include: { 
+                _count: { select: { assignedLeads: true } } 
+              } 
+            } 
+          }
+        });
+
+        let selectedAdminId = undefined;
+        if (staffMembers.length > 0) {
+          // Sort ascending by the number of assigned leads to find the staff with least load
+          staffMembers.sort((a, b) => (a.user._count.assignedLeads || 0) - (b.user._count.assignedLeads || 0));
+          selectedAdminId = staffMembers[0].user.id;
+        }
+
         await prisma.lead.upsert({
           where: { businessProfileId_customerPhone: { businessProfileId, customerPhone } },
           update: {
@@ -485,7 +505,8 @@ export class ChatbotEngine {
             notes: extracted.notes,
             tags: tagsStr,
             leadScore: extracted.leadScore,
-            churnReason: extracted.churnReason
+            churnReason: extracted.churnReason,
+            assignedAdminId: selectedAdminId
           }
         });
       }
