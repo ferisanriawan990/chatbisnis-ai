@@ -120,8 +120,8 @@
 | 116 | Cek ketersediaan jadwal | | | | | | DONE | Diimplementasikan melalui AI native tool check_availability |
 | 117 | Konfirmasi booking | | | | | | DONE | Tersedia UI persetujuan Booking untuk tim Admin |
 | 118 | Pengingat jadwal | | | | | | NOT_STARTED | |
-| 119 | Perubahan jadwal | | | | | | NOT_STARTED | |
-| 120 | Pembatalan reservasi | | | | | | NOT_STARTED | |
+| 119 | Perubahan jadwal | | | | | | DONE | Diimplementasikan lewat native tool reschedule_booking |
+| 120 | Pembatalan reservasi | | | | | | DONE | Diimplementasikan lewat native tool cancel_booking |
 | 121 | Pembayaran uang muka | | | | | | NOT_STARTED | |
 | 122 | Daftar tunggu | | | | | | NOT_STARTED | |
 | 123 | Penugasan teknisi atau petugas | | | | | | NOT_STARTED | |

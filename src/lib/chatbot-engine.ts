@@ -597,6 +597,8 @@ Kamu MEMILIKI native tool_call berikut:
 - {"tool_call": true, "action": "verify_payment"} : PANGGIL INI JIKA pelanggan baru saja mengirimkan FOTO BUKTI TRANSFER dan kamu bisa memvalidasi bahwa foto tersebut memang bukti transfer.
 - {"tool_call": true, "action": "check_availability", "params": {"date": "YYYY-MM-DD", "hour": "HH:00"}} : Cek apakah slot jam tersebut kosong untuk layanan.
 - {"tool_call": true, "action": "create_booking", "params": {"date": "YYYY-MM-DD", "hour": "HH:00", "serviceName": "Nama Layanan"}} : Buat reservasi / booking ke dalam sistem jika slot kosong.
+- {"tool_call": true, "action": "reschedule_booking", "params": {"newDate": "YYYY-MM-DD", "newHour": "HH:00", "reason": "Alasan pindah"}} : PANGGIL INI jika pelanggan ingin mengubah jadwal bookingnya yang sudah ada. Tanyakan dulu tanggal/jam penggantinya.
+- {"tool_call": true, "action": "cancel_booking", "params": {"reason": "Alasan batal"}} : PANGGIL INI HANYA JIKA pelanggan mengkonfirmasi ingin membatalkan bookingnya secara permanen. Pastikan bertanya "Apakah Kakak yakin ingin membatalkan jadwal ini?" sebelum mengeksekusi ini.
 - {"tool_call": true, "action": "record_testimonial", "params": {"rating": 5, "review": "Teks ulasan..."}} : PANGGIL INI otomatis jika pelanggan memberikan balasan rating angka (1-5) beserta komentarnya, sebagai umpan balik pasca-pembelian.
 - {"tool_call": true, "action": "request_human"} : PANGGIL INI JIKA pelanggan benar-benar kebingungan, marah, atau meminta eksplisit berbicara dengan admin/manusia/agen, dan kamu tidak bisa menyelesaikannya.
 
@@ -774,13 +776,53 @@ CONTOH BENAR: [SEND_IMAGE: https://imgur.com/xyz.jpg | Ini adalah gambar sepatu]
                       }
                     });
                   });
-                  toolResultString = `Booking BERHASIL DIBUAT (Kode: ${newBooking.id.substring(0,6)}). Konfirmasikan ini ke pelanggan dengan ramah.`;
-                } catch (err: any) {
-                  if (err.message === 'SLOT_TAKEN') {
-                    toolResultString = 'Gagal: Maaf, pada jam tersebut slot sudah terisi (double-booking). Silakan tawarkan jam lain.';
+                  toolResultString = `Booking berhasil dibuat: ID ${newBooking.id.substring(0,6)} pada tanggal ${toolData.params.date} jam ${toolData.params.hour}. Beritahu pelanggan bahwa reservasi sudah terkonfirmasi.`;
+                } catch (e: any) {
+                  if (e.message === 'SLOT_TAKEN') {
+                    toolResultString = `Gagal Booking: Slot pada ${toolData.params.date} jam ${toolData.params.hour} sudah terisi saat mencoba menyimpan. Tawarkan slot lain.`;
                   } else {
-                    toolResultString = 'Gagal: Terjadi kesalahan saat menyimpan booking.';
+                    toolResultString = `Gagal Booking: Terjadi kesalahan sistem. Coba lagi nanti.`;
                   }
+                }
+              } else if (toolData.action === 'reschedule_booking' && businessProfileId && customerPhone) {
+                const requestedDateTime = new Date(`${toolData.params.newDate}T${toolData.params.newHour}:00+07:00`);
+                try {
+                  const result = await prisma.$transaction(async (tx) => {
+                    const existingBooking = await tx.booking.findFirst({
+                      where: { businessProfileId, customerPhone, status: { notIn: ['cancelled', 'completed'] } },
+                      orderBy: { createdAt: 'desc' }
+                    });
+                    if (!existingBooking) throw new Error('NO_ACTIVE_BOOKING');
+
+                    const conflict = await tx.booking.findFirst({
+                      where: { businessProfileId, bookingDate: requestedDateTime, status: { not: 'cancelled' } }
+                    });
+                    if (conflict) throw new Error('SLOT_TAKEN');
+
+                    return await tx.booking.update({
+                      where: { id: existingBooking.id },
+                      data: { bookingDate: requestedDateTime, notes: toolData.params.reason || 'Rescheduled by AI' }
+                    });
+                  });
+                  toolResultString = `Jadwal berhasil diubah ke ${toolData.params.newDate} jam ${toolData.params.newHour}. Sampaikan ke pelanggan bahwa jadwal sudah di-update.`;
+                } catch (e: any) {
+                  if (e.message === 'NO_ACTIVE_BOOKING') toolResultString = 'Gagal: Pelanggan tidak memiliki jadwal aktif untuk diubah.';
+                  else if (e.message === 'SLOT_TAKEN') toolResultString = `Gagal: Slot pada ${toolData.params.newDate} jam ${toolData.params.newHour} sudah terisi. Tawarkan jam lain.`;
+                  else toolResultString = 'Gagal memproses reschedule.';
+                }
+              } else if (toolData.action === 'cancel_booking' && businessProfileId && customerPhone) {
+                const existingBooking = await prisma.booking.findFirst({
+                  where: { businessProfileId, customerPhone, status: { notIn: ['cancelled', 'completed'] } },
+                  orderBy: { createdAt: 'desc' }
+                });
+                if (existingBooking) {
+                  await prisma.booking.update({
+                    where: { id: existingBooking.id },
+                    data: { status: 'cancelled', notes: toolData.params.reason || 'Cancelled by AI' }
+                  });
+                  toolResultString = 'Booking berhasil dibatalkan. Konfirmasi ke pelanggan bahwa jadwalnya telah dihapus.';
+                } else {
+                  toolResultString = 'Gagal: Pelanggan tidak memiliki jadwal aktif untuk dibatalkan.';
                 }
               } else if (toolData.action === 'record_testimonial' && businessProfileId && customerPhone) {
                 const ratingNum = Number(toolData.params.rating) || 5;
