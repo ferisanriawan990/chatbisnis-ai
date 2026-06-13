@@ -80,7 +80,7 @@ export async function GET(req: Request) {
     if (faqIds.length > 0) {
       const faqs = await prisma.knowledgeItem.findMany({
         where: { id: { in: faqIds } },
-        select: { id: true, question: true, title: true } // 'question' is used in schema, but it might be 'title' if we use source title? Wait, KnowledgeItem has 'question' and 'productName'
+        select: { id: true, question: true, productName: true } // Use productName if question is null
       });
       
       topFaqs = faqs.map(faq => ({
