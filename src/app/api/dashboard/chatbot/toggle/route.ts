@@ -41,6 +41,7 @@ export async function POST() {
         missing.push('WhatsApp belum terhubung (status harus: connected)');
       }
 
+      /*
       const subscription = await prisma.subscription.findUnique({
         where: { userId },
         include: { plan: true },
@@ -48,6 +49,7 @@ export async function POST() {
       if (!subscription || subscription.status !== 'active' || !subscription.plan?.isActive) {
         missing.push('Tidak ada paket berlangganan yang aktif');
       }
+      */
 
       const credentials = await getAICredentialCandidates(chatbot);
       if (credentials.length === 0) {
