@@ -57,6 +57,7 @@ model User {
   lastSeenAt            DateTime?
   createdAt             DateTime             @default(now())
   updatedAt             DateTime             @updatedAt
+  avatar                String?              @db.Text
   businessProfiles      BusinessProfile[]
   chatbotSettings       ChatbotSetting[]
   knowledgeSources      KnowledgeSource[]

@@ -137,15 +137,16 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
         {/* User Profile Footer */}
         <div className="p-4 border-t border-slate-100 bg-slate-50/50">
-          <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-slate-200 shadow-sm mb-3">
-            <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center text-indigo-700 font-bold">
+          <Link href="/dashboard/profile" className="flex items-center gap-3 p-3 bg-white hover:bg-indigo-50/50 rounded-xl border border-slate-200 shadow-sm mb-3 transition-colors group cursor-pointer">
+            <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center text-indigo-700 font-bold overflow-hidden shrink-0">
+              {/* To fully support avatar from session, next-auth needs custom callbacks. For now, use initials. Avatar will show in Profile Page. */}
               {session?.user?.name?.[0]?.toUpperCase() || <UserCircle className="w-5 h-5" />}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-slate-900 truncate">{session?.user?.name || 'User'}</p>
-              <p className="text-xs text-slate-500 truncate">{session?.user?.email}</p>
+              <p className="text-sm font-bold text-slate-900 group-hover:text-indigo-700 transition-colors truncate">{session?.user?.name || 'User'}</p>
+              <p className="text-[10px] uppercase font-bold text-slate-400 group-hover:text-indigo-500 transition-colors mt-0.5 tracking-wider">Atur Profil</p>
             </div>
-          </div>
+          </Link>
           <div className="px-1">
             <LogoutButton />
           </div>
