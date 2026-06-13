@@ -132,14 +132,21 @@ export async function POST(req: NextRequest) {
     for (const [index, media] of (result.mediaToSend || []).entries()) {
       try {
         let imageUrl = media.url;
-        // Proxy Unsplash images to prevent 403 blocks from datacenter IPs
-        if (imageUrl.includes('images.unsplash.com')) {
-          imageUrl = `https://wsrv.nl/?url=${encodeURIComponent(imageUrl)}`;
+        // Fetch the image on Vercel and send as Base64 to bypass VPS datacenter blocks
+        const imgRes = await fetch(imageUrl);
+        if (!imgRes.ok) {
+          throw new Error(`Failed to fetch image: HTTP ${imgRes.status}`);
         }
-        await gateway.sendImage(
+        
+        const arrayBuffer = await imgRes.arrayBuffer();
+        const base64 = Buffer.from(arrayBuffer).toString('base64');
+        const mimeType = imgRes.headers.get('content-type') || 'image/jpeg';
+
+        await gateway.sendImageBase64(
           event.sessionId,
           customerPhone,
-          imageUrl,
+          mimeType,
+          base64,
           media.caption,
           webhookIdempotencyKey(event.messageId, `image-${index}`),
         );

@@ -160,6 +160,24 @@ export class BaileysService {
     );
   }
 
+  async sendImageBase64(
+    sessionId: string,
+    to: string,
+    mimeType: string,
+    base64: string,
+    caption?: string,
+    idempotencyKey?: string,
+  ) {
+    return this.request<{ messageId?: string; timestamp: number; idempotentReplay: boolean }>(
+      '/messages/send-image-base64',
+      {
+        method: 'POST',
+        headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : undefined,
+        body: JSON.stringify({ sessionId, to, mimeType, base64, caption }),
+      },
+    );
+  }
+
   private normalizeStatus(status: string): BaileysSessionStatus {
     if (status === 'connected') return 'connected';
     if (status === 'qr') return 'qr';
