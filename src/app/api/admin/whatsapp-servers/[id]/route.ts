@@ -12,7 +12,7 @@ const updateWhatsappServerSchema = z.object({
   apiKey: z.string().optional(),
   maxSessions: z.coerce.number().min(1).optional(),
   isActive: z.boolean().optional(),
-  notes: z.string().optional(),
+  notes: z.string().nullable().optional(),
 });
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -29,8 +29,17 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       return NextResponse.json({ error: 'Invalid data' }, { status: 400 });
     }
 
-    if (parsed.data.baseUrl && process.env.NODE_ENV === 'production' && !validatePublicHttpsUrl(parsed.data.baseUrl)) {
-      return NextResponse.json({ error: 'URL WhatsApp Server harus HTTPS publik dan bukan IP lokal (SSRF Protection).' }, { status: 400 });
+    // SSRF protection (allowing HTTP for user's VPS)
+    if (parsed.data.baseUrl) {
+      try {
+        const url = new URL(parsed.data.baseUrl);
+        const hn = url.hostname;
+        if (hn === 'localhost' || hn === '127.0.0.1' || hn === '0.0.0.0' || hn.startsWith('10.') || hn.startsWith('192.168.')) {
+           return NextResponse.json({ error: 'URL WhatsApp Server tidak boleh menggunakan IP lokal (SSRF Protection).' }, { status: 400 });
+        }
+      } catch (e) {
+        return NextResponse.json({ error: 'URL tidak valid' }, { status: 400 });
+      }
     }
 
     const { apiKey, baseUrl, ...rest } = parsed.data;

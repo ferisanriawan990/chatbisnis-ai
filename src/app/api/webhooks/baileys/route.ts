@@ -187,6 +187,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ received: true });
   } catch (error) {
     console.error('POST /api/webhooks/baileys error:', error instanceof Error ? error.message : error);
+    try {
+      const errorMsg = error instanceof Error ? error.stack || error.message : String(error);
+      const errorData = (error && typeof error === 'object' && 'response' in error) 
+        ? ((error as any).response?.data || (error as any).response?.status || errorMsg)
+        : errorMsg;
+        
+      const msg = typeof errorData === 'object' ? JSON.stringify(errorData) : String(errorData);
+      await prisma.auditLog.create({
+        data: {
+          actorUserId: null,
+          action: 'DEBUG_WEBHOOK_ERROR',
+          entityType: 'Error',
+          entityId: msg.slice(0, 50),
+          metadataJson: msg,
+        }
+      });
+    } catch (e) {}
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
