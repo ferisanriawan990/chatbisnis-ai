@@ -21,6 +21,7 @@ enum KnowledgeSourceType {
   pdf
   docx
   google_sheet
+  web_scraping
 }
 
 enum KnowledgeSourceStatus {
@@ -99,6 +100,7 @@ model BusinessProfile {
   roles                Role[]
   userRoleAssignments  UserRoleAssignment[]
   tenantFeatureSettings TenantFeatureSetting[]
+  products             Product[]
 }
 
 model ChatbotSetting {
@@ -524,7 +526,7 @@ model RolePermission {
 model UserRoleAssignment {
   id                String   @id @default(uuid())
   userId            String
-  businessProfileId String?  // The tenant where this role applies
+  businessProfileId String?  
   roleId            String
   createdAt         DateTime @default(now())
 
@@ -534,6 +536,25 @@ model UserRoleAssignment {
 
   @@unique([userId, businessProfileId, roleId])
   @@index([userId])
+  @@index([businessProfileId])
+}
+
+model Product {
+  id                String          @id @default(uuid())
+  businessProfileId String
+  name              String
+  description       String?         @db.Text
+  price             Decimal         @default(0.0)
+  stock             Int             @default(0)
+  isAvailable       Boolean         @default(true)
+  imageUrl          String?
+  category          String?
+  
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  businessProfile   BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+
   @@index([businessProfileId])
 }
 

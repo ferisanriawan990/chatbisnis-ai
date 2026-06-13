@@ -61,10 +61,20 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'API Key Flaz Cloud harus diawali dengan sk-' }, { status: 400 });
       }
 
-      const validation = await AIService.validateCredential(
+      let validation = await AIService.validateCredential(
         parsed.data.value,
         await getConfiguredGlobalAIModel(),
       );
+
+      if (!validation.ok) {
+        console.warn('Initial validation failed, trying fallbacks...');
+        const fallbacks = ['gemini-2.5-flash-lite', 'gpt-4o-mini', 'gemini-1.5-flash'];
+        for (const fb of fallbacks) {
+          validation = await AIService.validateCredential(parsed.data.value, fb);
+          if (validation.ok) break;
+        }
+      }
+
       if (!validation.ok) {
         return NextResponse.json(
           { error: validation.error || 'API Key Flaz Cloud tidak valid.' },

@@ -7,6 +7,7 @@ interface GenerateConfig {
   model: string;
   apiKey: string;
   maxTokens?: number;
+  responseFormat?: { type: 'json_object' } | { type: 'text' };
 }
 
 interface GenerateResult {
@@ -43,7 +44,7 @@ export class AIService {
       const signal = AbortSignal.timeout(30000); // 30s timeout
 
       console.log('--- AI_SERVICE_CALL ---');
-      console.log('Using Model:', config.model || 'gpt-4o-mini');
+      console.log('Using Model:', config.model || 'gemini-2.5-flash-lite');
       console.log('Using Provider:', config.provider);
 
       const res = await fetch(url, {
@@ -54,7 +55,7 @@ export class AIService {
           Authorization: `Bearer ${config.apiKey}`,
         },
         body: JSON.stringify({
-          model: config.model || 'gpt-4o-mini',
+          model: config.model || 'gemini-2.5-flash-lite',
           messages: [
             { role: 'system', content: config.systemPrompt },
             ...(config.chatHistory || []),
@@ -70,13 +71,20 @@ export class AIService {
           ],
           max_tokens: config.maxTokens || 1500,
           temperature: 0.7,
+          response_format: config.responseFormat,
         }),
         // Add timeout via AbortController if supported in edge/node, or just rely on platform defaults
       });
 
       if (!res.ok) {
-        console.error('AI API Error Status:', res.status);
-        throw new AIServiceError(`AI provider mengembalikan status ${res.status}.`, res.status);
+        const errText = await res.text();
+        console.error('AI Error Response:', errText);
+        let errorReason = res.statusText;
+        try {
+          const parsed = JSON.parse(errText);
+          if (parsed.error && parsed.error.message) errorReason = parsed.error.message;
+        } catch { /* ignore */ }
+        throw new AIServiceError(`HTTP ${res.status}: ${errorReason}`, res.status);
       }
 
       const data = await res.json();
@@ -119,7 +127,7 @@ export class AIService {
         provider: 'Flaz Cloud',
         model,
         apiKey,
-        maxTokens: 8,
+        maxTokens: 50,
       });
       return { ok: true };
     } catch (error) {
@@ -127,9 +135,7 @@ export class AIService {
         return {
           ok: false,
           status: error.status,
-          error: error.status
-            ? `Credential atau model ditolak AI provider (HTTP ${error.status}).`
-            : error.message,
+          error: error.message,
         };
       }
       return { ok: false, error: 'Gagal memvalidasi credential AI.' };

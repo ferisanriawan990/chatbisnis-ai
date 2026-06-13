@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { prisma } from './prisma';
 import { AIService } from './ai';
+
+import { LeadExtractor } from './lead-extractor';
 import { getAICredentialCandidates } from './ai-config';
 import { buildSystemPrompt } from './prompt-builder';
 import { searchKnowledgeItems, buildKnowledgeFallbackAnswer, detectCustomerIntent } from './knowledge-search';
@@ -81,10 +83,7 @@ export class ChatbotEngine {
       return null;
     }
 
-    // 3. Lead Capture
-    if (activePlan?.allowLeadCapture) {
-      await this.captureLead(chatbotSetting.userId, profile.id, params.customerPhone, params.customerName, sanitizedMessageIn);
-    }
+    // 3. Lead Capture is now handled asynchronously below
 
     // 4. (N8N Bypass Removed)
 
@@ -121,8 +120,30 @@ export class ChatbotEngine {
       if (log.messageOut) chatHistory.push({ role: 'assistant', content: log.messageOut });
     });
 
+    // 6.5 Run AI Lead Extraction in Background (non-blocking)
+    if (activePlan?.allowLeadCapture) {
+      getAICredentialCandidates(chatbotSetting).then(credentials => {
+        if (credentials.length > 0) {
+          this.captureLeadWithAI(
+            chatbotSetting.userId,
+            profile.id,
+            params.customerPhone,
+            sanitizedMessageIn,
+            chatHistory,
+            credentials[0].apiKey,
+            credentials[0].model
+          ).catch(e => console.error("Lead extraction error:", e));
+        }
+      });
+    }
+
+    // 6.7 Fetch Products (Catalog Integration)
+    const products = await prisma.product.findMany({
+      where: { businessProfileId: profile.id, isAvailable: true }
+    });
+
     // 7. Build Prompt & Call AI
-    const systemPrompt = this.buildPrompt(chatbotSetting, botConfig, profile, matchedItems);
+    const systemPrompt = this.buildPrompt(chatbotSetting, botConfig, profile, matchedItems, products);
     const { replyMessage, tokenUsage, usedCatalogUrl, promptSource, aiModelUsed } = await this.callAI(
       chatbotSetting,
       activePlan,
@@ -352,20 +373,57 @@ export class ChatbotEngine {
     return { allowed: true, usageId: usageResult.usage.id };
   }
 
-  private static async captureLead(userId: string, businessProfileId: string, customerPhone: string, customerName: string | undefined, messageIn: string) {
-    const leadKeywords = ['pesan', 'order', 'beli', 'harga', 'mau', 'tertarik'];
-    if (leadKeywords.some(k => messageIn.toLowerCase().includes(k))) {
-      await prisma.lead.upsert({
-        where: { businessProfileId_customerPhone: { businessProfileId, customerPhone } },
-        update: { customerName: customerName || undefined, updatedAt: new Date() },
-        create: { userId, businessProfileId, customerPhone, customerName, status: 'cold' }
-      });
+  private static async captureLeadWithAI(
+    userId: string,
+    businessProfileId: string,
+    customerPhone: string,
+    messageIn: string,
+    chatHistory: { role: string; content: string }[],
+    apiKey: string,
+    model: string
+  ) {
+    const leadKeywords = ['pesan', 'order', 'beli', 'harga', 'mau', 'tertarik', 'tanya', 'minat', 'alamat', 'ukuran'];
+    if (!leadKeywords.some(k => messageIn.toLowerCase().includes(k))) return;
+
+    try {
+      const extracted = await LeadExtractor.extract(chatHistory, messageIn, apiKey, model);
+      if (extracted && extracted.isLead) {
+        await prisma.lead.upsert({
+          where: { businessProfileId_customerPhone: { businessProfileId, customerPhone } },
+          update: {
+            customerName: extracted.customerName || undefined,
+            interest: extracted.interest || undefined,
+            budget: extracted.budget || undefined,
+            address: extracted.address || undefined,
+            status: extracted.status,
+            updatedAt: new Date()
+          },
+          create: {
+            userId,
+            businessProfileId,
+            customerPhone,
+            customerName: extracted.customerName || 'Pelanggan Baru',
+            interest: extracted.interest,
+            budget: extracted.budget,
+            address: extracted.address,
+            status: extracted.status
+          }
+        });
+      }
+    } catch (e) {
+      console.error('Lead AI Extraction Error', e);
     }
   }
 
 
 
-  private static buildPrompt(chatbotSetting: any, botConfig: any, profile: any, matchedItems: any[]) {
+  private static buildPrompt(
+    chatbotSetting: any,
+    botConfig: any,
+    profile: any,
+    matchedItems: any[],
+    products?: any[]
+  ): string {
     let relevantKnowledge = '';
     let charCount = 0;
     const limit = chatbotSetting.knowledgeCharLimit || 3500;
@@ -376,6 +434,14 @@ export class ChatbotEngine {
       text += '\n';
       relevantKnowledge += text;
       charCount += text.length;
+    }
+
+    if (products && products.length > 0) {
+      let productText = '\n[KATALOG PRODUK & STOK]\nBerikut adalah daftar produk beserta harga dan stok real-time saat ini. Gunakan info ini untuk membalas ketersediaan atau harga:\n';
+      products.forEach((p, i) => {
+        productText += `- ${p.name} (Kategori: ${p.category || '-'}) | Harga: Rp ${p.price} | Stok: ${p.stock} | Deskripsi: ${p.description || '-'}\n`;
+      });
+      relevantKnowledge += productText;
     }
 
     let customFAQ: Array<{ q: string; a: string }> = [];
@@ -424,7 +490,7 @@ export class ChatbotEngine {
     imageUrl?: string,
     catalogUrl?: string | null,
   ) {
-    const defaultModel = chatbotSetting.aiModel || 'gpt-4o-mini';
+    const defaultModel = chatbotSetting.aiModel || 'gemini-2.5-flash-lite';
     const credentials = await getAICredentialCandidates(chatbotSetting);
 
     if (credentials.length === 0) {

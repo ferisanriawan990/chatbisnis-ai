@@ -10,7 +10,7 @@ import InputModal from '@/components/InputModal';
 export default function AdminApiKeysPage() {
   const [keys, setKeys] = useState<any[]>([]) // eslint-disable-line @typescript-eslint/no-explicit-any
   const [loading, setLoading] = useState(true);
-  const [globalModel, setGlobalModel] = useState('gpt-4o-mini');
+  const [globalModel, setGlobalModel] = useState('gemini-2.5-flash-lite');
   const [savingModel, setSavingModel] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -198,8 +198,10 @@ export default function AdminApiKeysPage() {
                 <option value="gpt-4o">GPT-4o</option>
                 <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
                 <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite</option>
-                <option value="claude-haiku-4-5">Claude Haiku 4.5</option>
-                <option value="claude-sonnet-4-6">Claude Sonnet 4.6</option>
+                <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+                <option value="gemini-1.5-flash-8b">Gemini 1.5 Flash 8B</option>
+                <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+                <option value="claude-3-5-sonnet-20240620">Claude 3.5 Sonnet</option>
                 <option value="llama-3.1-70b-instruct">Llama 3.1 70B</option>
               </select>
             </div>

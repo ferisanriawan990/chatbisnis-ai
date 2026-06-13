@@ -4,7 +4,7 @@ import { ReactNode, useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
 import { usePathname } from 'next/navigation';
-import { BotMessageSquare, Menu, X, Settings, FileJson, Users, MessageSquare, CreditCard, LayoutDashboard } from 'lucide-react';
+import { BotMessageSquare, Menu, X, Settings, FileJson, Users, MessageSquare, CreditCard, LayoutDashboard, Inbox, Database, Box } from 'lucide-react';
 import Link from 'next/link';
 import LogoutButton from '@/components/LogoutButton';
 
@@ -77,6 +77,37 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           >
             <BotMessageSquare className="w-5 h-5" />
             <span className="font-medium">AI Chatbot</span>
+          </Link>
+
+          <Link 
+            href="/dashboard/knowledge" 
+            onClick={() => setMobileMenuOpen(false)}
+            className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+              pathname === '/dashboard/knowledge' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+            }`}
+          >
+            <Database className="w-5 h-5 mr-3" />
+            <span className="font-medium">Knowledge Base</span>
+          </Link>
+          <Link 
+            href="/dashboard/products" 
+            className={`flex items-center px-4 py-3 mb-2 rounded-xl transition-all duration-200 ${
+              pathname === '/dashboard/products' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+            }`}
+          >
+            <Box className="w-5 h-5 mr-3" />
+            <span className="font-medium">Katalog Produk</span>
+          </Link>
+
+          <Link 
+            href="/dashboard/inbox" 
+            onClick={() => setMobileMenuOpen(false)}
+            className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+              pathname === '/dashboard/inbox' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+            }`}
+          >
+            <Inbox className="w-5 h-5" />
+            <span className="font-medium">Live Chat Inbox</span>
           </Link>
 
           <Link 

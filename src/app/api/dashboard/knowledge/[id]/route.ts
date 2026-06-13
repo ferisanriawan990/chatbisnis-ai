@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { assertTenantAccess } from '@/lib/tenant-isolation';
 
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -10,30 +11,37 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const userId = (session.user as { id: string }).id;
-    const resolvedParams = await params;
-    const { id } = resolvedParams;
+    const userId = (session.user as any).id;
+    const { id: sourceId } = await params;
 
-    const source = await prisma.knowledgeSource.findFirst({
-      where: { id, userId },
+    // Check if source exists
+    const source = await prisma.knowledgeSource.findUnique({
+      where: { id: sourceId }
     });
 
     if (!source) {
-      return NextResponse.json({ error: 'Source not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Data tidak ditemukan' }, { status: 404 });
     }
 
-    // Prisma onDelete is set to SetNull for items, so we must delete them manually
-    const deletedItems = await prisma.knowledgeItem.deleteMany({
-      where: { sourceId: id, userId },
+    // Check access
+    const hasAccess = await assertTenantAccess(userId, source.businessProfileId);
+    if (!hasAccess) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    // Delete source (KnowledgeItem will be deleted via cascade if set up, or manually)
+    // Prisma schema does not have onDelete Cascade on KnowledgeItem's sourceId, so we delete items first.
+    await prisma.knowledgeItem.deleteMany({
+      where: { sourceId }
     });
 
     await prisma.knowledgeSource.delete({
-      where: { id },
+      where: { id: sourceId }
     });
 
-    return NextResponse.json({ success: true, deletedItemsCount: deletedItems.count });
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('DELETE /api/dashboard/knowledge/[id] Error:', (error as Error).message);
+    console.error(`DELETE /api/dashboard/knowledge Error:`, (error as Error).message);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

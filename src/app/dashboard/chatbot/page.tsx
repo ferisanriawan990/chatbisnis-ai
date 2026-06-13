@@ -26,7 +26,7 @@ export default function ChatbotDashboard() {
     businessName: '', businessIndustry: '', businessDescription: '', address: '', openingHours: '', adminPhone: '', websiteUrl: '', instagramUrl: '', marketplaceUrl: '',
     botName: '', toneStyle: 'Profesional', language: 'id', useEmoji: true, maxReplyLength: 'sedang', allowSelling: true, allowPromoOffer: true, allowVision: false,
     fallbackMessage: '', handoverMessage: '', handoverKeywords: '', outOfHoursMessage: '',
-    aiProvider: 'Flaz Cloud', aiModel: 'gpt-4o-mini', aiApiKey: '',
+    aiProvider: 'Flaz Cloud', aiModel: 'gemini-2.5-flash-lite', aiApiKey: '',
     dailyChatLimit: 1000, monthlyChatLimit: 30000,
     historyMessageCount: 6, knowledgeCharLimit: 3500, actionWebhookUrl: '',
     isActive: false,
@@ -35,7 +35,7 @@ export default function ChatbotDashboard() {
     customLinks: [] as { title: string, url: string }[],
   });
 
-  const [activeModelDisplay, setActiveModelDisplay] = useState('gpt-4o-mini');
+  const [activeModelDisplay, setActiveModelDisplay] = useState('gemini-2.5-flash-lite');
 
   const fetchInitialData = useCallback(async () => {
     try {

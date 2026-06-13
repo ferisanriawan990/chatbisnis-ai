@@ -19,7 +19,7 @@ export async function GET() {
       where: { key: 'GLOBAL_AI_MODEL' }
     });
 
-    let model = 'gpt-4o-mini';
+    let model = 'gemini-2.5-flash-lite';
     if (cred && cred.isActive) {
       try {
         model = decrypt(cred.encryptedValue);

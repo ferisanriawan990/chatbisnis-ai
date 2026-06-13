@@ -290,14 +290,13 @@ export const AdvancedRulesPanel = ({ form, handleChange }: any) => (
 );
 
 const AI_MODELS = [
-  'gpt-4o-mini', 
-  'gpt-4o', 
-  'gemini-2.5-flash', 
   'gemini-2.5-flash-lite', 
-  'claude-haiku-4-5', 
-  'claude-sonnet-4-6',
-  'gemini-1.5-flash', // legacy fallback
-  'gemini-1.5-pro'
+  'gpt-4o', 
+  'gemini-1.5-flash', 
+  'gemini-1.5-flash-8b', 
+  'gemini-1.5-pro',
+  'claude-3-5-sonnet-20240620',
+  'llama-3.1-70b-instruct'
 ];
 
 export const AiIntegrationPanel = ({ form, handleChange }: any) => {
