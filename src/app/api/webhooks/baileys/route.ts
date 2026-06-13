@@ -128,6 +128,7 @@ export async function POST(req: NextRequest) {
     }
 
     let mediaDeliveryFailed = false;
+    let failedReason = '';
     for (const [index, media] of (result.mediaToSend || []).entries()) {
       try {
         await gateway.sendImage(
@@ -139,13 +140,14 @@ export async function POST(req: NextRequest) {
         );
       } catch (error) {
         mediaDeliveryFailed = true;
-        console.error('Baileys image reply failed:', error instanceof Error ? error.message : error);
+        failedReason = error instanceof Error ? error.message : String(error);
+        console.error('Baileys image reply failed:', failedReason);
       }
     }
 
     if (result.reply.trim()) {
       const reply = mediaDeliveryFailed
-        ? `${result.reply}\n\nMaaf, gambar belum dapat dikirim saat ini.`
+        ? `${result.reply}\n\nMaaf, gambar belum dapat dikirim saat ini. [Debug Error: ${failedReason}]`
         : result.reply;
       await gateway.sendMessage(
         event.sessionId,
