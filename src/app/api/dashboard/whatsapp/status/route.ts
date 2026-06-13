@@ -27,7 +27,8 @@ export async function GET() {
     let phoneNumber: string | null = null;
     let lastError = storedSession?.lastError || null;
     try {
-      const info = await BaileysService.fromEnv().getStatus(sessionName);
+      const { gateway } = await BaileysService.resolveInstance(chatbot.id);
+      const info = await gateway.getStatus(sessionName);
       status = info.normalizedStatus;
       phoneNumber = info.phoneNumber;
       lastError = info.lastError;

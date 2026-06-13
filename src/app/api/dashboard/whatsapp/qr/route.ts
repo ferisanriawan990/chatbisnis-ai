@@ -19,7 +19,8 @@ export async function GET() {
     }
 
     const sessionName = getActiveWhatsappSessionName(userId, chatbot.businessProfileId);
-    const qr = await BaileysService.fromEnv().getQR(sessionName);
+    const { gateway } = await BaileysService.resolveInstance(chatbot.id);
+    const qr = await gateway.getQR(sessionName);
     return NextResponse.json({ qr: qr.qrDataUrl, updatedAt: qr.updatedAt });
   } catch (error) {
     if (error instanceof BaileysApiError && error.code === 'QR_NOT_AVAILABLE') {

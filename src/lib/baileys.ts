@@ -1,3 +1,6 @@
+import { prisma } from '@/lib/prisma';
+import { decrypt } from '@/lib/crypto';
+
 export type BaileysSessionStatus =
   | 'disconnected'
   | 'starting'
@@ -43,6 +46,10 @@ export class BaileysService {
     private readonly apiKey: string,
   ) {}
 
+  static fromConfig(baseUrl: string, apiKey: string) {
+    return new BaileysService(baseUrl.replace(/\/$/, ''), apiKey);
+  }
+
   static fromEnv() {
     const baseUrl = process.env.BAILEYS_BASE_URL?.trim().replace(/\/$/, '');
     const apiKey = process.env.BAILEYS_API_KEY?.trim();
@@ -52,6 +59,35 @@ export class BaileysService {
     }
 
     return new BaileysService(baseUrl, apiKey);
+  }
+
+  static async resolveInstance(chatbotSettingId?: string): Promise<{ gateway: BaileysService; serverId: string | null }> {
+    let baseUrl = process.env.BAILEYS_BASE_URL?.trim().replace(/\/$/, '');
+    let apiKey = process.env.BAILEYS_API_KEY?.trim() || '';
+    let serverId: string | null = null;
+
+    if (chatbotSettingId) {
+      const chatbot = await prisma.chatbotSetting.findUnique({ where: { id: chatbotSettingId } });
+      if (chatbot?.whatsappBaseUrl && chatbot?.whatsappApiKeyEncrypted) {
+        baseUrl = chatbot.whatsappBaseUrl;
+        apiKey = decrypt(chatbot.whatsappApiKeyEncrypted);
+        serverId = chatbot.whatsappServerId;
+        return { gateway: new BaileysService(baseUrl.replace(/\/$/, ''), apiKey), serverId };
+      }
+    }
+
+    const activeServer = await prisma.whatsappServer.findFirst({ where: { isActive: true } });
+    if (activeServer) {
+      baseUrl = activeServer.baseUrl;
+      apiKey = activeServer.apiKeyEncrypted ? decrypt(activeServer.apiKeyEncrypted) : '';
+      serverId = activeServer.id;
+    }
+
+    if (!baseUrl) {
+      throw new Error('Belum ada server WhatsApp yang dikonfigurasi aktif.');
+    }
+
+    return { gateway: new BaileysService(baseUrl.replace(/\/$/, ''), apiKey), serverId };
   }
 
   private async request<T>(path: string, options: RequestInit = {}): Promise<T> {

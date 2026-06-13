@@ -63,7 +63,7 @@ export async function POST() {
       });
     }
 
-    const gateway = BaileysService.fromEnv();
+    const { gateway, serverId } = await BaileysService.resolveInstance(chatbot.id);
     const info = await gateway.startSession(sessionName);
     const status = info.status === 'connected' ? 'connected' : info.status === 'qr' ? 'qr' : 'starting';
 
@@ -72,7 +72,7 @@ export async function POST() {
         where: { id: existingSession.id },
         data: {
           sessionName,
-          whatsappServerId: null,
+          whatsappServerId: serverId,
           status,
           lastError: null,
           lastConnectedAt: status === 'connected' ? new Date() : existingSession.lastConnectedAt,
@@ -84,6 +84,7 @@ export async function POST() {
           userId,
           businessProfileId: chatbot.businessProfileId,
           chatbotSettingId: chatbot.id,
+          whatsappServerId: serverId,
           sessionName,
           status,
           lastConnectedAt: status === 'connected' ? new Date() : null,
