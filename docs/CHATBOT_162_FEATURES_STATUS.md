@@ -138,9 +138,9 @@
 | 134 | Analisis sentimen | | | | | | DONE | Ditampilkan sebagai Pie Chart di halaman Analytics |
 | 135 | Laporan produk terpopuler | | | | | | DONE | Ditampilkan sebagai tabel 5 produk terlaris di Analytics |
 | 136 | Laporan alasan tidak membeli | | | | | | DONE | Datanya telah direkam di kolom churnReason pada DB Lead |
-| 137 | Export laporan | | | | | | DONE | Tersedia opsi Download CSV (Data Penjualan & Chat 30 Hari) |
-| 138 | Laporan otomatis kepada pemilik | | | | | | NOT_STARTED | |
-| 139 | Banyak nomor WhatsApp dalam satu akun | | | | | | NOT_STARTED | |
+| 137 | Analisis perilaku pelanggan | | | | | | NOT_STARTED | |
+| 138 | Laporan otomatis kepada pemilik | | | | | | DONE | Laporan Harian via Vercel Cron dikirim ke Admin Phone |
+| 139 | Banyak nomor WhatsApp dalam satu akun | | | | | | DONE | Diimplementasikan melalui relasi one-to-many WhatsappServer |
 | 140 | QR Code untuk menghubungkan WhatsApp | | | | | | DONE | Tombol "Start Session" dan Scan QR terintegrasi via Dashboard |
 | 141 | Status koneksi WhatsApp | | | | | | DONE | Indikator Connected / Disconnected di Dashboard |
 | 142 | Reconnect otomatis | | | | | | DONE | Ditangani secara native oleh Baileys / WAHA service |
