@@ -89,9 +89,11 @@ export class ChatbotEngine {
     // 5. Retrieve Knowledge
     let matchedItems = await searchKnowledgeItems(sanitizedMessageIn, profile.id);
     
-    // Jika ada gambar namun tidak ada kecocokan text, berikan konteks beberapa produk 
-    // agar AI bisa mencocokkan visual gambar dengan deskripsi produk di database.
-    if (params.imageUrl && matchedItems.length === 0) {
+    const shouldSendImage = customerRequestsImage(sanitizedMessageIn);
+
+    // Jika ada gambar namun tidak ada kecocokan text, atau user meminta gambar secara generik,
+    // berikan konteks beberapa produk agar AI bisa mencocokkan visual gambar dengan deskripsi produk di database.
+    if ((params.imageUrl || shouldSendImage) && matchedItems.length === 0) {
       matchedItems = await prisma.knowledgeItem.findMany({
         where: { businessProfileId: profile.id, isActive: true },
         take: 15,
@@ -133,7 +135,6 @@ export class ChatbotEngine {
     let finalReply = replyMessage;
     const mediaToSend: { url: string; caption: string; fallbackUrl?: string }[] = [];
     const imageRegex = /\[SEND_IMAGE:\s*([^|\]]+?)(?:\s*\|\s*([^\]]+))?\]/g;
-    const shouldSendImage = customerRequestsImage(sanitizedMessageIn);
     let match;
     while ((match = imageRegex.exec(finalReply)) !== null) {
       const url = match[1].trim();
