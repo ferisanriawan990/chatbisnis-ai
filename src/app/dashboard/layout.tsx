@@ -201,26 +201,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             <Settings className="w-5 h-5" />
             <span className="font-medium">Status WhatsApp</span>
           </Link>
-          <Link 
-            href="/dashboard/leads" 
-            onClick={() => setMobileMenuOpen(false)}
-            className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-              pathname === '/dashboard/leads' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-            }`}
-          >
-            <Users className="w-5 h-5" />
-            <span className="font-medium">Data Pelanggan</span>
-          </Link>
-          <Link 
-            href="/dashboard/chat-logs" 
-            onClick={() => setMobileMenuOpen(false)}
-            className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-              pathname === '/dashboard/chat-logs' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-            }`}
-          >
-            <MessageSquare className="w-5 h-5" />
-            <span className="font-medium">Riwayat Chat</span>
-          </Link>
+
           <Link 
             href="/dashboard/billing" 
             onClick={() => setMobileMenuOpen(false)}
