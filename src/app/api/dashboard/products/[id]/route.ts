@@ -6,7 +6,8 @@ import { authOptions } from '@/lib/auth';
 export async function PUT(req: Request, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const user = session?.user as any;
+    if (!user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -19,7 +20,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
       include: { businessProfile: true }
     });
 
-    if (!existing || existing.businessProfile.userId !== session.user.id) {
+    if (!existing || existing.businessProfile.userId !== user.id) {
       return NextResponse.json({ error: 'Product not found or access denied' }, { status: 403 });
     }
 
@@ -46,7 +47,8 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
 export async function DELETE(req: Request, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const user = session?.user as any;
+    if (!user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -55,7 +57,7 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
       include: { businessProfile: true }
     });
 
-    if (!existing || existing.businessProfile.userId !== session.user.id) {
+    if (!existing || existing.businessProfile.userId !== user.id) {
       return NextResponse.json({ error: 'Product not found or access denied' }, { status: 403 });
     }
 

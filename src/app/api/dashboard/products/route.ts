@@ -6,7 +6,8 @@ import { authOptions } from '@/lib/auth';
 export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const user = session?.user as any;
+    if (!user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -20,7 +21,7 @@ export async function GET(req: Request) {
 
     // Verify ownership
     const profile = await prisma.businessProfile.findFirst({
-      where: { id: businessProfileId, userId: session.user.id },
+      where: { id: businessProfileId, userId: user.id },
     });
     if (!profile) {
       return NextResponse.json({ error: 'Profile not found or access denied' }, { status: 403 });
@@ -44,7 +45,8 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const user = session?.user as any;
+    if (!user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -56,7 +58,7 @@ export async function POST(req: Request) {
     }
 
     const profile = await prisma.businessProfile.findFirst({
-      where: { id: businessProfileId, userId: session.user.id },
+      where: { id: businessProfileId, userId: user.id },
     });
     if (!profile) {
       return NextResponse.json({ error: 'Profile not found or access denied' }, { status: 403 });

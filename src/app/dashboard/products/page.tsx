@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useTenant } from '@/components/tenant-provider';
+import { useSession } from 'next-auth/react';
 import { Plus, Edit, Trash2, Box, Search } from 'lucide-react';
 
 interface Product {
@@ -15,7 +15,9 @@ interface Product {
 }
 
 export default function ProductsPage() {
-  const { activeTenantId } = useTenant();
+  const { data: session } = useSession();
+  const tenants = (session?.user as any)?.tenants || [];
+  const activeTenantId = tenants[0]?.id; // Default tenant
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
