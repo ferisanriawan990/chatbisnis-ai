@@ -1,13 +1,14 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
+import { getMidtransConfig } from '@/lib/midtrans';
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
 
     // Verification
-    const serverKey = process.env.MIDTRANS_SERVER_KEY || 'SB-Mid-server-YOUR_SANDBOX_KEY';
+    const { serverKey } = await getMidtransConfig();
     const { order_id, status_code, gross_amount, signature_key, transaction_status } = body;
 
     const hash = crypto.createHash('sha512').update(`${order_id}${status_code}${gross_amount}${serverKey}`).digest('hex');

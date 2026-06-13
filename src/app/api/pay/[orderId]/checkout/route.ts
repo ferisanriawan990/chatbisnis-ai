@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { snap } from '@/lib/midtrans';
+import { getMidtransSnap } from '@/lib/midtrans';
 
 export async function POST(req: Request, { params }: { params: Promise<{ orderId: string }> }) {
   try {
@@ -23,6 +23,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ orderId
 
     const grossAmount = Math.round(Number(order.totalAmount) + Number(order.shippingFee) - Number(order.discountAmount));
     const midtransOrderId = `ORD-${order.id}`;
+    
+    const snap = await getMidtransSnap();
 
     // Request Snap token
     const parameter = {

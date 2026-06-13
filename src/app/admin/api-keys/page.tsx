@@ -8,10 +8,17 @@ import ConfirmModal from '@/components/ConfirmModal';
 import InputModal from '@/components/InputModal';
 
 export default function AdminApiKeysPage() {
-  const [keys, setKeys] = useState<any[]>([]) // eslint-disable-line @typescript-eslint/no-explicit-any
   const [loading, setLoading] = useState(true);
   const [globalModel, setGlobalModel] = useState('gemini-2.5-flash-lite');
   const [savingModel, setSavingModel] = useState(false);
+  const [savingMidtrans, setSavingMidtrans] = useState(false);
+  
+  const [midtransData, setMidtransData] = useState({
+    clientKey: '',
+    serverKey: '',
+    isProduction: false,
+    hasServerKey: false,
+  });
 
   const [formData, setFormData] = useState({
     name: '',
@@ -52,9 +59,27 @@ export default function AdminApiKeysPage() {
     }
   };
 
+  const fetchMidtransConfig = async () => {
+    try {
+      const res = await fetch('/api/admin/midtrans-config', { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        setMidtransData({
+          clientKey: data.clientKey || '',
+          serverKey: '', // we don't return plain server key, just placeholder
+          isProduction: data.isProduction || false,
+          hasServerKey: data.hasServerKey || false,
+        });
+      }
+    } catch (error) {
+      console.error('Failed to fetch midtrans config:', error);
+    }
+  };
+
   useEffect(() => {
     fetchKeys();
     fetchGlobalModel();
+    fetchMidtransConfig();
   }, []);
 
   const handleSaveModel = async () => {
@@ -75,6 +100,29 @@ export default function AdminApiKeysPage() {
       toast.error(e.message, { id: 'model' });
     } finally {
       setSavingModel(false);
+    }
+  };
+
+  const handleSaveMidtrans = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingMidtrans(true);
+    toast.loading('Menyimpan Konfigurasi Midtrans...', { id: 'midtrans' });
+    try {
+      const res = await fetch('/api/admin/midtrans-config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(midtransData)
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Gagal menyimpan konfigurasi');
+      }
+      toast.success('Konfigurasi Midtrans berhasil disimpan', { id: 'midtrans' });
+      fetchMidtransConfig();
+    } catch (e: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
+      toast.error(e.message, { id: 'midtrans' });
+    } finally {
+      setSavingMidtrans(false);
     }
   };
 
@@ -244,7 +292,38 @@ export default function AdminApiKeysPage() {
           </form>
         </div>
 
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 space-y-6">
+          <form onSubmit={handleSaveMidtrans} className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 space-y-4">
+            <div className="flex justify-between items-center border-b pb-2">
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <CreditCard className="w-5 h-5 text-indigo-600" /> Midtrans Payment Gateway
+              </h2>
+              <div className="flex items-center gap-3">
+                <span className={`text-xs font-bold px-2 py-1 rounded-md ${midtransData.isProduction ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                  {midtransData.isProduction ? 'PRODUCTION MODE' : 'SANDBOX MODE'}
+                </span>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" checked={midtransData.isProduction} onChange={e => setMidtransData({...midtransData, isProduction: e.target.checked})} className="sr-only peer" />
+                  <div className="w-11 h-6 bg-emerald-500 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500"></div>
+                </label>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Client Key</label>
+                <input required type="text" value={midtransData.clientKey} onChange={e => setMidtransData({...midtransData, clientKey: e.target.value})} className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-sm" placeholder="SB-Mid-client-..." />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Server Key <span className="text-xs font-normal text-slate-500">(Secret)</span></label>
+                <input type="password" value={midtransData.serverKey} onChange={e => setMidtransData({...midtransData, serverKey: e.target.value})} required={!midtransData.hasServerKey} className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-sm" placeholder={midtransData.hasServerKey ? "•••••••••••••••••••• (Isi jika ingin ubah)" : "SB-Mid-server-..."} />
+              </div>
+            </div>
+            <button disabled={savingMidtrans} type="submit" className="w-full bg-slate-900 text-white py-2 rounded-lg font-medium hover:bg-slate-800 flex items-center justify-center gap-2">
+              <Save className="w-4 h-4" /> Simpan Konfigurasi Midtrans
+            </button>
+          </form>
+
           <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
             {loading ? <p>Memuat...</p> : (
               <table className="w-full text-left text-sm">
