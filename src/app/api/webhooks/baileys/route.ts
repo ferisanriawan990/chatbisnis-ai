@@ -131,10 +131,15 @@ export async function POST(req: NextRequest) {
     let failedReason = '';
     for (const [index, media] of (result.mediaToSend || []).entries()) {
       try {
+        let imageUrl = media.url;
+        // Proxy Unsplash images to prevent 403 blocks from datacenter IPs
+        if (imageUrl.includes('images.unsplash.com')) {
+          imageUrl = `https://wsrv.nl/?url=${encodeURIComponent(imageUrl)}`;
+        }
         await gateway.sendImage(
           event.sessionId,
           customerPhone,
-          media.url,
+          imageUrl,
           media.caption,
           webhookIdempotencyKey(event.messageId, `image-${index}`),
         );
