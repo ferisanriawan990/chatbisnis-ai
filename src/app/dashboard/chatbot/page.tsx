@@ -43,7 +43,7 @@ export default function ChatbotDashboard() {
         fetch('/api/dashboard/chatbot'),
         fetch('/api/dashboard/knowledge'),
         fetch('/api/dashboard/chat-logs?limit=5'),
-        fetch('/api/dashboard/waha/status'),
+        fetch('/api/dashboard/whatsapp/status'),
         fetch('/api/templates'),
       ]);
 

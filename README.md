@@ -66,7 +66,7 @@ Bagi pengguna *Enterprise*, platform ini mendukung *routing* *Webhook* melalui *
 
 1. Berikan file template `public/WAHA_to_Vercel_n8n_Workflow.json` ke klien Anda.
 2. Instruksikan klien mengganti variabel `{{WEBSITE_API_BASE_URL}}` dengan domain SaaS utama Anda (misal `https://chatbisnis.ai`).
-3. Instruksikan klien mengisi header `x-webhook-secret: {{WAHA_WEBHOOK_SECRET}}` agar verifikasi sukses.
+3. Instruksikan klien mengisi header `x-webhook-secret: {{WHATSAPP_WEBHOOK_SECRET}}` agar verifikasi sukses.
 4. N8n akan mem-*forward* `raw json body` ke backend secara aman tanpa mengubah struktur bawaan WAHA.
 
 ---

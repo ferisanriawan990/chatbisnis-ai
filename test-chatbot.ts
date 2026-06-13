@@ -8,7 +8,7 @@ async function test() {
   const profile = await prisma.businessProfile.findFirst({ where: { id: chatbotSetting?.businessProfileId } });
 
   const result = await ChatbotEngine.processMessage({
-    wahaSessionName: chatbotSetting?.wahaSessionName || 'test',
+    whatsappSessionName: chatbotSetting?.whatsappSessionName || 'test',
     customerPhone: '6281234567890',
     messageIn: 'saya minta gambar produk'
   });

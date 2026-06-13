@@ -4,20 +4,20 @@ import { prisma } from './prisma';
  * Returns the global WAHA core mode.
  * Default is 'true' if not set.
  */
-export function getWahaCoreMode(): boolean {
-  if (process.env.WAHA_CORE_MODE === undefined) return true;
-  return process.env.WAHA_CORE_MODE === 'true';
+export function getWhatsappCoreMode(): boolean {
+  if (process.env.WHATSAPP_CORE_MODE === undefined) return true;
+  return process.env.WHATSAPP_CORE_MODE === 'true';
 }
 
 /**
  * Generates a unique, deterministic WAHA session name for a user or business profile.
  * E.g., user-12345 or biz-67890
  */
-export function getActiveWahaSessionName(userId: string, businessProfileId?: string | null): string {
+export function getActiveWhatsappSessionName(userId: string, businessProfileId?: string | null): string {
   if ((process.env.WHATSAPP_PROVIDER || 'baileys').toLowerCase() === 'baileys') {
     return businessProfileId ? `biz-${businessProfileId}` : `user-${userId}`;
   }
-  if (getWahaCoreMode()) {
+  if (getWhatsappCoreMode()) {
     return 'default';
   }
   if (businessProfileId) {
@@ -31,17 +31,17 @@ export function getActiveWahaSessionName(userId: string, businessProfileId?: str
  * If the user has a specific server assigned via their active ChatbotSetting, it returns it.
  * Otherwise, it attempts to find a global or default WAHA Server.
  */
-export async function resolveWahaServerForUser(userId: string): Promise<string | null> {
+export async function resolveWhatsappServerForUser(userId: string): Promise<string | null> {
   const setting = await prisma.chatbotSetting.findFirst({
     where: { userId, isActive: true },
-    select: { wahaServerId: true }
+    select: { whatsappServerId: true }
   });
-  if (setting?.wahaServerId) {
-    return setting.wahaServerId;
+  if (setting?.whatsappServerId) {
+    return setting.whatsappServerId;
   }
   
   // Fallback to a global/default server if available
-  const defaultServer = await prisma.wahaServer.findFirst({
+  const defaultServer = await prisma.whatsappServer.findFirst({
     where: { isActive: true },
     orderBy: { createdAt: 'asc' }
   });
@@ -55,7 +55,7 @@ export async function resolveWahaServerForUser(userId: string): Promise<string |
  */
 export async function assertUserOwnsWahaSession(userId: string, sessionName: string): Promise<boolean> {
   const setting = await prisma.chatbotSetting.findFirst({
-    where: { userId, wahaSessionName: sessionName }
+    where: { userId, whatsappSessionName: sessionName }
   });
   return !!setting;
 }

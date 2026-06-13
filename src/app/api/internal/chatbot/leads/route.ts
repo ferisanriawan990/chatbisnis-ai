@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 import { requireHeaderSecret, parseJsonSafe } from '@/lib/security';
 const leadSchema = z.object({
-  wahaSessionName: z.string(),
+  whatsappSessionName: z.string(),
   customerPhone: z.string(),
   customerName: z.string().optional().nullable(),
   interest: z.string().optional().nullable(),
@@ -33,7 +33,7 @@ export async function POST(req: Request) {
     const data = parseResult.data;
 
     const chatbotSetting = await prisma.chatbotSetting.findFirst({
-      where: { wahaSessionName: data.wahaSessionName },
+      where: { whatsappSessionName: data.whatsappSessionName },
     });
 
     if (!chatbotSetting) {

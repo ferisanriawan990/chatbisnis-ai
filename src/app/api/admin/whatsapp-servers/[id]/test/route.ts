@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getRequiredAdminOrResponse } from '@/lib/admin-helper';
 import { prisma } from '@/lib/prisma';
-import { WAHAService } from '@/lib/waha';
+import { WhatsappService } from '@/lib/whatsapp';
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -9,7 +9,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     if (admin instanceof NextResponse) return admin;
 
     const serverId = (await params).id;
-    const server = await prisma.wahaServer.findUnique({
+    const server = await prisma.whatsappServer.findUnique({
       where: { id: serverId },
     });
 
@@ -22,12 +22,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     }
 
     try {
-      const waha = WAHAService.fromEncrypted(server.baseUrl, server.apiKeyEncrypted);
+      const waha = WhatsappService.fromEncrypted(server.baseUrl, server.apiKeyEncrypted);
       const isOk = await waha.testConnection();
       
       if (!isOk) throw new Error('Cannot connect to server');
       
-      await prisma.wahaServer.update({
+      await prisma.whatsappServer.update({
         where: { id: serverId },
         data: {
           status: 'online',
@@ -43,7 +43,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       });
     } catch (error) {
       const msg = error instanceof Error ? error.message : 'Unknown error';
-      await prisma.wahaServer.update({
+      await prisma.whatsappServer.update({
         where: { id: serverId },
         data: {
           status: 'offline',

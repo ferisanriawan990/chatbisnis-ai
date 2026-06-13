@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { BaileysApiError, BaileysService } from '@/lib/baileys';
-import { getActiveWahaSessionName } from '@/lib/waha-helpers';
+import { getActiveWhatsappSessionName } from '@/lib/whatsapp-helpers';
 
 export async function GET() {
   try {
@@ -18,7 +18,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Chatbot setting tidak ditemukan' }, { status: 404 });
     }
 
-    const sessionName = getActiveWahaSessionName(userId, chatbot.businessProfileId);
+    const sessionName = getActiveWhatsappSessionName(userId, chatbot.businessProfileId);
     const qr = await BaileysService.fromEnv().getQR(sessionName);
     return NextResponse.json({ qr: qr.qrDataUrl, updatedAt: qr.updatedAt });
   } catch (error) {

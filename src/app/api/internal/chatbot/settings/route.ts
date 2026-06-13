@@ -15,7 +15,7 @@ export async function GET(req: Request) {
     }
 
     const chatbotSetting = await prisma.chatbotSetting.findFirst({
-      where: { wahaSessionName: sessionName },
+      where: { whatsappSessionName: sessionName },
       include: {
         businessProfile: true,
       },
@@ -38,17 +38,17 @@ export async function GET(req: Request) {
 
     // DO NOT return decrypted API keys
     // Just return boolean flags
-    const wahaApiKeyConfigured = !!chatbotSetting.wahaApiKeyEncrypted;
+    const whatsappApiKeyConfigured = !!chatbotSetting.whatsappApiKeyEncrypted;
 
     // Remove encrypted keys from response
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { wahaApiKeyEncrypted, ...safeSettings } = chatbotSetting;
+    const { whatsappApiKeyEncrypted, ...safeSettings } = chatbotSetting;
 
     return Response.json({
       chatbotSetting: safeSettings,
       businessProfile: chatbotSetting.businessProfile,
       knowledgeItems,
-      wahaApiKeyConfigured,
+      whatsappApiKeyConfigured,
     });
   } catch (error) {
     console.error('GET /api/internal/chatbot/settings Error:', error);

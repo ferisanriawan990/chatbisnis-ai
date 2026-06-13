@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ChatbotEngine } from '@/lib/chatbot-engine';
 import { prisma } from '@/lib/prisma';
-import { WAHAService } from '@/lib/waha';
+import { WhatsappService } from '@/lib/whatsapp';
 import { rateLimit } from '@/lib/rate-limit';
 import { requireHeaderSecret, parseJsonSafe, getRequestIp } from '@/lib/security';
-import { getWahaCoreMode } from '@/lib/waha-helpers';
+import { getWhatsappCoreMode } from '@/lib/whatsapp-helpers';
 
 export const maxDuration = 60; // Set max duration to 60 seconds for Vercel Hobby tier
 
@@ -118,16 +118,16 @@ function normalizePayload(rawBody: WahaIncomingBody): NormalizedWahaPayload {
 export async function POST(req: NextRequest) {
   try {
     // Security validation
-    if (!requireHeaderSecret(req, 'x-webhook-secret', process.env.WAHA_WEBHOOK_SECRET)) {
+    if (!requireHeaderSecret(req, 'x-webhook-secret', process.env.WHATSAPP_WEBHOOK_SECRET)) {
       return NextResponse.json({ error: 'Unauthorized or missing secret' }, { status: 401 });
     }
 
-    const wahaServerId = req.headers.get('x-waha-server-id');
-    const coreMode = getWahaCoreMode();
+    const whatsappServerId = req.headers.get('x-whatsapp-server-id');
+    const coreMode = getWhatsappCoreMode();
     
-    // Require wahaServerId if coreMode is true (multi-server enabled)
-    if (coreMode && !wahaServerId) {
-      return NextResponse.json({ error: 'x-waha-server-id header is required in multi-server mode' }, { status: 400 });
+    // Require whatsappServerId if coreMode is true (multi-server enabled)
+    if (coreMode && !whatsappServerId) {
+      return NextResponse.json({ error: 'x-whatsapp-server-id header is required in multi-server mode' }, { status: 400 });
     }
 
     const body = await parseJsonSafe<WahaIncomingBody>(req, 5 * 1024 * 1024);
@@ -158,7 +158,7 @@ export async function POST(req: NextRequest) {
     }
 
     const ip = getRequestIp(req);
-    const rateLimitKey = `webhook:waha:${wahaServerId || norm.sessionName}:${norm.customerPhone}:${ip}`;
+    const rateLimitKey = `webhook:waha:${whatsappServerId || norm.sessionName}:${norm.customerPhone}:${ip}`;
     const rl = await rateLimit(rateLimitKey, 20, 60 * 1000);
     if (!rl.success) {
       return NextResponse.json({ error: 'Too Many Requests' }, { status: 429 });
@@ -168,7 +168,7 @@ export async function POST(req: NextRequest) {
 
     const chatbotSetting = await prisma.chatbotSetting.findFirst({
       where: { 
-        ...(coreMode ? { wahaServerId: wahaServerId! } : { wahaSessionName: norm.sessionName, ...(wahaServerId ? { wahaServerId } : {}) }),
+        ...(coreMode ? { whatsappServerId: whatsappServerId! } : { whatsappSessionName: norm.sessionName, ...(whatsappServerId ? { whatsappServerId } : {}) }),
         // Only fallback to userId in URL in non-production for debugging
         ...(qUserId && process.env.NODE_ENV !== 'production' ? { userId: qUserId } : {}),
         isActive: true,
@@ -179,7 +179,7 @@ export async function POST(req: NextRequest) {
           }
         }
       },
-      include: { wahaServer: true },
+      include: { whatsappServer: true },
     });
 
     if (!chatbotSetting) {
@@ -187,27 +187,27 @@ export async function POST(req: NextRequest) {
     }
 
     // Use the actual session name from DB if in core mode (since payload brings 'default')
-    const actualSessionName = coreMode ? chatbotSetting.wahaSessionName! : norm.sessionName;
+    const actualSessionName = coreMode ? chatbotSetting.whatsappSessionName! : norm.sessionName;
 
     // Instantiate WAHA Service for sending early replies if needed
-    let wahaInstance: WAHAService | null = null;
-    if (chatbotSetting?.wahaServer?.apiKeyEncrypted) {
-      wahaInstance = WAHAService.fromEncrypted(chatbotSetting.wahaServer.baseUrl, chatbotSetting.wahaServer.apiKeyEncrypted);
-    } else if (chatbotSetting?.wahaApiKeyEncrypted && chatbotSetting?.wahaBaseUrl) {
-      wahaInstance = WAHAService.fromEncrypted(chatbotSetting.wahaBaseUrl, chatbotSetting.wahaApiKeyEncrypted);
+    let whatsappInstance: WhatsappService | null = null;
+    if (chatbotSetting?.whatsappServer?.apiKeyEncrypted) {
+      whatsappInstance = WhatsappService.fromEncrypted(chatbotSetting.whatsappServer.baseUrl, chatbotSetting.whatsappServer.apiKeyEncrypted);
+    } else if (chatbotSetting?.whatsappApiKeyEncrypted && chatbotSetting?.whatsappBaseUrl) {
+      whatsappInstance = WhatsappService.fromEncrypted(chatbotSetting.whatsappBaseUrl, chatbotSetting.whatsappApiKeyEncrypted);
     }
 
     // Download image if media is present and vision is allowed
     let downloadedImageUrl: string | undefined;
     if (norm.hasMedia && norm.messageId && chatbotSetting.allowVision) {
       try {
-        if (wahaInstance) {
+        if (whatsappInstance) {
           let b64: string | null = null;
           if (norm.mediaUrl) {
-            b64 = await wahaInstance.downloadMediaByUrl(norm.mediaUrl);
+            b64 = await whatsappInstance.downloadMediaByUrl(norm.mediaUrl);
           }
           if (!b64) {
-            b64 = await wahaInstance.downloadMediaBase64(actualSessionName, norm.messageId);
+            b64 = await whatsappInstance.downloadMediaBase64(actualSessionName, norm.messageId);
           }
           if (b64) downloadedImageUrl = b64;
         }
@@ -220,8 +220,8 @@ export async function POST(req: NextRequest) {
     if (norm.hasMedia) {
       if (chatbotSetting.allowVision) {
         if (!downloadedImageUrl) {
-          if (wahaInstance) {
-            await wahaInstance.sendMessage(actualSessionName, norm.customerPhone, "Maaf, gambar belum bisa saya baca. Mohon kirim ulang gambarnya atau jelaskan lewat teks.");
+          if (whatsappInstance) {
+            await whatsappInstance.sendMessage(actualSessionName, norm.customerPhone, "Maaf, gambar belum bisa saya baca. Mohon kirim ulang gambarnya atau jelaskan lewat teks.");
           }
           return NextResponse.json({ success: true, message: 'Image download failed, notified user' });
         }
@@ -230,8 +230,8 @@ export async function POST(req: NextRequest) {
         }
       } else {
         // Stop processing and reply directly that image is not supported
-        if (wahaInstance) {
-          await wahaInstance.sendMessage(actualSessionName, norm.customerPhone, "Maaf, saat ini saya belum bisa melihat atau merespons gambar/foto. Silakan jelaskan dengan teks saja ya.");
+        if (whatsappInstance) {
+          await whatsappInstance.sendMessage(actualSessionName, norm.customerPhone, "Maaf, saat ini saya belum bisa melihat atau merespons gambar/foto. Silakan jelaskan dengan teks saja ya.");
         }
         return NextResponse.json({ success: true, message: 'Image ignored (allowVision false)' });
       }
@@ -239,8 +239,8 @@ export async function POST(req: NextRequest) {
 
     // Process using Chatbot Engine
     const result = await ChatbotEngine.processMessage({
-      wahaServerId: chatbotSetting.wahaServerId ?? undefined,
-      wahaSessionName: actualSessionName,
+      whatsappServerId: chatbotSetting.whatsappServerId ?? undefined,
+      whatsappSessionName: actualSessionName,
       customerPhone: norm.customerPhone,
       customerName: norm.customerName,
       messageIn: finalMessageIn,
@@ -249,13 +249,13 @@ export async function POST(req: NextRequest) {
 
     if (result) {
       const { reply, mediaToSend } = result;
-      let waha: WAHAService | null = null;
+      let waha: WhatsappService | null = null;
       let usedSessionName = actualSessionName;
 
-      if (chatbotSetting?.wahaServer?.apiKeyEncrypted) {
-        waha = WAHAService.fromEncrypted(chatbotSetting.wahaServer.baseUrl, chatbotSetting.wahaServer.apiKeyEncrypted || '');
-      } else if (chatbotSetting?.wahaApiKeyEncrypted && chatbotSetting?.wahaBaseUrl) {
-        waha = WAHAService.fromEncrypted(chatbotSetting.wahaBaseUrl, chatbotSetting.wahaApiKeyEncrypted || '');
+      if (chatbotSetting?.whatsappServer?.apiKeyEncrypted) {
+        waha = WhatsappService.fromEncrypted(chatbotSetting.whatsappServer.baseUrl, chatbotSetting.whatsappServer.apiKeyEncrypted || '');
+      } else if (chatbotSetting?.whatsappApiKeyEncrypted && chatbotSetting?.whatsappBaseUrl) {
+        waha = WhatsappService.fromEncrypted(chatbotSetting.whatsappBaseUrl, chatbotSetting.whatsappApiKeyEncrypted || '');
         usedSessionName = norm.sessionName;
       }
 
@@ -294,7 +294,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Internal error';
-    console.error('POST /api/webhooks/waha Error:', msg);
+    console.error('POST /api/webhooks/whatsapp Error:', msg);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

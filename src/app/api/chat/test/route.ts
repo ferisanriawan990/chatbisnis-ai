@@ -37,7 +37,7 @@ export async function POST(req: Request) {
 
     // Call Chatbot Engine with isTest = true
     const reply = await ChatbotEngine.processMessage({
-      wahaSessionName: chatbotSetting.wahaSessionName,
+      whatsappSessionName: chatbotSetting.whatsappSessionName,
       customerPhone: '6280000000000', // Mock phone
       customerName: 'Test User',
       messageIn: message,

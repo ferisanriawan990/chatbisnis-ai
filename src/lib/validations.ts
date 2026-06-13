@@ -107,7 +107,7 @@ export const manualKnowledgeSchema = z.object({
 // ─── Internal API Schemas ───────────────────────────────
 
 export const internalLogSchema = z.object({
-  wahaSessionName: z.string().min(1),
+  whatsappSessionName: z.string().min(1),
   customerPhone: z.string().min(1),
   customerName: z.string().optional().nullable(),
   messageIn: z.string().min(1),
@@ -121,7 +121,7 @@ export const internalLogSchema = z.object({
 });
 
 export const internalLeadSchema = z.object({
-  wahaSessionName: z.string().min(1),
+  whatsappSessionName: z.string().min(1),
   customerPhone: z.string().min(1),
   customerName: z.string().optional().nullable(),
   interest: z.string().optional().nullable(),

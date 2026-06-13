@@ -25,7 +25,7 @@ const navItems = [
   { name: 'Users', href: '/admin/users', icon: Users },
   { name: 'Templates', href: '/admin/templates', icon: Workflow },
   { name: 'API Keys', href: '/admin/api-keys', icon: Key },
-  { name: 'WhatsApp Servers', href: '/admin/waha-servers', icon: Server },
+  { name: 'WhatsApp Servers', href: '/admin/whatsapp-servers', icon: Server },
   { name: 'Plans', href: '/admin/plans', icon: CreditCard },
   { name: 'Usage', href: '/admin/usage', icon: Activity },
   { name: 'Audit Logs', href: '/admin/audit-logs', icon: History },

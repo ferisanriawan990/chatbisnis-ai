@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { getActiveWahaSessionName } from '@/lib/waha-helpers';
+import { getActiveWhatsappSessionName } from '@/lib/whatsapp-helpers';
 import { BaileysService } from '@/lib/baileys';
 
 export default async function DashboardIndex() {
@@ -14,7 +14,7 @@ export default async function DashboardIndex() {
   // 1. Get Chatbot Setting & Profile
   const chatbotSetting = await prisma.chatbotSetting.findFirst({
     where: { userId },
-    include: { businessProfile: true, wahaServer: true },
+    include: { businessProfile: true, whatsappServer: true },
   });
 
   const businessProfile = chatbotSetting?.businessProfile;
@@ -56,7 +56,7 @@ export default async function DashboardIndex() {
   // 5. WhatsApp Gateway Status
   let whatsappStatus = 'disconnected';
   if (chatbotSetting && businessProfile) {
-    const activeSessionName = getActiveWahaSessionName(userId, businessProfile.id);
+    const activeSessionName = getActiveWhatsappSessionName(userId, businessProfile.id);
     try {
       whatsappStatus = (await BaileysService.fromEnv().getStatus(activeSessionName)).normalizedStatus;
     } catch {

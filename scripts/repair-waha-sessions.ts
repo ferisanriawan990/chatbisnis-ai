@@ -11,7 +11,7 @@ async function main() {
   const allSettings = await prisma.chatbotSetting.findMany({
     include: {
       businessProfile: true,
-      wahaServer: true,
+      whatsappServer: true,
     }
   });
 
@@ -20,9 +20,9 @@ async function main() {
     const bizId = setting.businessProfileId;
     const expectedSessionName = `biz-${bizId}`;
     
-    // 1. Nonaktifkan jika tidak punya wahaServerId di production
-    if (isProduction && setting.isActive && !setting.wahaServerId) {
-      console.log(`Menonaktifkan ChatbotSetting ID ${setting.id} karena tidak memiliki wahaServerId di production.`);
+    // 1. Nonaktifkan jika tidak punya whatsappServerId di production
+    if (isProduction && setting.isActive && !setting.whatsappServerId) {
+      console.log(`Menonaktifkan ChatbotSetting ID ${setting.id} karena tidak memiliki whatsappServerId di production.`);
       await prisma.chatbotSetting.update({
         where: { id: setting.id },
         data: { isActive: false }
@@ -30,18 +30,18 @@ async function main() {
       disabledCount++;
     }
 
-    // 2. Perbaiki wahaSessionName yang kosong/default/duplikat menjadi biz-{businessProfileId}
-    if (!setting.wahaSessionName || setting.wahaSessionName === 'default' || setting.wahaSessionName !== expectedSessionName) {
+    // 2. Perbaiki whatsappSessionName yang kosong/default/duplikat menjadi biz-{businessProfileId}
+    if (!setting.whatsappSessionName || setting.whatsappSessionName === 'default' || setting.whatsappSessionName !== expectedSessionName) {
       console.log(`Memperbaiki sessionName untuk ChatbotSetting ID ${setting.id} -> ${expectedSessionName}`);
       
       await prisma.chatbotSetting.update({
         where: { id: setting.id },
-        data: { wahaSessionName: expectedSessionName }
+        data: { whatsappSessionName: expectedSessionName }
       });
       fixedCount++;
 
       // 3. Update WhatsAppSession lama yang mungkin menggunakan sessionName lama
-      if (setting.wahaSessionName) {
+      if (setting.whatsappSessionName) {
         const oldSessions = await prisma.whatsAppSession.findMany({
           where: {
             userId: setting.userId,
@@ -63,8 +63,8 @@ async function main() {
   }
 
   console.log('--- Laporan Perbaikan WAHA Sessions ---');
-  console.log(`- ChatbotSetting dinonaktifkan (karena wahaServerId kosong): ${disabledCount}`);
-  console.log(`- ChatbotSetting wahaSessionName diperbaiki: ${fixedCount}`);
+  console.log(`- ChatbotSetting dinonaktifkan (karena whatsappServerId kosong): ${disabledCount}`);
+  console.log(`- ChatbotSetting whatsappSessionName diperbaiki: ${fixedCount}`);
   console.log(`- WhatsAppSession sessionName disinkronkan: ${sessionUpdateCount}`);
   console.log('Selesai.');
 }

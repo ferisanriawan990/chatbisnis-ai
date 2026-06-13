@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 import { Server, Plus, Edit2, PlayCircle, Trash2, X } from 'lucide-react';
 import ConfirmModal from '@/components/ConfirmModal';
 
-export default function AdminWahaServersPage() {
+export default function AdminWhatsappServersPage() {
   const [servers, setServers] = useState<any[]>([]) // eslint-disable-line @typescript-eslint/no-explicit-any
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -19,7 +19,7 @@ export default function AdminWahaServersPage() {
 
   const fetchServers = async () => {
     try {
-      const res = await fetch('/api/admin/waha-servers');
+      const res = await fetch('/api/admin/whatsapp-servers');
       if (!res.ok) throw new Error('Failed to fetch servers');
       const data = await res.json();
       setServers(data);
@@ -53,7 +53,7 @@ export default function AdminWahaServersPage() {
         throw new Error('API Key wajib diisi untuk server baru');
       }
 
-      const url = editingServer ? `/api/admin/waha-servers/${editingServer.id}` : '/api/admin/waha-servers';
+      const url = editingServer ? `/api/admin/whatsapp-servers/${editingServer.id}` : '/api/admin/whatsapp-servers';
       const method = editingServer ? 'PATCH' : 'POST';
       
       const payload: Record<string, unknown> = { ...formData, maxSessions: Number(formData.maxSessions) };
@@ -80,7 +80,7 @@ export default function AdminWahaServersPage() {
   const handleTest = async (id: string) => {
     setTestingId(id);
     try {
-      const res = await fetch(`/api/admin/waha-servers/${id}/test`, { method: 'POST' });
+      const res = await fetch(`/api/admin/whatsapp-servers/${id}/test`, { method: 'POST' });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to test connection');
       toast.success('Koneksi berhasil! Status Gateway online.');
@@ -93,7 +93,7 @@ export default function AdminWahaServersPage() {
 
   const handleDelete = async (id: string) => {
     try {
-      const res = await fetch(`/api/admin/waha-servers/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/admin/whatsapp-servers/${id}`, { method: 'DELETE' });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to delete server');
       toast.success('Server berhasil dihapus');

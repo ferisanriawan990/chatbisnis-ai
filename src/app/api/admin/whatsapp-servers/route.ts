@@ -5,7 +5,7 @@ import { encrypt } from '@/lib/crypto';
 import { validatePublicHttpsUrl } from '@/lib/security';
 import { z } from 'zod';
 
-const wahaServerSchema = z.object({
+const whatsappServerSchema = z.object({
   name: z.string().min(1),
   baseUrl: z.string().url(),
   apiKey: z.string().optional(),
@@ -16,7 +16,7 @@ const wahaServerSchema = z.object({
 export async function GET() {
   try {
     const admin = await getRequiredAdminOrResponse();    if (admin instanceof NextResponse) return admin;
-    const servers = await prisma.wahaServer.findMany({
+    const servers = await prisma.whatsappServer.findMany({
       orderBy: { createdAt: 'desc' }
     });
 
@@ -50,7 +50,7 @@ export async function POST(req: Request) {
     const admin = await getRequiredAdminOrResponse();    if (admin instanceof NextResponse) return admin;
 
     const body = await req.json();
-    const parsed = wahaServerSchema.safeParse(body);
+    const parsed = whatsappServerSchema.safeParse(body);
 
     if (!parsed.success) {
       return NextResponse.json({ error: 'Invalid data' }, { status: 400 });
@@ -62,7 +62,7 @@ export async function POST(req: Request) {
 
     const apiKeyEncrypted = parsed.data.apiKey ? encrypt(parsed.data.apiKey) : null;
 
-    const server = await prisma.wahaServer.create({
+    const server = await prisma.whatsappServer.create({
       data: {
         name: parsed.data.name,
         baseUrl: parsed.data.baseUrl.replace(/\/$/, ''),
@@ -76,7 +76,7 @@ export async function POST(req: Request) {
       data: {
         actorUserId: admin.id,
         action: 'CREATE_WAHA_SERVER',
-        entityType: 'WahaServer',
+        entityType: 'WhatsappServer',
         entityId: server.id,
       }
     });

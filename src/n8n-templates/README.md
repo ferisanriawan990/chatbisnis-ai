@@ -5,16 +5,16 @@ Folder ini berisi sekumpulan *workflow* (alur kerja) otomatis untuk n8n Cloud. T
 ## Daftar Template
 
 1. **`basic-ai-cs.json`**
-   Template dasar untuk menjawab pesan WhatsApp secara otomatis menggunakan AI. Sangat direkomendasikan untuk pengguna baru. (Path webhook: `waha-ai-cs-basic`)
+   Template dasar untuk menjawab pesan WhatsApp secara otomatis menggunakan AI. Sangat direkomendasikan untuk pengguna baru. (Path webhook: `whatsapp-ai-cs-basic`)
 
 2. **`ai-cs-product-knowledge.json`**
-   Sama seperti basic, tetapi menyertakan fitur untuk memasukkan *product knowledge* (katalog produk/layanan) langsung ke dalam *prompt* AI. (Path webhook: `waha-ai-cs-product`)
+   Sama seperti basic, tetapi menyertakan fitur untuk memasukkan *product knowledge* (katalog produk/layanan) langsung ke dalam *prompt* AI. (Path webhook: `whatsapp-ai-cs-product`)
 
 3. **`lead-capture.json`**
-   Template pintar yang akan memerintahkan AI untuk mengekstrak Nama, Nomor, dan Minat customer, lalu mengirim data tersebut ke Webhook/Database Anda di `{{WEBSITE_API_BASE_URL}}/api/internal/chatbot/leads`. (Path webhook: `waha-lead-capture`)
+   Template pintar yang akan memerintahkan AI untuk mengekstrak Nama, Nomor, dan Minat customer, lalu mengirim data tersebut ke Webhook/Database Anda di `{{WEBSITE_API_BASE_URL}}/api/internal/chatbot/leads`. (Path webhook: `whatsapp-lead-capture`)
 
 4. **`human-handover.json`**
-   Mendeteksi jika customer sedang marah atau ingin berbicara dengan manusia (mengandung kata "admin", "cs", "komplain"). Bot akan berhenti, dan notifikasi akan dikirim ke WhatsApp pribadi Admin. (Path webhook: `waha-human-handover`)
+   Mendeteksi jika customer sedang marah atau ingin berbicara dengan manusia (mengandung kata "admin", "cs", "komplain"). Bot akan berhenti, dan notifikasi akan dikirim ke WhatsApp pribadi Admin. (Path webhook: `whatsapp-human-handover`)
 
 ---
 
@@ -43,17 +43,17 @@ Di n8n, Anda wajib mengisi *placeholder* ini di setiap Node HTTP Request. Beriku
 - `{{ADMIN_WHATSAPP_NUMBER}}` → (Khusus Handover) Nomor admin tanpa `+` atau `0`, misal: `628123456789`
 - `{{WEBSITE_API_BASE_URL}}` → URL website backend Anda (default: `https://chatbisnis-ai.vercel.app`)
 - `{{WEBSITE_INTERNAL_API_KEY}}` → API key internal website Anda untuk keamanan endpoint internal
-- `{{WAHA_WEBHOOK_SECRET}}` → Kunci rahasia untuk memvalidasi webhook WAHA (header `x-webhook-secret`)
+- `{{WHATSAPP_WEBHOOK_SECRET}}` → Kunci rahasia untuk memvalidasi webhook WAHA (header `x-webhook-secret`)
 
 *Tips Keamanan: Jangan pernah menyimpan API key di frontend. Untuk production, kelola API Key melalui Super Admin Panel ChatBisnis AI.*
 
 ---
 
-## 🔗 Setup Webhook WAHA ke n8n
+## 🔗 Setup Webhook WhatsApp ke n8n
 
 Setelah Anda menekan **Save** dan menyalakan *toggle* **Active** di n8n, Anda harus menghubungkan WAHA ke n8n Anda.
 
-1. Buka kotak Node yang bernama **Webhook WAHA** di n8n (paling kiri).
+1. Buka kotak Node yang bernama **Webhook WhatsApp** di n8n (paling kiri).
 2. Klik **Test URL** atau **Production URL**. Salin tautan (URL) tersebut.
 3. Gunakan fitur Webhook di dashboard/API WAHA untuk mengarahkan notifikasi `message` ke tautan tersebut.
 4. Pastikan untuk mengirimkan header `x-webhook-secret` bernilai sama dengan yang ada di `.env` backend website Anda.

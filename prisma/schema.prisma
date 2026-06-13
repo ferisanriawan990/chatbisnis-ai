@@ -127,21 +127,21 @@ model ChatbotSetting {
   historyMessageCount   Int      @default(6)
   knowledgeCharLimit    Int      @default(3500)
   actionWebhookUrl      String?
-  wahaBaseUrl           String?
-  wahaApiKeyEncrypted   String?
-  wahaServerId          String?
-  wahaSessionName       String
+  whatsappBaseUrl           String?  @map("wahaBaseUrl")
+  whatsappApiKeyEncrypted   String?  @map("wahaApiKeyEncrypted")
+  whatsappServerId          String?  @map("wahaServerId")
+  whatsappSessionName       String   @map("wahaSessionName")
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 
   user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   businessProfile    BusinessProfile     @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
-  wahaServer         WahaServer?         @relation(fields: [wahaServerId], references: [id], onDelete: SetNull)
+  whatsappServer     WhatsappServer?     @relation(fields: [whatsappServerId], references: [id], onDelete: SetNull)
   chatLogs           ChatLog[]
   whatsappSessions   WhatsAppSession[]
   conversationStates ConversationState[]
 
-  @@unique([wahaServerId, wahaSessionName])
+  @@unique([whatsappServerId, whatsappSessionName])
 }
 
 model KnowledgeSource {
@@ -246,7 +246,7 @@ model WhatsAppSession {
   userId            String
   businessProfileId String
   chatbotSettingId  String
-  wahaServerId      String?
+  whatsappServerId  String?  @map("wahaServerId")
   sessionName       String
   status            String    @default("disconnected") // disconnected, starting, qr, connected, failed
   lastConnectedAt   DateTime?
@@ -257,9 +257,9 @@ model WhatsAppSession {
   user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   businessProfile BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
   chatbotSetting  ChatbotSetting  @relation(fields: [chatbotSettingId], references: [id], onDelete: Cascade)
-  wahaServer      WahaServer?     @relation(fields: [wahaServerId], references: [id], onDelete: SetNull)
+  whatsappServer  WhatsappServer? @relation(fields: [whatsappServerId], references: [id], onDelete: SetNull)
 
-  @@unique([wahaServerId, sessionName])
+  @@unique([whatsappServerId, sessionName])
 }
 
 // ─── Admin & System Models ───────────────────────────────
@@ -288,7 +288,8 @@ model SecretCredential {
   updatedAt      DateTime  @updatedAt
 }
 
-model WahaServer {
+model WhatsappServer {
+  @@map("WahaServer")
   id                String    @id @default(uuid())
   name              String
   baseUrl           String

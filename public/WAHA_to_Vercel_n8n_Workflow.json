@@ -8,7 +8,7 @@
         "options": {}
       },
       "id": "1",
-      "name": "Webhook WAHA",
+      "name": "Webhook WhatsApp",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [250, 300],
@@ -17,7 +17,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "{{WEBSITE_API_BASE_URL}}/api/webhooks/waha",
+        "url": "{{WEBSITE_API_BASE_URL}}/api/webhooks/whatsapp",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -27,7 +27,7 @@
             },
             {
               "name": "x-webhook-secret",
-              "value": "{{WAHA_WEBHOOK_SECRET}}"
+              "value": "{{WHATSAPP_WEBHOOK_SECRET}}"
             }
           ]
         },
@@ -45,7 +45,7 @@
     }
   ],
   "connections": {
-    "Webhook WAHA": {
+    "Webhook WhatsApp": {
       "main": [
         [
           {

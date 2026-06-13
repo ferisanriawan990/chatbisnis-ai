@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { BaileysApiError, BaileysService } from '@/lib/baileys';
-import { getActiveWahaSessionName } from '@/lib/waha-helpers';
+import { getActiveWhatsappSessionName } from '@/lib/whatsapp-helpers';
 
 export async function GET() {
   try {
@@ -18,7 +18,7 @@ export async function GET() {
       return NextResponse.json({ status: 'disconnected', isCoreMode: false });
     }
 
-    const sessionName = getActiveWahaSessionName(userId, chatbot.businessProfileId);
+    const sessionName = getActiveWhatsappSessionName(userId, chatbot.businessProfileId);
     const storedSession = await prisma.whatsAppSession.findFirst({
       where: { userId, chatbotSettingId: chatbot.id },
     });

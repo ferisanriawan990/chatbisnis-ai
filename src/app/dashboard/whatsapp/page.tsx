@@ -14,7 +14,7 @@ export default function WahaDashboard() {
 
   const fetchQrCode = async () => {
     try {
-      const res = await fetch('/api/dashboard/waha/qr');
+      const res = await fetch('/api/dashboard/whatsapp/qr');
       if (res.ok) {
         const { qr } = await res.json();
         setQrCode(qr);
@@ -27,7 +27,7 @@ export default function WahaDashboard() {
   const fetchStatus = useCallback(async () => {
     setRefreshing(true);
     try {
-      const res = await fetch('/api/dashboard/waha/status');
+      const res = await fetch('/api/dashboard/whatsapp/status');
       if (res.ok) {
         const { status, sessionName: sName } = await res.json();
         setWahaStatus(status);
@@ -77,7 +77,7 @@ export default function WahaDashboard() {
     setLoading(true);
     toast.loading('Memulai sesi WhatsApp...', { id: 'waha' });
     try {
-      const res = await fetch('/api/dashboard/waha/start', { method: 'POST' });
+      const res = await fetch('/api/dashboard/whatsapp/start', { method: 'POST' });
       if (res.ok) {
         toast.success('Sesi berhasil dimulai!', { id: 'waha' });
         setTimeout(() => {
@@ -98,7 +98,7 @@ export default function WahaDashboard() {
     setLoading(true);
     toast.loading('Menghentikan sesi...', { id: 'waha' });
     try {
-      const res = await fetch('/api/dashboard/waha/stop', { method: 'POST' });
+      const res = await fetch('/api/dashboard/whatsapp/stop', { method: 'POST' });
       if (res.ok) {
         toast.success('Sesi dihentikan', { id: 'waha' });
         fetchStatus();

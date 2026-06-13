@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { getActiveWahaSessionName } from '@/lib/waha-helpers';
+import { getActiveWhatsappSessionName } from '@/lib/whatsapp-helpers';
 
 export async function GET() {
   try {
@@ -36,7 +36,7 @@ export async function GET() {
     });
 
     if (!chatbotSetting) {
-      const uniqueSessionName = getActiveWahaSessionName(userId, businessProfile.id);
+      const uniqueSessionName = getActiveWhatsappSessionName(userId, businessProfile.id);
 
       chatbotSetting = await prisma.chatbotSetting.create({
         data: {
@@ -47,7 +47,7 @@ export async function GET() {
           handoverMessage: 'Baik, saya akan menyambungkan Anda dengan admin kami.',
           handoverKeywords: 'admin, cs, manusia',
           outOfHoursMessage: 'Mohon maaf, saat ini kami sedang di luar jam operasional.',
-          wahaSessionName: uniqueSessionName,
+          whatsappSessionName: uniqueSessionName,
         },
       });
     }
@@ -55,7 +55,7 @@ export async function GET() {
     // Don't expose decrypted keys to frontend
     const safeChatbotSetting = {
       ...chatbotSetting,
-      wahaApiKeyEncrypted: null, // Never expose
+      whatsappApiKeyEncrypted: null, // Never expose
     };
 
     // Count active knowledge items

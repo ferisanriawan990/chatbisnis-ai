@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { BaileysService } from '@/lib/baileys';
-import { getActiveWahaSessionName } from '@/lib/waha-helpers';
+import { getActiveWhatsappSessionName } from '@/lib/whatsapp-helpers';
 
 export async function POST() {
   try {
@@ -32,7 +32,7 @@ export async function POST() {
       return NextResponse.json({ error: 'Chatbot setting tidak ditemukan' }, { status: 404 });
     }
 
-    const sessionName = getActiveWahaSessionName(userId, chatbot.businessProfileId);
+    const sessionName = getActiveWhatsappSessionName(userId, chatbot.businessProfileId);
     const existingSession = await prisma.whatsAppSession.findFirst({
       where: { userId, chatbotSettingId: chatbot.id },
     });
@@ -56,10 +56,10 @@ export async function POST() {
       }
     }
 
-    if (chatbot.wahaSessionName !== sessionName) {
+    if (chatbot.whatsappSessionName !== sessionName) {
       await prisma.chatbotSetting.update({
         where: { id: chatbot.id },
-        data: { wahaSessionName: sessionName },
+        data: { whatsappSessionName: sessionName },
       });
     }
 
@@ -72,7 +72,7 @@ export async function POST() {
         where: { id: existingSession.id },
         data: {
           sessionName,
-          wahaServerId: null,
+          whatsappServerId: null,
           status,
           lastError: null,
           lastConnectedAt: status === 'connected' ? new Date() : existingSession.lastConnectedAt,

@@ -112,11 +112,11 @@ export async function POST(req: Request, { params }: { params: { phone: string }
       where: { id: convoState.chatbotSettingId }
     });
 
-    if (chatbotSetting && chatbotSetting.wahaSessionName) {
+    if (chatbotSetting && chatbotSetting.whatsappSessionName) {
       const wahaUrl = process.env.WAHA_API_URL || 'http://localhost:3000';
       try {
         const payload: any = {
-          session: chatbotSetting.wahaSessionName,
+          session: chatbotSetting.whatsappSessionName,
           chatId: params.phone.includes('@') ? params.phone : `${params.phone}@c.us`,
           text: message
         };

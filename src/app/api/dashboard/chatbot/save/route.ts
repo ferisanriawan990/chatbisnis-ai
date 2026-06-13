@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { saveChatbotSchema } from '@/lib/validations';
-import { getActiveWahaSessionName } from '@/lib/waha-helpers';
+import { getActiveWhatsappSessionName } from '@/lib/whatsapp-helpers';
 import { validatePublicHttpsUrl } from '@/lib/security';
 
 export async function POST(req: Request) {
@@ -66,8 +66,8 @@ export async function POST(req: Request) {
 
     const chatbot = await prisma.chatbotSetting.findFirst({ where: { userId, businessProfileId: profile.id } });
 
-    // Always preserve existing wahaSessionName or generate a new one
-    const sessionName = chatbot?.wahaSessionName || getActiveWahaSessionName(userId, profile.id);
+    // Always preserve existing whatsappSessionName or generate a new one
+    const sessionName = chatbot?.whatsappSessionName || getActiveWhatsappSessionName(userId, profile.id);
 
     const chatbotData = {
       botName: data.botName,
@@ -91,9 +91,9 @@ export async function POST(req: Request) {
       historyMessageCount: data.historyMessageCount !== undefined ? Number(data.historyMessageCount) : undefined,
       knowledgeCharLimit: data.knowledgeCharLimit !== undefined ? Number(data.knowledgeCharLimit) : undefined,
       actionWebhookUrl: data.actionWebhookUrl || null,
-      // wahaSessionName is preserved — never overwritten from user input
-      wahaSessionName: sessionName,
-      // wahaBaseUrl, wahaApiKeyEncrypted, wahaServerId are NEVER set from user save
+      // whatsappSessionName is preserved — never overwritten from user input
+      whatsappSessionName: sessionName,
+      // whatsappBaseUrl, whatsappApiKeyEncrypted, whatsappServerId are NEVER set from user save
     };
 
     if (chatbot) {

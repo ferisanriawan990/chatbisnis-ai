@@ -4,7 +4,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { BaileysService } from '@/lib/baileys';
-import { getActiveWahaSessionName } from '@/lib/waha-helpers';
+import { getActiveWhatsappSessionName } from '@/lib/whatsapp-helpers';
 
 export async function POST(req: Request) {
   try {
@@ -24,7 +24,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Konfigurasi chatbot tidak ditemukan.' }, { status: 404 });
     }
 
-    const sessionName = getActiveWahaSessionName(userId, chatbot.businessProfileId);
+    const sessionName = getActiveWhatsappSessionName(userId, chatbot.businessProfileId);
     const gateway = BaileysService.fromEnv();
     const status = await gateway.getStatus(sessionName).catch(() => null);
     if (status?.normalizedStatus !== 'connected') {

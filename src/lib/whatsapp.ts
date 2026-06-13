@@ -24,7 +24,7 @@ class WAHAApiError extends Error {
   }
 }
 
-export class WAHAService {
+export class WhatsappService {
   private static mediaModeByServer = new Map<string, 'image' | 'link-preview'>();
   private baseUrl: string;
   private apiKey: string;
@@ -108,7 +108,7 @@ export class WAHAService {
   }
 
   private getEffectiveSession(name: string) {
-    return (process.env.WAHA_CORE_MODE === 'false') ? name : 'default';
+    return (process.env.WHATSAPP_CORE_MODE === 'false') ? name : 'default';
   }
 
   async testConnection() {
@@ -120,10 +120,10 @@ export class WAHAService {
     }
   }
 
-  async startSession(sessionName: string, wahaServerId?: string, webhookUrl?: string, webhookSecret?: string) {
+  async startSession(sessionName: string, whatsappServerId?: string, webhookUrl?: string, webhookSecret?: string) {
     const payload: any = { name: this.getEffectiveSession(sessionName) };
 
-    if (wahaServerId && webhookUrl && webhookSecret) {
+    if (whatsappServerId && webhookUrl && webhookSecret) {
       payload.config = {
         webhooks: [
           {
@@ -133,7 +133,7 @@ export class WAHAService {
             retries: null,
             customHeaders: [
               { name: "x-webhook-secret", value: webhookSecret },
-              { name: "x-waha-server-id", value: wahaServerId }
+              { name: "x-whatsapp-server-id", value: whatsappServerId }
             ]
           }
         ]
@@ -252,7 +252,7 @@ export class WAHAService {
 
     const safeFallbackUrl = validatePublicHttpsUrl(fallbackUrl || '') ? fallbackUrl! : imageUrl;
 
-    if (WAHAService.mediaModeByServer.get(this.baseUrl) === 'link-preview') {
+    if (WhatsappService.mediaModeByServer.get(this.baseUrl) === 'link-preview') {
       const response = await this.sendImageLinkPreview(sessionName, phone, safeFallbackUrl, caption);
       return { mode: 'link-preview', response };
     }
@@ -280,11 +280,11 @@ export class WAHAService {
           caption: caption || '',
         }),
       });
-      WAHAService.mediaModeByServer.set(this.baseUrl, 'image');
+      WhatsappService.mediaModeByServer.set(this.baseUrl, 'image');
       return { mode: 'image', response };
     } catch (error) {
       if (this.isPlusOnlyMediaError(error)) {
-        WAHAService.mediaModeByServer.set(this.baseUrl, 'link-preview');
+        WhatsappService.mediaModeByServer.set(this.baseUrl, 'link-preview');
         const response = await this.sendImageLinkPreview(sessionName, phone, safeFallbackUrl, caption);
         return { mode: 'link-preview', response };
       }
@@ -321,11 +321,11 @@ export class WAHAService {
             caption: caption || '',
           }),
         });
-        WAHAService.mediaModeByServer.set(this.baseUrl, 'image');
+        WhatsappService.mediaModeByServer.set(this.baseUrl, 'image');
         return { mode: 'image', response };
       } catch (retryError) {
         if (this.isPlusOnlyMediaError(retryError)) {
-          WAHAService.mediaModeByServer.set(this.baseUrl, 'link-preview');
+          WhatsappService.mediaModeByServer.set(this.baseUrl, 'link-preview');
           const response = await this.sendImageLinkPreview(sessionName, phone, safeFallbackUrl, caption);
           return { mode: 'link-preview', response };
         }
@@ -335,10 +335,10 @@ export class WAHAService {
   }
 
   /**
-   * Create a WAHAService instance from encrypted credentials stored in DB.
+   * Create a WhatsappService instance from encrypted credentials stored in DB.
    */
-  static fromEncrypted(baseUrl: string, encryptedApiKey: string): WAHAService {
-    return new WAHAService({
+  static fromEncrypted(baseUrl: string, encryptedApiKey: string): WhatsappService {
+    return new WhatsappService({
       baseUrl,
       apiKey: decrypt(encryptedApiKey),
     });

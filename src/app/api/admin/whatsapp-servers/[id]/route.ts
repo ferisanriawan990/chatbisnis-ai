@@ -6,7 +6,7 @@ import { Prisma } from '@prisma/client';
 import { validatePublicHttpsUrl } from '@/lib/security';
 import { z } from 'zod';
 
-const updateWahaServerSchema = z.object({
+const updateWhatsappServerSchema = z.object({
   name: z.string().optional(),
   baseUrl: z.string().url().optional(),
   apiKey: z.string().optional(),
@@ -23,7 +23,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     const admin = await getRequiredAdminOrResponse();    if (admin instanceof NextResponse) return admin;
 
     const body = await req.json();
-    const parsed = updateWahaServerSchema.safeParse(body);
+    const parsed = updateWhatsappServerSchema.safeParse(body);
 
     if (!parsed.success) {
       return NextResponse.json({ error: 'Invalid data' }, { status: 400 });
@@ -34,7 +34,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     }
 
     const { apiKey, baseUrl, ...rest } = parsed.data;
-    const updateData: Prisma.WahaServerUpdateInput = { ...rest };
+    const updateData: Prisma.WhatsappServerUpdateInput = { ...rest };
     
     if (baseUrl) {
       updateData.baseUrl = baseUrl.replace(/\/$/, '');
@@ -43,7 +43,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       updateData.apiKeyEncrypted = encrypt(apiKey);
     }
 
-    const server = await prisma.wahaServer.update({
+    const server = await prisma.whatsappServer.update({
       where: { id: (await params).id },
       data: updateData,
     });
@@ -52,7 +52,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       data: {
         actorUserId: admin.id,
         action: 'UPDATE_WAHA_SERVER',
-        entityType: 'WahaServer',
+        entityType: 'WhatsappServer',
         entityId: server.id,
       }
     });
@@ -74,7 +74,7 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
     const serverId = (await params).id;
     
     // Check if server is in use
-    const server = await prisma.wahaServer.findUnique({
+    const server = await prisma.whatsappServer.findUnique({
       where: { id: serverId },
       include: {
         _count: {
@@ -93,16 +93,16 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
     if (server.currentSessions > 0 || server._count.chatbotSettings > 0 || server._count.whatsappSessions > 0) {
       // Force unlink instead of blocking
       await prisma.whatsAppSession.updateMany({
-        where: { wahaServerId: serverId },
-        data: { status: 'disconnected', wahaServerId: null },
+        where: { whatsappServerId: serverId },
+        data: { status: 'disconnected', whatsappServerId: null },
       });
       await prisma.chatbotSetting.updateMany({
-        where: { wahaServerId: serverId },
-        data: { isActive: false, wahaServerId: null },
+        where: { whatsappServerId: serverId },
+        data: { isActive: false, whatsappServerId: null },
       });
     }
 
-    await prisma.wahaServer.delete({
+    await prisma.whatsappServer.delete({
       where: { id: serverId },
     });
 
@@ -110,7 +110,7 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
       data: {
         actorUserId: admin.id,
         action: 'DELETE_WAHA_SERVER',
-        entityType: 'WahaServer',
+        entityType: 'WhatsappServer',
         entityId: (await params).id,
       }
     });

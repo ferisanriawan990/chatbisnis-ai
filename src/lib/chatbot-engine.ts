@@ -10,8 +10,8 @@ import { validatePublicHttpsUrl } from './security';
 import { analyzeSentiment, SentimentResult } from './sentiment-analysis';
 
 export interface ChatbotEngineParams {
-  wahaServerId?: string;
-  wahaSessionName: string;
+  whatsappServerId?: string;
+  whatsappSessionName: string;
   customerPhone: string;
   customerName?: string;
   messageIn: string;
@@ -66,7 +66,7 @@ export class ChatbotEngine {
     const sentiment = analyzeSentiment(sanitizedMessageIn);
     
     // 1. Load Context
-    const context = await this.loadChatbotContext(params.wahaSessionName, params.wahaServerId, isTest);
+    const context = await this.loadChatbotContext(params.whatsappSessionName, params.whatsappServerId, isTest);
     if (!context) return null; // Silent if no active bot (and not testing)
 
     const { chatbotSetting, botConfig, activePlan, profile } = context;
@@ -226,10 +226,10 @@ export class ChatbotEngine {
     };
   }
 
-  private static async loadChatbotContext(wahaSessionName: string, wahaServerId?: string, isTest: boolean = false) {
+  private static async loadChatbotContext(whatsappSessionName: string, whatsappServerId?: string, isTest: boolean = false) {
     // Modify query to allow fallback. If serverId provided, use it. Otherwise just use session name.
-    const whereClause: any = { wahaSessionName };
-    if (wahaServerId) whereClause.wahaServerId = wahaServerId;
+    const whereClause: any = { whatsappSessionName };
+    if (whatsappServerId) whereClause.whatsappServerId = whatsappServerId;
     if (!isTest) whereClause.isActive = true;
 
     const chatbotSetting = await prisma.chatbotSetting.findFirst({

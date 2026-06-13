@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
 
     const chatbot = await prisma.chatbotSetting.findFirst({
       where: {
-        wahaSessionName: event.sessionId,
+        whatsappSessionName: event.sessionId,
         isActive: true,
         user: { subscriptions: { some: { status: 'active' } } },
       },
@@ -116,7 +116,7 @@ export async function POST(req: NextRequest) {
     }
 
     const result = await ChatbotEngine.processMessage({
-      wahaSessionName: event.sessionId,
+      whatsappSessionName: event.sessionId,
       customerPhone,
       customerName: event.senderName,
       messageIn: messageForAI,
