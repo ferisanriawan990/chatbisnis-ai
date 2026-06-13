@@ -182,7 +182,7 @@ export default function AdminPlansPage() {
               {/* Feature Toggles */}
               <div className="bg-slate-50 rounded-2xl p-4 flex flex-col gap-2.5">
                 <div className={`flex items-center gap-2 text-xs font-semibold ${p.allowLeadCapture ? 'text-indigo-700' : 'text-slate-400'}`}>
-                  {p.allowLeadCapture ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />} AI Auto Lead Capture
+                  {p.allowLeadCapture ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />} Auto Lead Capture
                 </div>
                 <div className={`flex items-center gap-2 text-xs font-semibold ${p.allowHumanHandover ? 'text-indigo-700' : 'text-slate-400'}`}>
                   {p.allowHumanHandover ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />} Live Human Handover
@@ -241,16 +241,16 @@ export default function AdminPlansPage() {
                   <h4 className="text-sm font-bold text-indigo-600 uppercase tracking-wider mb-4 border-b border-slate-100 pb-2">Batas Kuota Sistem</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">Sesi WhatsAppAktif</label>
+                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">Nomor WhatsApp (Device)</label>
                       <div className="relative">
                         <input type="number" required value={formData.maxWhatsappSessions} onChange={e => setFormData({...formData, maxWhatsappSessions: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white focus:outline-none transition-colors pr-20 font-bold" />
                         <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
-                          <span className="text-slate-400 text-sm font-medium">Device</span>
+                          <span className="text-slate-400 text-sm font-medium">Nomor</span>
                         </div>
                       </div>
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">Kapasitas Knowledge Base</label>
+                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">Item Knowledge Base</label>
                       <div className="relative">
                         <input type="number" required value={formData.maxKnowledgeItems} onChange={e => setFormData({...formData, maxKnowledgeItems: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white focus:outline-none transition-colors pr-20 font-bold" />
                         <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
@@ -259,7 +259,7 @@ export default function AdminPlansPage() {
                       </div>
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">Limit Chat / Hari (FUP)</label>
+                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">Chat AI / Hari (FUP)</label>
                       <div className="relative">
                         <input type="number" required value={formData.dailyChatLimit} onChange={e => setFormData({...formData, dailyChatLimit: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white focus:outline-none transition-colors pr-20 font-bold" />
                         <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
@@ -268,7 +268,7 @@ export default function AdminPlansPage() {
                       </div>
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">Total Kuota Chat / Bulan</label>
+                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">Chat AI / Bulan</label>
                       <div className="relative">
                         <input type="number" required value={formData.monthlyChatLimit} onChange={e => setFormData({...formData, monthlyChatLimit: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white focus:outline-none transition-colors pr-20 font-bold" />
                         <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
@@ -285,7 +285,7 @@ export default function AdminPlansPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
                     <label className="flex items-center gap-3 p-4 border border-slate-200 rounded-2xl cursor-pointer hover:bg-emerald-50 transition-colors">
                       <input type="checkbox" checked={formData.allowLeadCapture} onChange={e => setFormData({...formData, allowLeadCapture: e.target.checked})} className="w-5 h-5 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500" />
-                      <span className="text-sm font-semibold text-slate-700">AI Lead Capture</span>
+                      <span className="text-sm font-semibold text-slate-700">Auto Lead Capture</span>
                     </label>
                     <label className="flex items-center gap-3 p-4 border border-slate-200 rounded-2xl cursor-pointer hover:bg-blue-50 transition-colors">
                       <input type="checkbox" checked={formData.allowHumanHandover} onChange={e => setFormData({...formData, allowHumanHandover: e.target.checked})} className="w-5 h-5 text-blue-600 rounded border-slate-300 focus:ring-blue-500" />
