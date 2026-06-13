@@ -37,8 +37,18 @@ export async function GET(req: Request) {
       },
       include: { businessProfile: { include: { chatbotSettings: true } } }
     });
+    // Appointment Reminders: Status not cancelled/completed, bookingDate between now and +24 hours, reminderSentAt is null
+    const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    const upcomingBookings = await prisma.booking.findMany({
+      where: {
+        status: { in: ['pending', 'confirmed'] },
+        bookingDate: { gte: now, lte: tomorrow },
+        reminderSentAt: null
+      },
+      include: { businessProfile: { include: { chatbotSettings: true } } }
+    });
 
-    const results = { abandoned: 0, paymentReminders: 0, errors: 0 };
+    const results = { abandoned: 0, paymentReminders: 0, appointmentReminders: 0, errors: 0 };
     const ServiceClass = BaileysService;
 
     // Process Abandoned Carts
@@ -80,6 +90,30 @@ export async function GET(req: Request) {
         results.paymentReminders++;
       } catch (e) {
         console.error(`Error sending payment reminder for order ${order.id}:`, e);
+        results.errors++;
+      }
+    }
+
+    // Process Appointment Reminders
+    for (const booking of upcomingBookings) {
+      try {
+        const chatbotSetting = booking.businessProfile.chatbotSettings.find(c => c.isActive);
+        if (!chatbotSetting || !chatbotSetting.whatsappSessionName) continue;
+
+        const { gateway } = await ServiceClass.resolveInstance(chatbotSetting.id);
+        const name = booking.customerName || 'Kak';
+        
+        // Format Date and Time
+        const dateStr = booking.bookingDate.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        const timeStr = booking.bookingDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+
+        const message = `Halo ${name}, ini sekadar pengingat bahwa Anda memiliki jadwal untuk *${booking.serviceName}* besok pada hari *${dateStr}* jam *${timeStr}*.\n\nKami tunggu kedatangannya ya! Jika ingin membatalkan atau mengubah jadwal, silakan balas pesan ini. 🙏`;
+
+        await gateway.sendMessage(chatbotSetting.whatsappSessionName, booking.customerPhone, message);
+        await prisma.booking.update({ where: { id: booking.id }, data: { reminderSentAt: now } });
+        results.appointmentReminders++;
+      } catch (e) {
+        console.error(`Error sending appointment reminder for booking ${booking.id}:`, e);
         results.errors++;
       }
     }

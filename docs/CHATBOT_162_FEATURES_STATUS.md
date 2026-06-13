@@ -119,7 +119,7 @@
 | 115 | Pembuatan jadwal otomatis | | | | | | DONE | Diimplementasikan melalui AI native tool create_booking |
 | 116 | Cek ketersediaan jadwal | | | | | | DONE | Diimplementasikan melalui AI native tool check_availability |
 | 117 | Konfirmasi booking | | | | | | DONE | Tersedia UI persetujuan Booking untuk tim Admin |
-| 118 | Pengingat jadwal | | | | | | NOT_STARTED | |
+| 118 | Pengingat jadwal | | | | | | DONE | Diimplementasikan lewat Vercel Cron pengingat H-1 |
 | 119 | Perubahan jadwal | | | | | | DONE | Diimplementasikan lewat native tool reschedule_booking |
 | 120 | Pembatalan reservasi | | | | | | DONE | Diimplementasikan lewat native tool cancel_booking |
 | 121 | Pembayaran uang muka | | | | | | NOT_STARTED | |
