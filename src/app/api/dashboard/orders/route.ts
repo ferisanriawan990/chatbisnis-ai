@@ -109,6 +109,21 @@ export async function PATCH(req: Request) {
 
     // Trigger WhatsApp Review Collection if completed
     if (data.status === 'completed' && existingOrder.status !== 'completed') {
+      
+      // Phase 25: Loyalty Points Increment
+      const pointsEarned = Math.floor(Number(existingOrder.totalAmount) / 1000);
+      if (pointsEarned > 0) {
+        const lead = await prisma.lead.findFirst({
+          where: { businessProfileId: profile.id, customerPhone: existingOrder.customerPhone }
+        });
+        if (lead) {
+          await prisma.lead.update({
+            where: { id: lead.id },
+            data: { loyaltyPoints: lead.loyaltyPoints + pointsEarned }
+          });
+        }
+      }
+
       const chatbotSetting = await prisma.chatbotSetting.findFirst({
         where: { businessProfileId: profile.id }
       });

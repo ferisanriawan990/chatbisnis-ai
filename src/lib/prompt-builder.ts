@@ -41,6 +41,7 @@ interface BuildPromptParams {
   cartTotal?: any;
   allowSelling: boolean;
   allowPromoOffer: boolean;
+  loyaltyPoints?: number;
 }
 
 /**
@@ -73,6 +74,7 @@ export function buildSystemPrompt(params: BuildPromptParams): string {
     cartTotal,
     allowSelling,
     allowPromoOffer,
+    loyaltyPoints,
   } = params;
 
   const bd = businessData;
@@ -128,6 +130,9 @@ Tujuan utama:
     dataLines.push(`- Pelanggan ini sudah pernah order / menghubungi kita sebelumnya (Returning Customer). Berikan sambutan hangat sebagai pelanggan setia.`);
     if (customerName && customerName !== 'Pelanggan Baru' && customerName !== 'Customer') {
       dataLines.push(`- Nama Pelanggan: ${customerName}. Panggil atau sapa dia dengan nama ini secara natural!`);
+    }
+    if (loyaltyPoints && loyaltyPoints > 0) {
+      dataLines.push(`- Poin Loyalitas (Loyalty Points): ${loyaltyPoints} poin. (Ingatkan pelanggan bahwa mereka bisa menukarkan poin ini dengan Voucher jika tersedia).`);
     }
   }
 

@@ -106,6 +106,7 @@ model BusinessProfile {
   broadcasts            BroadcastCampaign[]
   bookings              Booking[]
   Testimonial           Testimonial[]
+  vouchers              Voucher[]
 }
 
 model ChatbotSetting {
@@ -240,6 +241,7 @@ model Lead {
   tags              String?    @db.Text
   leadScore         Int?       // 1-100 score of purchase intent
   churnReason       String?    @db.Text // Alasan kegagalan closing
+  loyaltyPoints     Int        @default(0)
   isReturning       Boolean    @default(false)
   assignedAdminId   String?
   createdAt         DateTime   @default(now())
@@ -600,6 +602,8 @@ model Order {
   shippingCourier   String?
   shippingResi      String?
   shippingFee       Decimal     @default(0.0)
+  discountAmount    Decimal     @default(0.0)
+  voucherCode       String?
   deliveryMethod    String      @default("shipping") // shipping, pickup
   reminderSentAt    DateTime?
   items             OrderItem[]
@@ -706,4 +710,19 @@ model Booking {
 
   @@index([businessProfileId])
   @@index([customerPhone])
+}
+
+model Voucher {
+  id                String   @id @default(uuid())
+  businessProfileId String
+  code              String   
+  discountType      String   // "percentage" | "fixed"
+  discountValue     Float
+  minPurchase       Float?   @default(0)
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  
+  businessProfile BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+  
+  @@index([businessProfileId, code])
 }

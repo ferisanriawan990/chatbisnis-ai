@@ -93,8 +93,8 @@
 | 89 | Opt-out promosi | | | | | | NOT_STARTED | |
 | 90 | Promo ulang tahun | | | | | | NOT_STARTED | |
 | 91 | Aktivasi kembali pelanggan tidak aktif | | | | | | NOT_STARTED | |
-| 92 | Program loyalitas | | | | | | NOT_STARTED | |
-| 93 | Kode voucher otomatis | | | | | | NOT_STARTED | |
+| 92 | Program loyalitas | | | | | | DONE | Loyalitas Poin dicatat secara otomatis untuk setiap Rp 1.000 belanja |
+| 93 | Kode voucher otomatis | | | | | | DONE | Diimplementasikan melalui AI native tool apply_voucher |
 | 94 | A/B testing pesan promosi | | | | | | NOT_STARTED | |
 | 95 | Basis pengetahuan bisnis | | | | | | DONE | UI Pengelolaan (Manual, Upload, Scrape) sudah ada |
 | 96 | Upload dokumen pengetahuan | | | | | | DONE | Mendukung format PDF, DOCX, CSV, Excel (Batas 10MB) |

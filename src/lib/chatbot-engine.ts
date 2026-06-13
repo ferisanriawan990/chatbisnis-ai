@@ -556,6 +556,7 @@ export class ChatbotEngine {
       cartTotal: activeCart?.totalAmount,
       allowSelling: chatbotSetting.allowSelling ?? true,
       allowPromoOffer: chatbotSetting.allowPromoOffer ?? true,
+      loyaltyPoints: existingLead?.loyaltyPoints || 0,
     });
   }
 
@@ -599,6 +600,7 @@ Kamu MEMILIKI native tool_call berikut:
 - {"tool_call": true, "action": "create_booking", "params": {"date": "YYYY-MM-DD", "hour": "HH:00", "serviceName": "Nama Layanan"}} : Buat reservasi / booking ke dalam sistem jika slot kosong.
 - {"tool_call": true, "action": "reschedule_booking", "params": {"newDate": "YYYY-MM-DD", "newHour": "HH:00", "reason": "Alasan pindah"}} : PANGGIL INI jika pelanggan ingin mengubah jadwal bookingnya yang sudah ada. Tanyakan dulu tanggal/jam penggantinya.
 - {"tool_call": true, "action": "cancel_booking", "params": {"reason": "Alasan batal"}} : PANGGIL INI HANYA JIKA pelanggan mengkonfirmasi ingin membatalkan bookingnya secara permanen. Pastikan bertanya "Apakah Kakak yakin ingin membatalkan jadwal ini?" sebelum mengeksekusi ini.
+- {"tool_call": true, "action": "apply_voucher", "params": {"code": "KODE_VOUCHER"}} : PANGGIL INI JIKA pelanggan menyebutkan kode promo atau ingin menukarkan poin dengan voucher diskon pada saat checkout.
 - {"tool_call": true, "action": "record_testimonial", "params": {"rating": 5, "review": "Teks ulasan..."}} : PANGGIL INI otomatis jika pelanggan memberikan balasan rating angka (1-5) beserta komentarnya, sebagai umpan balik pasca-pembelian.
 - {"tool_call": true, "action": "request_human"} : PANGGIL INI JIKA pelanggan benar-benar kebingungan, marah, atau meminta eksplisit berbicara dengan admin/manusia/agen, dan kamu tidak bisa menyelesaikannya.
 
@@ -715,13 +717,40 @@ CONTOH BENAR: [SEND_IMAGE: https://imgur.com/xyz.jpg | Ini adalah gambar sepatu]
                 } else {
                   toolResultString = 'Gagal: Keranjang masih kosong. Tambahkan produk ke keranjang dulu.';
                 }
+              } else if (toolData.action === 'apply_voucher' && businessProfileId && customerPhone) {
+                const voucherCode = (toolData.params.code || '').toUpperCase();
+                const order = await prisma.order.findFirst({ where: { businessProfileId, customerPhone, status: 'draft' } });
+                if (!order) {
+                  toolResultString = 'Gagal: Keranjang kosong. Voucher hanya bisa dipakai jika ada pesanan.';
+                } else {
+                  const voucher = await prisma.voucher.findFirst({
+                    where: { businessProfileId, code: voucherCode, isActive: true }
+                  });
+                  if (!voucher) {
+                    toolResultString = `Voucher ${voucherCode} tidak ditemukan atau sudah tidak aktif.`;
+                  } else if (Number(order.totalAmount) < Number(voucher.minPurchase || 0)) {
+                    toolResultString = `Voucher ${voucherCode} mensyaratkan minimal pembelian Rp ${voucher.minPurchase}.`;
+                  } else {
+                    let discount = 0;
+                    if (voucher.discountType === 'percentage') {
+                      discount = (Number(order.totalAmount) * voucher.discountValue) / 100;
+                    } else {
+                      discount = voucher.discountValue;
+                    }
+                    await prisma.order.update({
+                      where: { id: order.id },
+                      data: { discountAmount: discount, voucherCode: voucher.code }
+                    });
+                    toolResultString = `Voucher ${voucherCode} berhasil diaplikasikan! Diskon didapatkan: Rp ${discount}. Sampaikan ke pelanggan bahwa total harganya telah dipotong diskon, lalu tanya apakah ingin lanjut checkout.`;
+                  }
+                }
               } else if (toolData.action === 'checkout' && businessProfileId && customerPhone) {
                 const order = await prisma.order.findFirst({ where: { businessProfileId, customerPhone, status: 'draft' }, include: { items: true } });
                 if (order && order.items.length > 0) {
                   await prisma.order.update({ where: { id: order.id }, data: { status: 'pending_payment' } });
                   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
                   const invoiceLink = `${baseUrl}/pay/${order.id}`;
-                  const grandTotal = Number(order.totalAmount) + Number(order.shippingFee);
+                  const grandTotal = Number(order.totalAmount) + Number(order.shippingFee) - Number(order.discountAmount);
                   toolResultString = `Checkout berhasil. Order ID: ${order.orderNumber}. Grand Total: Rp ${grandTotal}. BERIKAN LINK INVOICE INI KE PELANGGAN UNTUK MEMBAYAR: ${invoiceLink}`;
                 } else {
                   toolResultString = 'Gagal checkout: Keranjang kosong.';

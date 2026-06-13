@@ -119,9 +119,15 @@ export default function PublicInvoicePage() {
                     {Number(order.shippingFee) > 0 ? `Rp ${Number(order.shippingFee).toLocaleString('id-ID')}` : 'Gratis'}
                   </p>
                 </div>
+                {Number(order.discountAmount) > 0 && (
+                  <div className="flex justify-between items-center text-sm">
+                    <p className="text-green-600 font-medium">Diskon Voucher {order.voucherCode ? `(${order.voucherCode})` : ''}</p>
+                    <p className="font-bold text-green-600">- Rp {Number(order.discountAmount).toLocaleString('id-ID')}</p>
+                  </div>
+                )}
                 <div className="flex justify-between items-center pt-2 mt-2 border-t border-slate-100">
                   <p className="font-bold text-slate-800">Total Tagihan</p>
-                  <p className="font-bold text-blue-700 text-lg">Rp {(Number(order.totalAmount) + Number(order.shippingFee)).toLocaleString('id-ID')}</p>
+                  <p className="font-bold text-blue-700 text-lg">Rp {(Number(order.totalAmount) + Number(order.shippingFee) - Number(order.discountAmount)).toLocaleString('id-ID')}</p>
                 </div>
               </div>
             </div>
@@ -186,7 +192,7 @@ export default function PublicInvoicePage() {
             <>
               <h3 className="font-bold text-slate-800 text-sm">Cara Pembayaran</h3>
               <p className="text-sm text-slate-600">
-                Silakan lakukan transfer sebesar <strong className="text-blue-600">Rp {(Number(order.totalAmount) + Number(order.shippingFee)).toLocaleString('id-ID')}</strong>. 
+                Silakan lakukan transfer sebesar <strong className="text-blue-600">Rp {(Number(order.totalAmount) + Number(order.shippingFee) - Number(order.discountAmount)).toLocaleString('id-ID')}</strong>. 
                 Untuk mendapatkan informasi nomor rekening atau metode pembayaran e-wallet, silakan balas pesan di WhatsApp.
               </p>
               <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-3">
