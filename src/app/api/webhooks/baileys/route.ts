@@ -23,17 +23,6 @@ export async function POST(req: NextRequest) {
     }
 
     const rawBody = await req.text();
-    
-    // DEBUG LOG
-    await prisma.auditLog.create({
-      data: {
-        actorUserId: null,
-        action: 'DEBUG_INCOMING_WEBHOOK',
-        entityType: 'Webhook',
-        entityId: 'baileys_webhook_payload',
-        metadataJson: rawBody,
-      }
-    });
     if (Buffer.byteLength(rawBody, 'utf8') > MAX_WEBHOOK_BYTES) {
       return NextResponse.json({ error: 'Payload too large' }, { status: 413 });
     }
