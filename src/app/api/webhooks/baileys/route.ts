@@ -61,6 +61,18 @@ export async function POST(req: NextRequest) {
     if (!event.sessionId || !event.messageId || !event.from || event.isGroup) {
       return NextResponse.json({ received: true, ignored: 'invalid_or_group_message' });
     }
+
+    const idempotency = await rateLimit(
+      `idempotency:msg:${event.messageId}`,
+      1,
+      300_000 // 5 minutes window
+    );
+
+    if (!idempotency.success) {
+      console.log(`Duplicate webhook detected for messageId: ${event.messageId}`);
+      return NextResponse.json({ received: true, ignored: 'duplicate_message_id' });
+    }
+
     if (event.from.includes('status@broadcast')) {
       return NextResponse.json({ received: true, ignored: 'status_broadcast' });
     }
