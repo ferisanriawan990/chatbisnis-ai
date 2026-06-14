@@ -101,165 +101,82 @@ export default async function DashboardIndex() {
         </div>
       </div>
 
-      {/* Floating Statistics Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-[0_4px_24px_rgba(0,0,0,0.02)] hover:-translate-y-1 transition-transform duration-300">
-           <div className="flex justify-between items-start mb-4">
-             <div className="bg-blue-50 p-3 rounded-2xl"><MessageSquare className="w-6 h-6 text-blue-600" /></div>
-           </div>
-           <div>
-             <p className="text-4xl font-black text-slate-800 tracking-tight">{todayChats}</p>
-             <p className="text-sm font-medium text-slate-500 mt-1">Interaksi Chat Hari Ini</p>
-           </div>
-        </div>
-        
-        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-[0_4px_24px_rgba(0,0,0,0.02)] hover:-translate-y-1 transition-transform duration-300">
-           <div className="flex justify-between items-start mb-4">
-             <div className="bg-emerald-50 p-3 rounded-2xl"><Users className="w-6 h-6 text-emerald-600" /></div>
-           </div>
-           <div>
-             <p className="text-4xl font-black text-slate-800 tracking-tight">{newLeads}</p>
-             <p className="text-sm font-medium text-slate-500 mt-1">Lead Baru (7 Hari Terakhir)</p>
-           </div>
-        </div>
-        
-        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-[0_4px_24px_rgba(0,0,0,0.02)] hover:-translate-y-1 transition-transform duration-300 relative overflow-hidden group">
-           <div className={`absolute inset-0 opacity-0 transition-opacity duration-300 ${needsHuman > 0 ? 'bg-amber-50 group-hover:opacity-100' : ''} pointer-events-none`}></div>
-           <div className="relative z-10">
-             <div className="flex justify-between items-start mb-4">
-               <div className="bg-amber-50 p-3 rounded-2xl group-hover:bg-amber-100 transition-colors"><ShieldAlert className="w-6 h-6 text-amber-600" /></div>
-             </div>
-             <div>
-               <p className={`text-4xl font-black tracking-tight ${needsHuman > 0 ? 'text-amber-600' : 'text-slate-800'}`}>{needsHuman}</p>
-               <p className="text-sm font-medium text-slate-500 mt-1">Chat Butuh Bantuan Admin</p>
-             </div>
-           </div>
-        </div>
-        
-        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-[0_4px_24px_rgba(0,0,0,0.02)] hover:-translate-y-1 transition-transform duration-300">
-           <div className="flex justify-between items-start mb-4">
-             <div className={`p-3 rounded-2xl ${isWhatsappReady ? 'bg-teal-50' : 'bg-slate-100'}`}>
-               <Bot className={`w-6 h-6 ${isWhatsappReady ? 'text-teal-600' : 'text-slate-500'}`} />
-             </div>
-           </div>
-           <div>
-             <p className={`text-2xl font-black tracking-tight capitalize truncate ${isWhatsappReady ? 'text-teal-600' : 'text-slate-600'}`}>{whatsappStatus}</p>
-             <p className="text-sm font-medium text-slate-500 mt-1">Status Koneksi WhatsApp</p>
-           </div>
-        </div>
-      </div>
-
       {/* Onboarding Checklist Section */}
-      <section className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200/60">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="bg-indigo-100 p-2 rounded-xl text-indigo-600"><Zap className="w-5 h-5" /></div>
-          <div>
-            <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Checklist Persiapan Chatbot</h2>
-            <p className="text-sm text-slate-500">Selesaikan langkah berikut agar asisten AI Anda siap melayani pelanggan.</p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className={`flex flex-col p-5 border-2 rounded-2xl transition-all ${hasProf ? 'border-emerald-100 bg-emerald-50/30' : 'border-slate-100 bg-slate-50 hover:border-indigo-200'}`}>
-            <div className="flex items-center justify-between mb-3">
-              <div className={`p-2 rounded-lg ${hasProf ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-200 text-slate-400'}`}>
-                {hasProf ? <CheckCircle2 className="w-5 h-5" /> : <Circle className="w-5 h-5" />}
-              </div>
-              <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded-md ${hasProf ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500'}`}>
-                Langkah 1
-              </span>
+      {!allSetupReady && (
+        <section className="bg-white p-6 md:p-8 rounded-3xl shadow-[0_4px_30px_rgb(0,0,0,0.06)] border border-indigo-100 relative overflow-hidden animate-in slide-in-from-top-4 fade-in duration-700">
+          <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-gradient-to-bl from-indigo-50 to-purple-50 rounded-full blur-[80px] opacity-60 pointer-events-none"></div>
+          <div className="relative z-10 flex items-center gap-4 mb-8">
+            <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-3 rounded-2xl text-white shadow-lg shadow-indigo-500/30"><Zap className="w-6 h-6" /></div>
+            <div>
+              <h2 className="text-2xl font-black text-slate-900 tracking-tight">Mulai Perjalanan Anda 🚀</h2>
+              <p className="text-sm font-medium text-slate-500 mt-1">Selesaikan 3 langkah mudah ini agar asisten AI Anda siap beraksi melayani pelanggan.</p>
             </div>
-            <h3 className="font-bold text-slate-800 mb-1">Profil Bisnis</h3>
-            <p className="text-xs text-slate-500 flex-1 mb-4">Isi nama bisnis, industri, dan gaya bahasa agar bot mengerti identitas usahanya.</p>
-            {!hasProf ? (
-              <Link href="/dashboard/chatbot" className="text-sm font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1 group">
-                Lengkapi Sekarang <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </Link>
-            ) : (
-              <span className="text-sm font-bold text-emerald-600">Selesai ✓</span>
-            )}
           </div>
 
-          <div className={`flex flex-col p-5 border-2 rounded-2xl transition-all ${hasKnow ? 'border-emerald-100 bg-emerald-50/30' : 'border-slate-100 bg-slate-50 hover:border-indigo-200'}`}>
-            <div className="flex items-center justify-between mb-3">
-              <div className={`p-2 rounded-lg ${hasKnow ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-200 text-slate-400'}`}>
-                {hasKnow ? <CheckCircle2 className="w-5 h-5" /> : <Circle className="w-5 h-5" />}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10">
+            <div className={`flex flex-col p-6 border-2 rounded-3xl transition-all duration-300 ${hasProf ? 'border-emerald-100 bg-emerald-50/50' : 'border-indigo-100 bg-white hover:border-indigo-300 shadow-sm'}`}>
+              <div className="flex items-center justify-between mb-4">
+                <div className={`p-2.5 rounded-xl ${hasProf ? 'bg-emerald-100 text-emerald-600' : 'bg-indigo-50 text-indigo-500'}`}>
+                  {hasProf ? <CheckCircle2 className="w-6 h-6" /> : <Circle className="w-6 h-6" />}
+                </div>
+                <span className={`text-[10px] uppercase font-bold tracking-wider px-3 py-1.5 rounded-lg ${hasProf ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+                  Langkah 1
+                </span>
               </div>
-              <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded-md ${hasKnow ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500'}`}>
-                Langkah 2
-              </span>
+              <h3 className="font-extrabold text-lg text-slate-800 mb-2">Profil Bisnis</h3>
+              <p className="text-xs font-medium text-slate-500 flex-1 mb-6 leading-relaxed">Beritahu AI nama bisnis, jam buka, dan karakter usahanya.</p>
+              {!hasProf ? (
+                <Link href="/dashboard/chatbot" className="w-full py-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-sm font-bold rounded-xl flex items-center justify-center gap-2 transition-colors">
+                  Isi Profil <ChevronRight className="w-4 h-4" />
+                </Link>
+              ) : (
+                <span className="w-full py-3 bg-emerald-100 text-emerald-700 text-sm font-bold rounded-xl flex items-center justify-center gap-2">Selesai ✓</span>
+              )}
             </div>
-            <h3 className="font-bold text-slate-800 mb-1">Knowledge Base</h3>
-            <p className="text-xs text-slate-500 flex-1 mb-4">Unggah data, Q&A, atau aturan toko sebagai sumber pengetahuan utama bot.</p>
-            {!hasKnow ? (
-              <Link href="/dashboard/knowledge" className="text-sm font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1 group">
-                Tambah Data <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </Link>
-            ) : (
-              <span className="text-sm font-bold text-emerald-600">Selesai ✓</span>
-            )}
-          </div>
 
-          <div className={`flex flex-col p-5 border-2 rounded-2xl transition-all ${isWhatsappReady ? 'border-emerald-100 bg-emerald-50/30' : 'border-slate-100 bg-slate-50 hover:border-indigo-200'}`}>
-            <div className="flex items-center justify-between mb-3">
-              <div className={`p-2 rounded-lg ${isWhatsappReady ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-200 text-slate-400'}`}>
-                {isWhatsappReady ? <CheckCircle2 className="w-5 h-5" /> : <Circle className="w-5 h-5" />}
+            <div className={`flex flex-col p-6 border-2 rounded-3xl transition-all duration-300 ${hasKnow ? 'border-emerald-100 bg-emerald-50/50' : 'border-indigo-100 bg-white hover:border-indigo-300 shadow-sm'}`}>
+              <div className="flex items-center justify-between mb-4">
+                <div className={`p-2.5 rounded-xl ${hasKnow ? 'bg-emerald-100 text-emerald-600' : 'bg-indigo-50 text-indigo-500'}`}>
+                  {hasKnow ? <CheckCircle2 className="w-6 h-6" /> : <Circle className="w-6 h-6" />}
+                </div>
+                <span className={`text-[10px] uppercase font-bold tracking-wider px-3 py-1.5 rounded-lg ${hasKnow ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+                  Langkah 2
+                </span>
               </div>
-              <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded-md ${isWhatsappReady ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500'}`}>
-                Langkah 3
-              </span>
+              <h3 className="font-extrabold text-lg text-slate-800 mb-2">Knowledge Base</h3>
+              <p className="text-xs font-medium text-slate-500 flex-1 mb-6 leading-relaxed">Upload data produk atau FAQ (Opsional, tapi sangat disarankan).</p>
+              {!hasKnow ? (
+                <Link href="/dashboard/knowledge" className="w-full py-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-sm font-bold rounded-xl flex items-center justify-center gap-2 transition-colors">
+                  Tambah Data <ChevronRight className="w-4 h-4" />
+                </Link>
+              ) : (
+                <span className="w-full py-3 bg-emerald-100 text-emerald-700 text-sm font-bold rounded-xl flex items-center justify-center gap-2">Selesai ✓</span>
+              )}
             </div>
-            <h3 className="font-bold text-slate-800 mb-1">Koneksi WhatsApp</h3>
-            <p className="text-xs text-slate-500 flex-1 mb-4">Tautkan nomor WhatsApp Anda dengan memindai QR Code di sistem.</p>
-            {!isWhatsappReady ? (
-              <Link href="/dashboard/whatsapp" className="text-sm font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1 group">
-                Hubungkan Perangkat <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </Link>
-            ) : (
-              <span className="text-sm font-bold text-emerald-600">Selesai ✓</span>
-            )}
-          </div>
 
-          <div className={`flex flex-col p-5 border-2 rounded-2xl transition-all ${isAiKeyReady ? 'border-emerald-100 bg-emerald-50/30' : 'border-slate-100 bg-slate-50'}`}>
-            <div className="flex items-center justify-between mb-3">
-              <div className={`p-2 rounded-lg ${isAiKeyReady ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'}`}>
-                {isAiKeyReady ? <CheckCircle2 className="w-5 h-5" /> : <Circle className="w-5 h-5" />}
+            <div className={`flex flex-col p-6 border-2 rounded-3xl transition-all duration-300 ${isWhatsappReady ? 'border-emerald-100 bg-emerald-50/50' : 'border-indigo-100 bg-white hover:border-indigo-300 shadow-sm'}`}>
+              <div className="flex items-center justify-between mb-4">
+                <div className={`p-2.5 rounded-xl ${isWhatsappReady ? 'bg-emerald-100 text-emerald-600' : 'bg-indigo-50 text-indigo-500'}`}>
+                  {isWhatsappReady ? <CheckCircle2 className="w-6 h-6" /> : <Circle className="w-6 h-6" />}
+                </div>
+                <span className={`text-[10px] uppercase font-bold tracking-wider px-3 py-1.5 rounded-lg ${isWhatsappReady ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+                  Langkah 3
+                </span>
               </div>
-              <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded-md ${isAiKeyReady ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
-                Sistem
-              </span>
+              <h3 className="font-extrabold text-lg text-slate-800 mb-2">Hubungkan WhatsApp</h3>
+              <p className="text-xs font-medium text-slate-500 flex-1 mb-6 leading-relaxed">Scan QR Code atau gunakan Nomor HP untuk menghubungkan bot ke WA.</p>
+              {!isWhatsappReady ? (
+                <Link href="/dashboard/whatsapp" className="w-full py-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-sm font-bold rounded-xl flex items-center justify-center gap-2 transition-colors">
+                  Koneksikan WA <ChevronRight className="w-4 h-4" />
+                </Link>
+              ) : (
+                <span className="w-full py-3 bg-emerald-100 text-emerald-700 text-sm font-bold rounded-xl flex items-center justify-center gap-2">Selesai ✓</span>
+              )}
             </div>
-            <h3 className="font-bold text-slate-800 mb-1">Akses Koneksi AI</h3>
-            <p className="text-xs text-slate-500 flex-1 mb-4">{hasGlobalKey ? 'Akses Global OpenAI/LLM telah diaktifkan oleh sistem.' : 'Kunci API Global belum disiapkan oleh admin. Hubungi CS.'}</p>
-            {isAiKeyReady && (
-              <span className="text-sm font-bold text-emerald-600">Selesai ✓</span>
-            )}
           </div>
-        </div>
+        </section>
+      )}
 
-        <div className={`mt-8 p-6 rounded-2xl border-2 flex flex-col sm:flex-row items-center justify-between gap-6 transition-all ${allSetupReady ? 'bg-indigo-600 border-indigo-500 shadow-xl shadow-indigo-600/20' : 'bg-slate-50 border-slate-100 border-dashed'}`}>
-          <div>
-            <h4 className={`text-lg font-bold mb-1 ${allSetupReady ? 'text-white' : 'text-slate-700'}`}>
-              {allSetupReady ? '🚀 Semua Siap! Aktifkan Asisten Anda' : '⚠️ Persiapan Belum Selesai'}
-            </h4>
-            <p className={`text-sm ${allSetupReady ? 'text-indigo-100' : 'text-slate-500'}`}>
-              {allSetupReady 
-                ? 'Sistem siap dioperasikan. Aktifkan bot untuk mulai membalas chat secara otomatis.' 
-                : 'Harap selesaikan seluruh checklist di atas terlebih dahulu untuk bisa mengaktifkan Bot.'}
-            </p>
-          </div>
-          <Link 
-            href="/dashboard/chatbot" 
-            className={`px-8 py-3.5 rounded-xl font-bold whitespace-nowrap transition-all flex items-center gap-2 ${
-              allSetupReady 
-                ? 'bg-white text-indigo-600 hover:bg-slate-50 hover:scale-105 shadow-md' 
-                : 'bg-slate-200 text-slate-400 cursor-not-allowed'
-            }`}
-          >
-            Menuju Pengaturan Bot <ChevronRight className="w-5 h-5" />
-          </Link>
-        </div>
-      </section>
     </div>
   );
 }

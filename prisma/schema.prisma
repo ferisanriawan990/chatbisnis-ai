@@ -141,6 +141,8 @@ model ChatbotSetting {
   monthlyChatLimit        Int      @default(30000)
   historyMessageCount     Int      @default(6)
   knowledgeCharLimit      Int      @default(3500)
+  welcomeMessage          String?  @db.Text
+  enableWelcomeMessage    Boolean  @default(false)
   actionWebhookUrl        String?
   whatsappBaseUrl         String?
   whatsappApiKeyEncrypted String?
@@ -823,3 +825,7 @@ model IdempotencyKey {
   key       String   @id
   createdAt DateTime @default(now())
 }
+
+// ─── Interactive Messages (WhatsApp Menus) ───────────────
+
+

@@ -26,6 +26,7 @@ export default function ChatbotDashboard() {
     businessName: '', businessIndustry: '', businessDescription: '', address: '', openingHours: '', adminPhone: '', websiteUrl: '', instagramUrl: '', marketplaceUrl: '',
     botName: '', toneStyle: 'Profesional', language: 'id', useEmoji: true, maxReplyLength: 'sedang', allowSelling: true, allowPromoOffer: true, allowVision: false, allowVoiceNote: false,
     fallbackMessage: '', handoverMessage: '', handoverKeywords: '', outOfHoursMessage: '',
+    enableWelcomeMessage: false, welcomeMessage: '',
     aiProvider: 'Flaz Cloud', aiModel: 'gemini-2.5-flash-lite', aiApiKey: '',
     dailyChatLimit: 1000, monthlyChatLimit: 30000,
     historyMessageCount: 6, knowledgeCharLimit: 3500, actionWebhookUrl: '',

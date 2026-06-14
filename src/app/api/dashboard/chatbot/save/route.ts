@@ -92,6 +92,8 @@ export async function POST(req: Request) {
       monthlyChatLimit: data.monthlyChatLimit !== undefined ? Number(data.monthlyChatLimit) : undefined,
       historyMessageCount: data.historyMessageCount !== undefined ? Number(data.historyMessageCount) : undefined,
       knowledgeCharLimit: data.knowledgeCharLimit !== undefined ? Number(data.knowledgeCharLimit) : undefined,
+      enableWelcomeMessage: data.enableWelcomeMessage,
+      welcomeMessage: data.welcomeMessage || null,
       actionWebhookUrl: data.actionWebhookUrl || null,
       // whatsappSessionName is preserved — never overwritten from user input
       whatsappSessionName: sessionName,

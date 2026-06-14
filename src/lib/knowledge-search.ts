@@ -1,5 +1,6 @@
 import { prisma } from './prisma';
 import { KnowledgeItem } from '@prisma/client';
+import { systemCache } from './cache';
 
 export function normalizeText(text: string): string {
   return text.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
@@ -59,10 +60,15 @@ export function extractMetadata(item: KnowledgeItem): Record<string, string> {
 
 export async function searchKnowledgeItems(message: string, businessProfileId: string): Promise<KnowledgeItem[]> {
   const msg = normalizeText(message);
-  
-  const allItems = await prisma.knowledgeItem.findMany({
-    where: { businessProfileId, isActive: true },
-  });
+  const cacheKey = `kb_${businessProfileId}`;
+  let allItems = systemCache.get<KnowledgeItem[]>(cacheKey);
+
+  if (!allItems) {
+    allItems = await prisma.knowledgeItem.findMany({
+      where: { businessProfileId, isActive: true },
+    });
+    systemCache.set(cacheKey, allItems, 60); // 60 seconds TTL
+  }
 
   const words = msg
     .split(/\s+/)

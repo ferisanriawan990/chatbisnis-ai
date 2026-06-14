@@ -5,8 +5,11 @@ import { prisma } from '@/lib/prisma';
 import { BaileysService } from '@/lib/baileys';
 import { getActiveWhatsappSessionName } from '@/lib/whatsapp-helpers';
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
+    const body = await request.json().catch(() => ({}));
+    const phoneNumber = body.phoneNumber?.trim() || undefined;
+
     const authSession = await getServerSession(authOptions);
     if (!authSession?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -66,8 +69,9 @@ export async function POST() {
     const resolved = await BaileysService.resolveInstance(chatbot.id);
     const gateway = resolved.gateway;
     const serverId = resolved.serverId;
-    const info = await gateway.startSession(sessionName);
+    const info = await gateway.startSession(sessionName, phoneNumber);
     const status = info.status === 'connected' ? 'connected' : info.status === 'qr' ? 'qr' : 'starting';
+    const pairingCode = info.pairingCode;
 
     if (existingSession) {
       await prisma.whatsAppSession.update({
@@ -94,7 +98,7 @@ export async function POST() {
       });
     }
 
-    return NextResponse.json({ success: true, sessionName, status });
+    return NextResponse.json({ success: true, sessionName, status, pairingCode });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     console.error('Baileys Start Error:', message);

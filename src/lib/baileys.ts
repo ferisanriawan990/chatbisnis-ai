@@ -26,6 +26,7 @@ interface GatewaySessionInfo {
   lastDisconnectedAt: string | null;
   lastError: string | null;
   qrAvailable: boolean;
+  pairingCode?: string;
 }
 
 export class BaileysApiError extends Error {
@@ -149,9 +150,10 @@ export class BaileysService {
     }
   }
 
-  async startSession(sessionId: string) {
+  async startSession(sessionId: string, phoneNumber?: string) {
     return this.request<GatewaySessionInfo>(`/sessions/${encodeURIComponent(sessionId)}/start`, {
       method: 'POST',
+      body: phoneNumber ? JSON.stringify({ phoneNumber }) : undefined,
     });
   }
 

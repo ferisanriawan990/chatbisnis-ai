@@ -323,6 +323,25 @@ export const AdvancedRulesPanel = ({ form, handleChange }: any) => (
       <div><label className="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">Pesan Handover (Saat diteruskan ke Admin)</label><textarea name="handoverMessage" value={form.handoverMessage} onChange={handleChange} rows={2} className="w-full p-3.5 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-amber-500/10 focus:border-amber-500 outline-none transition-all shadow-sm hover:border-amber-300 resize-none"></textarea></div>
       <div><label className="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">Keyword Handover (Dipisah koma)</label><input name="handoverKeywords" value={form.handoverKeywords} onChange={handleChange} className="w-full p-3.5 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-amber-500/10 focus:border-amber-500 outline-none transition-all shadow-sm hover:border-amber-300" placeholder="cth: admin, manusia, cs" /></div>
       <div><label className="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">Pesan Di Luar Jam Operasional</label><textarea name="outOfHoursMessage" value={form.outOfHoursMessage} onChange={handleChange} rows={2} className="w-full p-3.5 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-amber-500/10 focus:border-amber-500 outline-none transition-all shadow-sm hover:border-amber-300 resize-none" placeholder="Mohon maaf, saat ini kami sedang tutup..."></textarea></div>
+
+      <div className="md:col-span-2 mt-4 pt-4 border-t border-slate-200/50">
+        <label className="flex items-center gap-4 p-4 bg-white border border-slate-200 rounded-2xl cursor-pointer hover:bg-emerald-50/50 hover:border-emerald-200 transition-all shadow-sm group">
+          <div className="relative flex items-center justify-center w-6 h-6">
+            <input type="checkbox" name="enableWelcomeMessage" checked={form.enableWelcomeMessage || false} onChange={handleChange} className="peer w-6 h-6 text-emerald-600 bg-slate-100 border-slate-300 rounded focus:ring-emerald-500 cursor-pointer transition-all" />
+          </div>
+          <div className="flex-1">
+            <span className="text-sm font-bold text-slate-800 group-hover:text-emerald-700 transition-colors">Gunakan Pesan Pembuka Statis (Welcome Message) 👋</span>
+            <p className="text-xs text-slate-500 mt-0.5">Kirim pesan otomatis ini secara gratis tanpa token AI kepada pelanggan yang baru pertama kali chat.</p>
+          </div>
+        </label>
+      </div>
+
+      {form.enableWelcomeMessage && (
+        <div className="md:col-span-2">
+          <label className="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">Teks Pesan Pembuka</label>
+          <textarea name="welcomeMessage" value={form.welcomeMessage || ''} onChange={handleChange} rows={3} className="w-full p-3.5 bg-white border border-emerald-200 rounded-xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all shadow-sm hover:border-emerald-300 resize-none" placeholder="Halo! Ada yang bisa kami bantu?"></textarea>
+        </div>
+      )}
     </div>
   </section>
 );

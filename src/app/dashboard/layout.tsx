@@ -6,7 +6,7 @@ import { redirect, usePathname } from 'next/navigation';
 import { 
   Bot, Settings, BookOpen, Package, MessageSquare, Phone, 
   Users, CreditCard, LayoutDashboard, Send, Inbox, Database, 
-  Box, X, Menu, BotMessageSquare, BarChart3, Shield, ShoppingCart, Star, History, Megaphone, Sparkles, UserCircle
+  Box, X, Menu, BotMessageSquare, BarChart3, Shield, ShoppingCart, Star, History, Megaphone, Sparkles, UserCircle, MousePointerClick
 } from 'lucide-react';
 import Link from 'next/link';
 import LogoutButton from '@/components/LogoutButton';

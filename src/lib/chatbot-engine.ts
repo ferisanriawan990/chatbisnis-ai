@@ -9,6 +9,7 @@ import { searchKnowledgeItems, buildKnowledgeFallbackAnswer, detectCustomerInten
 import { validatePublicHttpsUrl } from './security';
 import { analyzeSentiment, SentimentResult } from './sentiment-analysis';
 import { BaileysService } from './baileys';
+import { systemCache } from './cache';
 
 export interface ChatbotEngineParams {
   whatsappServerId?: string;
@@ -113,7 +114,7 @@ export class ChatbotEngine {
     }
 
     // 3. Lead Capture is now handled asynchronously below
-
+    
     // 4. (N8N Bypass Removed)
 
     // 5. Retrieve Knowledge
@@ -143,6 +144,14 @@ export class ChatbotEngine {
       take: (chatbotSetting as any).historyMessageCount || 6, // Menggunakan batas dinamis (Prisma)
     });
     
+    // Welcome Message Logic (Priority 2)
+    if (chatHistoryLogs.length === 0 && chatbotSetting.enableWelcomeMessage && chatbotSetting.welcomeMessage) {
+      if (!isTest) {
+        await this.sendLog({ ...params, chatbotSetting, messageOut: chatbotSetting.welcomeMessage, needsHuman: false, intent: 'welcome', sentiment: 'neutral' });
+      }
+      return { reply: chatbotSetting.welcomeMessage, metadata: { intent: 'welcome', promptSource: 'welcome_message' } };
+    }
+
     // Format history: pesan user menjadi 'user', balasan AI menjadi 'assistant'
     const chatHistory: { role: string; content: string }[] = [];
     chatHistoryLogs.reverse().forEach(log => {
@@ -282,6 +291,10 @@ export class ChatbotEngine {
   }
 
   private static async loadChatbotContext(whatsappSessionName: string, whatsappServerId?: string, isTest: boolean = false) {
+    const cacheKey = `ctx_${whatsappServerId || 'none'}_${whatsappSessionName}_${isTest}`;
+    const cached = systemCache.get<any>(cacheKey);
+    if (cached) return cached;
+
     // Modify query to allow fallback. If serverId provided, use it. Otherwise just use session name.
     const whereClause: any = { whatsappSessionName };
     if (whatsappServerId) whereClause.whatsappServerId = whatsappServerId;
@@ -307,12 +320,15 @@ export class ChatbotEngine {
       include: { template: true },
     });
 
-    return {
+    const result = {
       chatbotSetting,
       botConfig,
       profile: chatbotSetting.businessProfile,
       activePlan: chatbotSetting.user.subscriptions[0]?.plan
     };
+
+    systemCache.set(cacheKey, result, 30); // 30 seconds TTL
+    return result;
   }
 
   private static async validateBotAccess(chatbotSetting: any, customerPhone: string, messageIn: string, activePlan: any, isTest: boolean, sentiment: SentimentResult, customerName?: string) {

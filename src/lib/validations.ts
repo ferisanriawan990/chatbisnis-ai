@@ -58,6 +58,8 @@ export const chatbotSettingSchema = z.object({
   monthlyChatLimit: z.coerce.number().int().min(1).max(10000000).default(30000),
   historyMessageCount: z.coerce.number().int().min(2).max(50).default(6),
   knowledgeCharLimit: z.coerce.number().int().min(1000).max(20000).default(3500),
+  enableWelcomeMessage: z.boolean().default(false),
+  welcomeMessage: z.string().max(2000).optional().nullable(),
   actionWebhookUrl: z.string().url().optional().or(z.literal('')).nullable(),
   templateId: z.string().optional().nullable(),
   // Advanced bot config fields
