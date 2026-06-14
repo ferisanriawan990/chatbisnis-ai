@@ -11,6 +11,7 @@ interface WhatsappSession {
   phoneNumber: string | null;
   lastConnectedAt: string | null;
   lastError: string | null;
+  pairingCode?: string;
 }
 
 export default function WhatsappDashboard() {
@@ -46,12 +47,23 @@ export default function WhatsappDashboard() {
         setSessions(data.sessions || []);
         setMaxSessions(data.maxSessions || 1);
 
-        // Fetch QR for any session that needs it
+        // Cek jika API mengembalikan pairingCode untuk sesi yang sedang "qr" (menunggu koneksi)
+        const newPairingCodes = { ...pairingCodes };
+        let updatedPairing = false;
+        
         data.sessions?.forEach((s: WhatsappSession) => {
-          if (s.status === 'qr' && !pairingCodes[s.sessionName]) {
+          if (s.pairingCode) {
+            newPairingCodes[s.sessionName] = s.pairingCode;
+            updatedPairing = true;
+          }
+          if (s.status === 'qr' && !newPairingCodes[s.sessionName]) {
             fetchQrCode(s.sessionName);
           }
         });
+        
+        if (updatedPairing) {
+          setPairingCodes(newPairingCodes);
+        }
       }
     } catch {
       toast.error('Gagal mengambil status');

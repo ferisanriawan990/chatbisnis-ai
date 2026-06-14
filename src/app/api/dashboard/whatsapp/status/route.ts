@@ -43,12 +43,14 @@ export async function GET() {
       let status = 'disconnected';
       let phoneNumber: string | null = null;
       let lastError = storedSession.lastError || null;
+      let pairingCode: string | undefined;
       try {
         const { gateway } = await BaileysService.resolveInstance(chatbot.id);
         const info = await gateway.getStatus(storedSession.sessionName);
         status = info.normalizedStatus;
         phoneNumber = info.phoneNumber;
         lastError = info.lastError;
+        pairingCode = info.pairingCode;
       } catch (error) {
         if (!(error instanceof BaileysApiError && error.status === 404)) {
           if (error instanceof Error && !error.message.includes('404')) {
@@ -76,6 +78,7 @@ export async function GET() {
         phoneNumber,
         lastConnectedAt: storedSession.lastConnectedAt,
         lastError,
+        pairingCode,
       });
     }
 
