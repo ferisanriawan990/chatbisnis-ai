@@ -4,8 +4,9 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import speakeasy from 'speakeasy';
 import qrcode from 'qrcode';
+import { encrypt } from '@/lib/crypto';
 
-export async function GET() {
+export async function POST() {
   try {
     const session = await getServerSession(authOptions);
     if (!session || !session.user || !(session.user as any).id) {
@@ -18,10 +19,10 @@ export async function GET() {
 
     const qrCodeDataUrl = await qrcode.toDataURL(secret.otpauth_url!);
 
-    // Save temporary secret to user (not yet enabled)
+    // Save temporary encrypted secret to user (not yet enabled)
     await prisma.user.update({
       where: { id: (session.user as any).id },
-      data: { twoFactorSecret: secret.base32 }
+      data: { twoFactorSecret: encrypt(secret.base32) }
     });
 
     return NextResponse.json({ secret: secret.base32, qrCodeDataUrl });

@@ -18,74 +18,99 @@ export async function POST(req: Request) {
     }
 
     const isSuccess = transaction_status === 'settlement' || transaction_status === 'capture';
+    const isFailure = transaction_status === 'cancel' || transaction_status === 'expire' || transaction_status === 'deny';
 
     if (order_id.startsWith('SUB-')) {
       // --- B2B SaaS Subscription Payment ---
-      const tx = await prisma.transaction.findUnique({ where: { externalId: order_id } });
-      if (!tx) return NextResponse.json({ error: 'Transaction not found' }, { status: 404 });
+      await prisma.$transaction(async (tx) => {
+        const transaction = await tx.transaction.findUnique({ where: { externalId: order_id } });
+        if (!transaction) throw new Error('Transaction not found');
 
-      if (isSuccess && tx.status !== 'paid') {
-        // Update Transaction
-        await prisma.transaction.update({
-          where: { id: tx.id },
-          data: { status: 'paid', paidAt: new Date() }
-        });
+        // Prevent backward status changes
+        if (transaction.status === 'paid') return;
 
-        // Extend Subscription 30 Days
-        const now = new Date();
-        const expiry = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // + 30 days
-
-        const existingSub = await prisma.subscription.findFirst({
-          where: { userId: tx.userId, status: 'active' }
-        });
-
-        if (existingSub) {
-          // Upgrade or extend
-          await prisma.subscription.update({
-            where: { id: existingSub.id },
-            data: { planId: tx.planId, expiredAt: expiry }
+        if (isSuccess) {
+          // Update Transaction
+          await tx.transaction.update({
+            where: { id: transaction.id },
+            data: { status: 'paid', paidAt: new Date() }
           });
-        } else {
-          // Create new
-          await prisma.subscription.create({
-            data: {
-              userId: tx.userId,
-              planId: tx.planId,
+
+          // Find active subscription
+          const existingSub = await tx.subscription.findFirst({
+            where: { 
+              userId: transaction.userId, 
               status: 'active',
-              expiredAt: expiry
+              OR: [{ expiredAt: null }, { expiredAt: { gt: new Date() } }]
             }
           });
+
+          const now = new Date();
+          let baseDate = now;
+          if (existingSub && existingSub.expiredAt && existingSub.expiredAt > now) {
+            baseDate = existingSub.expiredAt;
+          }
+          
+          const newExpiry = new Date(baseDate.getTime() + 30 * 24 * 60 * 60 * 1000); // + 30 days
+
+          if (existingSub) {
+            // Upgrade or extend
+            await tx.subscription.update({
+              where: { id: existingSub.id },
+              data: { planId: transaction.planId, expiredAt: newExpiry }
+            });
+          } else {
+            // Create new
+            await tx.subscription.create({
+              data: {
+                userId: transaction.userId,
+                planId: transaction.planId,
+                status: 'active',
+                expiredAt: newExpiry
+              }
+            });
+          }
+        } else if (isFailure) {
+          await tx.transaction.update({
+            where: { id: transaction.id },
+            data: { status: 'failed' }
+          });
         }
-      } else if (transaction_status === 'cancel' || transaction_status === 'expire' || transaction_status === 'deny') {
-        await prisma.transaction.update({
-          where: { id: tx.id },
-          data: { status: 'failed' }
-        });
-      }
+      });
 
     } else if (order_id.startsWith('ORD-')) {
       // --- B2C UMKM Order Payment ---
       const orderIdStr = order_id.replace('ORD-', '');
-      const order = await prisma.order.findUnique({ where: { id: orderIdStr } });
-      if (!order) return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+      await prisma.$transaction(async (tx) => {
+        const order = await tx.order.findUnique({ where: { id: orderIdStr } });
+        if (!order) throw new Error('Order not found');
 
-      if (isSuccess && order.status !== 'paid') {
-        await prisma.order.update({
-          where: { id: order.id },
-          data: { status: 'paid' }
-        });
-      } else if (transaction_status === 'cancel' || transaction_status === 'expire' || transaction_status === 'deny') {
-        await prisma.order.update({
-          where: { id: order.id },
-          data: { status: 'cancelled' }
-        });
-      }
+        // Prevent backward status changes
+        if (order.status === 'paid' || order.status === 'completed') return;
+
+        if (isSuccess) {
+          await tx.order.update({
+            where: { id: order.id },
+            data: { status: 'paid' }
+          });
+        } else if (isFailure) {
+          await tx.order.update({
+            where: { id: order.id },
+            data: { status: 'cancelled' }
+          });
+        }
+      });
     }
 
     return NextResponse.json({ success: true });
 
-  } catch (error) {
-    console.error('Midtrans Webhook Error:', error);
+  } catch (error: any) {
+    console.error('Midtrans Webhook Error:', error.message);
+    // Return 200 even on error if it's our logic error, so Midtrans stops retrying infinitely,
+    // but return 500 if DB is down. For transaction missing, 404.
+    if (error.message === 'Transaction not found' || error.message === 'Order not found') {
+        return NextResponse.json({ error: error.message }, { status: 404 });
+    }
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

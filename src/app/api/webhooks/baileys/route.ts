@@ -12,6 +12,7 @@ import {
 } from '@/lib/baileys-webhook';
 import { getRequestIp } from '@/lib/security';
 import { rateLimit } from '@/lib/rate-limit';
+import { secureFetchBuffer } from '@/lib/security-fetch';
 
 export const maxDuration = 60;
 
@@ -191,23 +192,21 @@ export async function POST(req: NextRequest) {
     for (const [index, media] of (result.mediaToSend || []).entries()) {
       try {
         const imageUrl = media.url;
-        // Fetch the image on Vercel and send as Base64 to bypass VPS datacenter blocks
-        const imgRes = await fetch(imageUrl);
-        if (!imgRes.ok) {
-          throw new Error(`Failed to fetch image: HTTP ${imgRes.status}`);
-        }
+        // Fetch the image securely to bypass VPS blocks and prevent SSRF / large file OOM
+        const { buffer, contentType } = await secureFetchBuffer(imageUrl, {
+          maxSizeBytes: 5 * 1024 * 1024, // 5MB limit
+          signal: AbortSignal.timeout(10000)
+        });
         
-        const arrayBuffer = await imgRes.arrayBuffer();
-        const base64 = Buffer.from(arrayBuffer).toString('base64');
-        const mimeType = imgRes.headers.get('content-type') || 'image/jpeg';
-
+        const base64 = buffer.toString('base64');
+        
         await gateway.sendImageBase64(
           event.sessionId,
           customerPhone,
-          mimeType,
+          contentType,
           base64,
           media.caption,
-          webhookIdempotencyKey(event.messageId, `image-${index}`),
+          webhookIdempotencyKey(event.messageId, `img-${index}`),
         );
       } catch (error) {
         mediaDeliveryFailed = true;

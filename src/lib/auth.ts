@@ -2,6 +2,8 @@ import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
 import { prisma } from './prisma';
+import { decrypt } from './crypto';
+import { rateLimit } from './rate-limit';
 
 if (!process.env.NEXTAUTH_SECRET && process.env.NODE_ENV === 'production') {
   throw new Error('NEXTAUTH_SECRET is required in production');
@@ -16,12 +18,19 @@ export const authOptions: NextAuthOptions = {
         password: { label: 'Password', type: 'password' },
         totpCode: { label: '2FA Code', type: 'text' }
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
         if (!credentials?.email || !credentials?.password) {
           throw new Error('Email dan password wajib diisi');
         }
 
         const email = credentials.email.toLowerCase().trim();
+        
+        // Anti-Brute Force Lockout
+        const ip = req?.headers?.['x-forwarded-for']?.toString().split(',')[0] || req?.headers?.['x-real-ip']?.toString() || 'unknown';
+        const rl = await rateLimit(`login:${email}:${ip}`, 5, 5 * 60 * 1000); // 5 attempts per 5 mins
+        if (!rl.success) {
+          throw new Error('Terlalu banyak percobaan login. Silakan coba lagi setelah 5 menit.');
+        }
 
         const user = await prisma.user.findUnique({
           where: { email },
@@ -46,10 +55,19 @@ export const authOptions: NextAuthOptions = {
           if (!credentials.totpCode) {
             throw new Error('2FA_REQUIRED');
           }
-          
+          let decryptedSecret: string;
+          try {
+            decryptedSecret = decrypt(user.twoFactorSecret);
+          } catch {
+            throw new Error('Konfigurasi 2FA rusak. Hubungi Admin.');
+          }
+          if (!decryptedSecret) {
+            throw new Error('Konfigurasi 2FA rusak. Hubungi Admin.');
+          }
+
           const speakeasy = require('speakeasy');
           const isTotpValid = speakeasy.totp.verify({
-            secret: user.twoFactorSecret,
+            secret: decryptedSecret,
             encoding: 'base32',
             token: credentials.totpCode,
             window: 1 // allow 1 window tolerance

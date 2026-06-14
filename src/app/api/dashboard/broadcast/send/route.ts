@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { BaileysService } from '@/lib/baileys';
+import { secureFetchBuffer } from '@/lib/security-fetch';
 
 export async function POST(req: Request) {
   try {
@@ -57,33 +58,20 @@ export async function POST(req: Request) {
 
         const jid = recipient.customerPhone.includes('@') ? recipient.customerPhone : `${recipient.customerPhone}@s.whatsapp.net`;
 
-        if (campaign.imageUrl) {
-          // SSRF Protection
-          let allowedImage = false;
-          try {
-            const urlObj = new URL(campaign.imageUrl);
-            const hn = urlObj.hostname;
-            if (urlObj.protocol.startsWith('http') && hn !== 'localhost' && hn !== '127.0.0.1' && !hn.startsWith('10.') && !hn.startsWith('192.168.') && !hn.startsWith('172.') && !hn.includes('internal') && !hn.endsWith('.local')) {
-              allowedImage = true;
-            }
-          } catch {}
-
-          if (allowedImage) {
-            const imgRes = await fetch(campaign.imageUrl);
-            if (imgRes.ok) {
-              const arrayBuffer = await imgRes.arrayBuffer();
-              const base64 = Buffer.from(arrayBuffer).toString('base64');
-              const mimeType = imgRes.headers.get('content-type') || 'image/jpeg';
-              // FIX P1: sendImageBase64 requires (sessionId, to, mimeType, base64)
-              await gateway.sendImageBase64(chatbot.whatsappSessionName, jid, mimeType, base64, msg);
-            } else {
-               await gateway.sendMessage(chatbot.whatsappSessionName, jid, msg);
+          if (campaign.imageUrl) {
+            try {
+              const { buffer, contentType } = await secureFetchBuffer(campaign.imageUrl, {
+                maxSizeBytes: 5 * 1024 * 1024, // 5MB max for broadcast image
+                signal: AbortSignal.timeout(10000)
+              });
+              const base64 = buffer.toString('base64');
+              await gateway.sendImageBase64(chatbot.whatsappSessionName, jid, contentType, base64, msg);
+            } catch (err: any) {
+              console.error('Failed to fetch or send image securely:', err.message);
+              // fallback to text if SSRF detected or invalid URL or too large
+              await gateway.sendMessage(chatbot.whatsappSessionName, jid, msg);
             }
           } else {
-            // fallback to text if SSRF detected or invalid URL
-            await gateway.sendMessage(chatbot.whatsappSessionName, jid, msg);
-          }
-        } else {
           await gateway.sendMessage(chatbot.whatsappSessionName, jid, msg);
         }
 

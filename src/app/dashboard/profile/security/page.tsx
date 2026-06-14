@@ -31,7 +31,7 @@ export default function SecurityProfilePage() {
   const handleGenerate = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/auth/2fa/generate');
+      const res = await fetch('/api/auth/2fa/generate', { method: 'POST' });
       const data = await res.json();
       if (res.ok) {
         setQrCodeData(data);

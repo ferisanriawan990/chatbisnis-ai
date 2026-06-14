@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import speakeasy from 'speakeasy';
+import { decrypt } from '@/lib/crypto';
 
 export async function POST(req: Request) {
   try {
@@ -21,8 +22,19 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Secret 2FA tidak ditemukan. Harap generate ulang QR.' }, { status: 400 });
     }
 
+    let decryptedSecret: string;
+    try {
+      decryptedSecret = decrypt(user.twoFactorSecret);
+    } catch {
+      return NextResponse.json({ error: 'Secret 2FA rusak. Harap generate ulang QR.' }, { status: 400 });
+    }
+
+    if (!decryptedSecret) {
+      return NextResponse.json({ error: 'Secret 2FA rusak. Harap generate ulang QR.' }, { status: 400 });
+    }
+
     const verified = speakeasy.totp.verify({
-      secret: user.twoFactorSecret,
+      secret: decryptedSecret,
       encoding: 'base32',
       token: code,
       window: 1 // Allow 1 window tolerance (30 seconds)

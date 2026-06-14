@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import * as cheerio from 'cheerio';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { secureFetch } from '@/lib/security-fetch';
 
 export async function POST(req: Request) {
   try {
@@ -36,13 +37,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Protokol tidak diizinkan' }, { status: 400 });
     }
 
+    // SSRF checks are handled deeply by secureFetch, but we keep basic syntax checks here
     const hostname = parsedUrl.hostname;
-    const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1';
-    const isInternalIp = hostname.startsWith('10.') || hostname.startsWith('192.168.') || hostname.startsWith('172.'); 
     const hasPort = parsedUrl.port && parsedUrl.port !== '80' && parsedUrl.port !== '443';
     
-    if (isLocalhost || isInternalIp || hasPort || hostname.includes('internal') || hostname.endsWith('.local')) {
-       return NextResponse.json({ error: 'URL tidak diizinkan untuk alasan keamanan (SSRF protection)' }, { status: 403 });
+    if (hasPort) {
+       return NextResponse.json({ error: 'Port tidak diizinkan' }, { status: 403 });
     }
 
     const profile = await prisma.businessProfile.findFirst({
@@ -52,7 +52,7 @@ export async function POST(req: Request) {
           include: {
             subscriptions: {
               include: { plan: true },
-              where: { status: 'active' },
+              where: { status: 'active', OR: [{ expiredAt: null }, { expiredAt: { gt: new Date() } }] },
               take: 1
             }
           }
@@ -75,14 +75,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: `Batas maksimal knowledge base Anda adalah ${maxKnowledgeItems} item.` }, { status: 400 });
     }
 
-    // Fetch the URL
-    const res = await fetch(url, {
-      headers: { 'User-Agent': 'ChatBisnisAI-Bot/1.0' },
-      signal: AbortSignal.timeout(15000),
-    });
+    // Fetch the URL securely
+    let res;
+    try {
+      res = await secureFetch(url, {
+        headers: { 'User-Agent': 'ChatBisnisAI-Bot/1.0' },
+        signal: AbortSignal.timeout(15000),
+        maxSizeBytes: 5 * 1024 * 1024 // 5MB max
+      });
+    } catch (e: any) {
+      return NextResponse.json({ error: e.message || 'Gagal mengakses URL tersebut.' }, { status: 400 });
+    }
 
     if (!res.ok) {
-      return NextResponse.json({ error: 'Gagal mengakses URL tersebut.' }, { status: 400 });
+      return NextResponse.json({ error: `Gagal mengakses URL tersebut. Status: ${res.status}` }, { status: 400 });
     }
 
     const html = await res.text();
