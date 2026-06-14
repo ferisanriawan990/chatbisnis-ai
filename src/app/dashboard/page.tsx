@@ -29,7 +29,7 @@ export default async function DashboardIndex() {
 
   // 3. Subscription & Global Key
   const subscription = await prisma.subscription.findFirst({
-    where: { userId, status: 'active' },
+    where: { userId, status: 'active', OR: [{ expiredAt: null }, { expiredAt: { gt: new Date() } }] },
     include: { plan: true },
     orderBy: { createdAt: 'desc' },
   });

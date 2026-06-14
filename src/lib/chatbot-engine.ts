@@ -310,7 +310,7 @@ export class ChatbotEngine {
       },
       include: {
         businessProfile: true,
-        user: { include: { subscriptions: { include: { plan: true }, where: { status: 'active' }, take: 1 } } }
+        user: { include: { subscriptions: { include: { plan: true }, where: { status: 'active', OR: [{ expiredAt: null }, { expiredAt: { gt: new Date() } }] }, take: 1 } } }
       },
     });
 

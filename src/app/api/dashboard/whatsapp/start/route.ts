@@ -22,7 +22,7 @@ export async function POST(request: Request) {
         user: {
           include: {
             subscriptions: {
-              where: { status: 'active' },
+              where: { status: 'active', OR: [{ expiredAt: null }, { expiredAt: { gt: new Date() } }] },
               include: { plan: true },
               take: 1,
             },

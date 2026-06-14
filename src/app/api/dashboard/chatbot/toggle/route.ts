@@ -41,15 +41,17 @@ export async function POST() {
         missing.push('WhatsApp belum terhubung (status harus: connected)');
       }
 
-      /*
-      const subscription = await prisma.subscription.findUnique({
-        where: { userId },
+      const subscription = await prisma.subscription.findFirst({
+        where: { 
+          userId, 
+          status: 'active',
+          OR: [{ expiredAt: null }, { expiredAt: { gt: new Date() } }]
+        },
         include: { plan: true },
       });
-      if (!subscription || subscription.status !== 'active' || !subscription.plan?.isActive) {
+      if (!subscription || !subscription.plan?.isActive) {
         missing.push('Tidak ada paket berlangganan yang aktif');
       }
-      */
 
       const credentials = await getAICredentialCandidates(chatbot);
       if (credentials.length === 0) {

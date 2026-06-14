@@ -65,7 +65,7 @@ export async function GET() {
 
     // Get active subscription with plan
     const subscription = await prisma.subscription.findFirst({
-      where: { userId, status: 'active' },
+      where: { userId, status: 'active', OR: [{ expiredAt: null }, { expiredAt: { gt: new Date() } }] },
       include: { plan: true },
       orderBy: { createdAt: 'desc' },
     });

@@ -18,7 +18,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ phone: 
     const userId = (session.user as { id: string }).id;
     const userWithSub = await prisma.user.findUnique({
       where: { id: userId },
-      include: { subscriptions: { include: { plan: true }, where: { status: 'active' }, take: 1 } }
+      include: { subscriptions: { include: { plan: true }, where: { status: 'active', OR: [{ expiredAt: null }, { expiredAt: { gt: new Date() } }] }, take: 1 } }
     });
     const activePlan = userWithSub?.subscriptions[0]?.plan;
 
