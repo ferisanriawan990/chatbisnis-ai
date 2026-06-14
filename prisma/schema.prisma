@@ -55,6 +55,7 @@ model User {
   twoFactorSecret       String?
   twoFactorEnabled      Boolean              @default(false)
   lastSeenAt            DateTime?
+  emailVerified         DateTime?
   createdAt             DateTime             @default(now())
   updatedAt             DateTime             @updatedAt
   avatar                String?              @db.Text
@@ -530,7 +531,33 @@ model Testimonial {
   isPublished       Boolean  @default(false)
   createdAt         DateTime @default(now())
 
+  status          String   @default("processed") // pending, processed, failed
+  
   businessProfile BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+}
+
+model IdempotencyKey {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  status    String   @default("processed")
+  createdAt DateTime @default(now())
+
+  @@index([key])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model PasswordResetToken {
+  id      String   @id @default(uuid())
+  email   String
+  token   String   @unique
+  expires DateTime
 }
 
 model Role {
@@ -823,10 +850,6 @@ model QuickReply {
   @@index([businessProfileId, shortcut])
 }
 
-model IdempotencyKey {
-  key       String   @id
-  createdAt DateTime @default(now())
-}
 
 // ─── Interactive Messages (WhatsApp Menus) ───────────────
 
