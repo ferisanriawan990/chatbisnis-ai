@@ -16,6 +16,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ phone: 
     }
 
     const userId = (session.user as { id: string }).id;
+    const userWithSub = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { subscriptions: { include: { plan: true }, where: { status: 'active' }, take: 1 } }
+    });
+    const activePlan = userWithSub?.subscriptions[0]?.plan;
+
     const profile = await prisma.businessProfile.findFirst({
       where: { userId },
       select: { id: true, businessName: true }
@@ -36,6 +42,40 @@ export async function POST(req: Request, { params }: { params: Promise<{ phone: 
     if (credentials.length === 0) {
       return NextResponse.json({ error: 'Tidak ada API Key AI yang dikonfigurasi.' }, { status: 400 });
     }
+
+    // ==== USAGE QUOTA CHECK ====
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+    const monthStr = `${today.getUTCFullYear()}-${(today.getUTCMonth() + 1).toString().padStart(2, '0')}`;
+    const maxDaily = activePlan?.dailyChatLimit || chatbotSetting.dailyChatLimit;
+    const maxMonthly = activePlan?.monthlyChatLimit || chatbotSetting.monthlyChatLimit;
+
+    const usageResult = await prisma.$transaction(async (tx) => {
+      let usage = await tx.usageCounter.findUnique({
+        where: { userId_date: { userId: chatbotSetting.userId, date: today } }
+      });
+      if (!usage) {
+        usage = await tx.usageCounter.create({
+          data: { userId: chatbotSetting.userId, businessProfileId: chatbotSetting.businessProfileId, date: today, month: monthStr }
+        });
+      }
+
+      const monthlyData = await tx.usageCounter.aggregate({ _sum: { aiChats: true }, where: { userId: chatbotSetting.userId, month: monthStr } });
+      const monthlyCount = monthlyData._sum.aiChats || 0;
+      
+      if (usage.aiChats >= maxDaily || monthlyCount >= maxMonthly) return { allowed: false };
+      
+      const updatedUsage = await tx.usageCounter.update({ 
+        where: { id: usage.id }, 
+        data: { aiChats: { increment: 1 } } 
+      });
+      return { allowed: true, usageId: updatedUsage.id };
+    });
+
+    if (!usageResult.allowed) {
+      return NextResponse.json({ error: 'Kuota AI telah habis. Tingkatkan paket berlangganan Anda.' }, { status: 403 });
+    }
+    // ============================
 
     const systemPrompt = `Kamu adalah Asisten Customer Service Profesional untuk bisnis "${profile.businessName}". 
 Tugasmu adalah membaca riwayat chat pelanggan, lalu memberikan 3 PILIHAN SARAN BALASAN yang bisa dikirimkan oleh agen manusia (Admin) kepada pelanggan tersebut.

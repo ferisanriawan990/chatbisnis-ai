@@ -262,11 +262,12 @@ export class ChatbotEngine {
     }
 
     // 8. Record Usage & Log
+    await prisma.usageCounter.update({
+      where: { id: access.usageId! },
+      data: { aiTokens: { increment: tokenUsage }, aiChats: { increment: 1 } }
+    });
+
     if (!isTest) {
-      await prisma.usageCounter.update({
-        where: { id: access.usageId! },
-        data: { aiTokens: { increment: tokenUsage }, aiChats: { increment: 1 } }
-      });
       await this.sendLog({
         ...params,
         chatbotSetting,
@@ -332,125 +333,126 @@ export class ChatbotEngine {
   }
 
   private static async validateBotAccess(chatbotSetting: any, customerPhone: string, messageIn: string, activePlan: any, isTest: boolean, sentiment: SentimentResult, customerName?: string) {
-    if (isTest) return { allowed: true };
-
-    // Handover Check & Inbox Update
-    let convoState = await prisma.conversationState.findUnique({
-      where: { chatbotSettingId_customerPhone: { chatbotSettingId: chatbotSetting.id, customerPhone } }
-    });
-
-    const previousLastMessageAt = convoState?.lastMessageAt || new Date(0);
-
-    if (!convoState) {
-      convoState = await prisma.conversationState.create({
-        data: { 
-          userId: chatbotSetting.userId, 
-          businessProfileId: chatbotSetting.businessProfileId, 
-          chatbotSettingId: chatbotSetting.id, 
-          customerPhone, 
-          customerName,
-          status: 'ai_active',
-          unreadCount: 1,
-          lastMessageAt: new Date(),
-          sentimentScore: sentiment
-        }
-      });
-    } else {
-      // Update Inbox Unread Count and Last Message
-      convoState = await prisma.conversationState.update({
-        where: { id: convoState.id },
-        data: {
-          unreadCount: { increment: 1 },
-          lastMessageAt: new Date(),
-          sentimentScore: sentiment,
-          customerName: customerName || convoState.customerName
-        }
-      });
-    }
-
-    const ONE_HOUR = 60 * 60 * 1000;
-    const isStale = (new Date().getTime() - new Date(previousLastMessageAt).getTime()) > ONE_HOUR;
-
-    if (convoState.status === 'human_handover' || convoState.status === 'waiting_admin') {
-      // Auto-return to AI if stale (Admin didn't reply or conversation went cold for > 1 hour)
-      if (isStale) {
-        await prisma.conversationState.update({ 
-          where: { id: convoState.id }, 
-          data: { status: 'ai_active', handoverUntil: null } 
-        });
-        // Let it fall through so AI can reply to the new message that just broke the silence
-      } else if (convoState.handoverUntil && convoState.handoverUntil > new Date()) {
-        // Allow customer to reset handover via chat
-        const lowerMsg = messageIn.toLowerCase().trim();
-        const resetKeywords = ['kembali ke ai', 'selesai', 'reset', 'batal', 'kembali'];
-        if (resetKeywords.includes(lowerMsg)) {
-          await prisma.conversationState.update({ where: { id: convoState.id }, data: { status: 'ai_active', handoverUntil: null } });
-          return { allowed: false, replyMessage: "✅ Sesi dengan admin telah diakhiri. Asisten AI kembali aktif! Ada yang bisa dibantu?", needsHuman: false };
-        }
-        return { allowed: false }; // Silently ignore other messages because admin is handling it
-      }
-    }
-
-    const allowHumanHandover = activePlan ? activePlan.allowHumanHandover : false;
-    if (allowHumanHandover) {
-      const keywords = chatbotSetting.handoverKeywords.split(',').map((k: string) => k.trim().toLowerCase());
-      const lowerMessageIn = messageIn.toLowerCase();
-      if (keywords.some((k: string) => k && lowerMessageIn.includes(k)) || sentiment === 'marah') {
-        const until = new Date();
-        until.setHours(until.getHours() + 24);
-        await prisma.conversationState.update({ where: { id: convoState.id }, data: { status: 'waiting_admin', handoverUntil: until } });
-        
-        // Generate Smart Summary Asynchronously
-        (async () => {
-          try {
-            const credentials = await getAICredentialCandidates(chatbotSetting);
-            if (credentials.length > 0) {
-              const recentLogs = await prisma.chatLog.findMany({
-                where: { chatbotSettingId: chatbotSetting.id, customerPhone },
-                orderBy: { createdAt: 'desc' },
-                take: 5
-              });
-              const historyText = recentLogs.reverse().map((l: any) => `${l.messageIn ? 'user' : 'assistant'}: ${l.messageIn || l.messageOut}`).join('\n');
-              const summaryPrompt = "Rangkum percakapan berikut dalam 1-2 kalimat pendek untuk memberi tahu agen CS manusia apa masalah atau inti percakapan pelanggan saat ini. Hanya keluarkan ringkasan teks tanpa pembuka/penutup.\n\nRiwayat:\n" + historyText + `\nuser: ${messageIn}`;
-              const res = await AIService.generateReply({
-                systemPrompt: "Kamu adalah asisten ringkasan yang objektif, fokus, dan sangat singkat.",
-                userMessage: summaryPrompt,
-                provider: credentials[0].provider,
-                model: credentials[0].model,
-                apiKey: credentials[0].apiKey,
-                maxTokens: 100
-              });
-              if (res && res.reply) {
-                await prisma.conversationState.update({ where: { id: convoState.id }, data: { summary: res.reply } });
-              }
-            }
-          } catch (e) {
-            console.error('Failed to generate smart summary via keyword', e);
-          }
-        })();
-
-        return { allowed: false, replyMessage: chatbotSetting.handoverMessage, needsHuman: true };
-      }
-    }
-
-    // Out of Hours Check
     const jakartaNow = getJakartaDateParts();
-    const currentMinutes = (jakartaNow.hour * 60) + jakartaNow.minute;
-    const hoursStr = (chatbotSetting.businessProfile.openingHours || '08:00-17:00').toLowerCase().replace(/\s/g, '');
-    if (hoursStr !== '24jam' && hoursStr !== '24/7') {
-      const match = hoursStr.match(/(\d{1,2}):(\d{2})-(\d{1,2}):(\d{2})/);
-      if (match) {
-        const startMinutes = (parseInt(match[1], 10) * 60) + parseInt(match[2], 10);
-        const endMinutes = (parseInt(match[3], 10) * 60) + parseInt(match[4], 10);
 
-        if (endMinutes <= startMinutes) {
-          // Overnight hours, e.g. 09:00-02:00
-          const isAllowed = currentMinutes >= startMinutes || currentMinutes < endMinutes;
-          if (!isAllowed) return { allowed: false, replyMessage: chatbotSetting.outOfHoursMessage };
-        } else {
-          // Normal hours, e.g. 08:00-17:00
-          if (currentMinutes < startMinutes || currentMinutes >= endMinutes) {
-            return { allowed: false, replyMessage: chatbotSetting.outOfHoursMessage };
+    if (!isTest) {
+      // Handover Check & Inbox Update
+      let convoState = await prisma.conversationState.findUnique({
+        where: { chatbotSettingId_customerPhone: { chatbotSettingId: chatbotSetting.id, customerPhone } }
+      });
+
+      const previousLastMessageAt = convoState?.lastMessageAt || new Date(0);
+
+      if (!convoState) {
+        convoState = await prisma.conversationState.create({
+          data: { 
+            userId: chatbotSetting.userId, 
+            businessProfileId: chatbotSetting.businessProfileId, 
+            chatbotSettingId: chatbotSetting.id, 
+            customerPhone, 
+            customerName,
+            status: 'ai_active',
+            unreadCount: 1,
+            lastMessageAt: new Date(),
+            sentimentScore: sentiment
+          }
+        });
+      } else {
+        // Update Inbox Unread Count and Last Message
+        convoState = await prisma.conversationState.update({
+          where: { id: convoState.id },
+          data: {
+            unreadCount: { increment: 1 },
+            lastMessageAt: new Date(),
+            sentimentScore: sentiment,
+            customerName: customerName || convoState.customerName
+          }
+        });
+      }
+
+      const ONE_HOUR = 60 * 60 * 1000;
+      const isStale = (new Date().getTime() - new Date(previousLastMessageAt).getTime()) > ONE_HOUR;
+
+      if (convoState.status === 'human_handover' || convoState.status === 'waiting_admin') {
+        // Auto-return to AI if stale (Admin didn't reply or conversation went cold for > 1 hour)
+        if (isStale) {
+          await prisma.conversationState.update({ 
+            where: { id: convoState.id }, 
+            data: { status: 'ai_active', handoverUntil: null } 
+          });
+          // Let it fall through so AI can reply to the new message that just broke the silence
+        } else if (convoState.handoverUntil && convoState.handoverUntil > new Date()) {
+          // Allow customer to reset handover via chat
+          const lowerMsg = messageIn.toLowerCase().trim();
+          const resetKeywords = ['kembali ke ai', 'selesai', 'reset', 'batal', 'kembali'];
+          if (resetKeywords.includes(lowerMsg)) {
+            await prisma.conversationState.update({ where: { id: convoState.id }, data: { status: 'ai_active', handoverUntil: null } });
+            return { allowed: false, replyMessage: "✅ Sesi dengan admin telah diakhiri. Asisten AI kembali aktif! Ada yang bisa dibantu?", needsHuman: false };
+          }
+          return { allowed: false }; // Silently ignore other messages because admin is handling it
+        }
+      }
+
+      const allowHumanHandover = activePlan ? activePlan.allowHumanHandover : false;
+      if (allowHumanHandover) {
+        const keywords = chatbotSetting.handoverKeywords.split(',').map((k: string) => k.trim().toLowerCase());
+        const lowerMessageIn = messageIn.toLowerCase();
+        if (keywords.some((k: string) => k && lowerMessageIn.includes(k)) || sentiment === 'marah') {
+          const until = new Date();
+          until.setHours(until.getHours() + 24);
+          await prisma.conversationState.update({ where: { id: convoState.id }, data: { status: 'waiting_admin', handoverUntil: until } });
+          
+          // Generate Smart Summary Asynchronously
+          (async () => {
+            try {
+              const credentials = await getAICredentialCandidates(chatbotSetting);
+              if (credentials.length > 0) {
+                const recentLogs = await prisma.chatLog.findMany({
+                  where: { chatbotSettingId: chatbotSetting.id, customerPhone },
+                  orderBy: { createdAt: 'desc' },
+                  take: 5
+                });
+                const historyText = recentLogs.reverse().map((l: any) => `${l.messageIn ? 'user' : 'assistant'}: ${l.messageIn || l.messageOut}`).join('\n');
+                const summaryPrompt = "Rangkum percakapan berikut dalam 1-2 kalimat pendek untuk memberi tahu agen CS manusia apa masalah atau inti percakapan pelanggan saat ini. Hanya keluarkan ringkasan teks tanpa pembuka/penutup.\n\nRiwayat:\n" + historyText + `\nuser: ${messageIn}`;
+                const res = await AIService.generateReply({
+                  systemPrompt: "Kamu adalah asisten ringkasan yang objektif, fokus, dan sangat singkat.",
+                  userMessage: summaryPrompt,
+                  provider: credentials[0].provider,
+                  model: credentials[0].model,
+                  apiKey: credentials[0].apiKey,
+                  maxTokens: 100
+                });
+                if (res && res.reply) {
+                  await prisma.conversationState.update({ where: { id: convoState.id }, data: { summary: res.reply } });
+                }
+              }
+            } catch (e) {
+              console.error('Failed to generate smart summary via keyword', e);
+            }
+          })();
+
+          return { allowed: false, replyMessage: chatbotSetting.handoverMessage, needsHuman: true };
+        }
+      }
+
+      // Out of Hours Check
+      const currentMinutes = (jakartaNow.hour * 60) + jakartaNow.minute;
+      const hoursStr = (chatbotSetting.businessProfile.openingHours || '08:00-17:00').toLowerCase().replace(/\s/g, '');
+      if (hoursStr !== '24jam' && hoursStr !== '24/7') {
+        const match = hoursStr.match(/(\d{1,2}):(\d{2})-(\d{1,2}):(\d{2})/);
+        if (match) {
+          const startMinutes = (parseInt(match[1], 10) * 60) + parseInt(match[2], 10);
+          const endMinutes = (parseInt(match[3], 10) * 60) + parseInt(match[4], 10);
+
+          if (endMinutes <= startMinutes) {
+            // Overnight hours, e.g. 09:00-02:00
+            const isAllowed = currentMinutes >= startMinutes || currentMinutes < endMinutes;
+            if (!isAllowed) return { allowed: false, replyMessage: chatbotSetting.outOfHoursMessage };
+          } else {
+            // Normal hours, e.g. 08:00-17:00
+            if (currentMinutes < startMinutes || currentMinutes >= endMinutes) {
+              return { allowed: false, replyMessage: chatbotSetting.outOfHoursMessage };
+            }
           }
         }
       }
@@ -491,7 +493,7 @@ export class ChatbotEngine {
       const updatedUsage = await tx.usageCounter.update({ 
         where: { id: usage.id }, 
         data: { 
-          whatsappMessages: { increment: 1 },
+          ...(!isTest && { whatsappMessages: { increment: 1 } }),
           ...(dailyWarningTriggered && { dailyWarningSent: true }),
           ...(monthlyWarningTriggered && { monthlyWarningSent: true })
         } 
