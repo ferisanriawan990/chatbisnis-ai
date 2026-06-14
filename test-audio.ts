@@ -1,13 +1,17 @@
-import { AIService } from './src/lib/ai';
+import { prisma } from './src/lib/prisma';
+import { decrypt } from './src/lib/crypto';
 
-async function testAudio() {
-  const dummyBase64 = Buffer.from('dummy audio data').toString('base64');
-  try {
-    const res = await AIService.transcribeAudio('dummy_key', `data:audio/ogg;base64,${dummyBase64}`, 'audio/ogg; codecs=opus');
-    console.log(res);
-  } catch (err) {
-    console.error('Test Error:', err);
-  }
+async function testModels() {
+  const credentials = await prisma.secretCredential.findUnique({
+    where: { key: 'FLAZ_API_KEY_GLOBAL' }
+  });
+  const key = decrypt(credentials!.encryptedValue);
+  const baseUrl = process.env.AI_BASE_URL || 'https://ai.flaz.id/v1';
+
+  const res = await fetch(`${baseUrl}/models`, {
+    headers: { Authorization: `Bearer ${key}` },
+  });
+  const data = await res.json();
+  console.log(data);
 }
-
-testAudio();
+testModels();

@@ -170,12 +170,17 @@ export async function POST(req: NextRequest) {
         } else {
           throw new Error('No AI credentials available for transcription');
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error('Transcription error:', err);
+        const errorDetail = err?.message || '';
+        const replyMsg = errorDetail.includes('HTTP 400') || errorDetail.includes('Invalid model')
+          ? 'Maaf, layanan AI (Flaz/Gemini) yang sedang digunakan oleh bisnis ini belum mendukung penerjemahan suara (Voice Note). Mohon berkenan untuk mengetik pesannya ya. 🙏'
+          : 'Maaf, sistem sedang kesulitan memproses pesan suara Anda. Mohon berkenan untuk mengetik pesannya ya. 🙏';
+
         await gateway.sendMessage(
           event.sessionId,
           customerPhone,
-          'Maaf, sistem sedang kesulitan memproses pesan suara Anda. Mohon berkenan untuk mengetik pesannya ya.',
+          replyMsg,
           webhookIdempotencyKey(event.messageId, 'voice-error'),
         );
         return NextResponse.json({ received: true, error: 'transcription_failed' });
