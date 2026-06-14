@@ -99,33 +99,41 @@ export default function OrdersPage() {
   };
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-            <ShoppingCart className="w-6 h-6 text-blue-600" />
+    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-700">
+      {/* Header Premium */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/60 backdrop-blur-lg p-8 rounded-3xl border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
+        <div className="absolute -right-20 -top-20 w-64 h-64 bg-blue-400/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="absolute -left-20 -bottom-20 w-64 h-64 bg-indigo-400/10 rounded-full blur-3xl pointer-events-none"></div>
+        
+        <div className="relative z-10">
+          <h1 className="text-3xl font-extrabold bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 bg-clip-text text-transparent flex items-center gap-3">
+            <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-lg shadow-blue-500/20">
+              <ShoppingCart className="w-8 h-8 text-white" />
+            </div>
             Manajemen Pesanan
           </h1>
-          <p className="text-slate-500 text-sm mt-1">Pantau transaksi, verifikasi pembayaran, dan perbarui resi pengiriman.</p>
+          <p className="text-slate-500 mt-2 font-medium text-lg ml-14">Pantau transaksi e-commerce, verifikasi pembayaran, dan perbarui resi.</p>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row gap-4 bg-slate-50/50">
+      <div className="bg-white/80 backdrop-blur-xl rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60 relative overflow-hidden group">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-blue-100/50 to-transparent rounded-bl-full pointer-events-none transition-transform duration-500 group-hover:scale-110"></div>
+        
+        <div className="p-6 md:p-8 border-b border-slate-100/50 flex flex-col sm:flex-row gap-4 relative z-10">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
             <input 
               type="text" 
               placeholder="Cari Order ID, Nama, atau No. WA..." 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-slate-700 bg-white"
+              className="w-full pl-11 pr-4 py-3.5 bg-slate-50/80 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none text-sm font-semibold text-slate-700 transition-all shadow-sm focus:bg-white"
             />
           </div>
           <select 
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-slate-700 bg-white"
+            className="px-4 py-3.5 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none text-sm font-semibold text-slate-700 bg-slate-50/80 hover:bg-white transition-all shadow-sm appearance-none cursor-pointer min-w-[200px]"
           >
             <option value="all">Semua Status</option>
             <option value="pending_payment">Belum Bayar</option>
@@ -138,57 +146,57 @@ export default function OrdersPage() {
           </select>
           <button 
             onClick={fetchOrders}
-            className="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 transition-colors flex items-center gap-2 text-sm font-medium"
+            className="px-6 py-3.5 bg-white border border-slate-200 text-blue-600 rounded-2xl shadow-sm hover:border-blue-300 hover:bg-blue-50 transition-all flex items-center gap-2 text-sm font-bold"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </button>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto relative z-10 custom-scrollbar p-2">
           <table className="w-full text-left text-sm text-slate-600">
-            <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-100">
-              <tr>
-                <th className="px-6 py-4">Order ID & Tanggal</th>
-                <th className="px-6 py-4">Pelanggan</th>
-                <th className="px-6 py-4">Total Tagihan</th>
-                <th className="px-6 py-4">Status</th>
-                <th className="px-6 py-4">Aksi</th>
+            <thead>
+              <tr className="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider border-b border-slate-100">
+                <th className="px-6 py-5">Order ID & Tanggal</th>
+                <th className="px-6 py-5">Pelanggan</th>
+                <th className="px-6 py-5">Total Tagihan</th>
+                <th className="px-6 py-5">Status</th>
+                <th className="px-6 py-5 text-right">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
-                    <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-blue-500" />
-                    Memuat pesanan...
+                  <td colSpan={5} className="px-6 py-20 text-center text-slate-500">
+                    <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+                    <span className="font-medium">Memuat pesanan e-commerce...</span>
                   </td>
                 </tr>
               ) : orders.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
-                    <Package className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                    Belum ada pesanan yang sesuai kriteria.
+                  <td colSpan={5} className="px-6 py-20 text-center text-slate-500">
+                    <Package className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                    <span className="font-bold text-lg">Belum ada pesanan.</span>
                   </td>
                 </tr>
               ) : (
                 orders.map((order) => (
-                  <tr key={order.id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="font-semibold text-slate-800">{order.orderNumber}</div>
-                      <div className="text-xs text-slate-500 mt-1">{new Date(order.createdAt).toLocaleString('id-ID')}</div>
+                  <tr key={order.id} className="hover:bg-blue-50/40 transition-colors group/row">
+                    <td className="px-6 py-5">
+                      <div className="font-extrabold text-slate-800">{order.orderNumber}</div>
+                      <div className="text-[11px] font-medium text-slate-500 mt-1">{new Date(order.createdAt).toLocaleString('id-ID')}</div>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="font-medium text-slate-700">{order.customerName || 'Customer'}</div>
-                      <div className="text-xs text-slate-500 mt-1">{order.customerPhone}</div>
+                    <td className="px-6 py-5">
+                      <div className="font-bold text-slate-700">{order.customerName || 'Customer'}</div>
+                      <div className="text-[11px] font-medium text-slate-500 mt-1">{order.customerPhone}</div>
                     </td>
-                    <td className="px-6 py-4 font-medium text-slate-800">
+                    <td className="px-6 py-5 font-extrabold text-indigo-700">
                       Rp {Number(order.totalAmount).toLocaleString('id-ID')}
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-5">
                       {getStatusBadge(order.status)}
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-5 text-right">
                       <button 
                         onClick={() => {
                           setSelectedOrder(order);
@@ -197,7 +205,7 @@ export default function OrdersPage() {
                           setEditCourier(order.shippingCourier || '');
                           setEditResi(order.shippingResi || '');
                         }}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        className="p-2 text-blue-600 hover:text-white hover:bg-blue-600 rounded-xl border border-transparent hover:border-blue-700 transition-all shadow-sm hover:shadow-blue-500/20"
                       >
                         <Edit className="w-4 h-4" />
                       </button>
@@ -212,16 +220,19 @@ export default function OrdersPage() {
 
       {/* Detail & Edit Modal */}
       {selectedOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm overflow-y-auto">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden my-8">
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden my-8 relative border border-slate-100">
+            <div className="p-6 md:p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/80">
               <div>
-                <h3 className="text-lg font-bold text-slate-800">Detail Pesanan</h3>
-                <p className="text-sm text-slate-500 font-mono mt-1">{selectedOrder.orderNumber}</p>
+                <h3 className="text-xl font-extrabold text-slate-800 flex items-center gap-3">
+                  <div className="p-2 bg-blue-100 text-blue-600 rounded-xl"><Package className="w-5 h-5" /></div>
+                  Detail Pesanan
+                </h3>
+                <p className="text-sm text-slate-500 font-mono mt-2 bg-white px-3 py-1 rounded-lg border border-slate-200 inline-block">{selectedOrder.orderNumber}</p>
               </div>
               <button 
                 onClick={() => setSelectedOrder(null)}
-                className="p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 rounded-full transition-colors"
+                className="absolute top-6 right-6 p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 rounded-full transition-colors"
               >
                 <XCircle className="w-6 h-6" />
               </button>
@@ -273,17 +284,17 @@ export default function OrdersPage() {
               </div>
 
               {/* Update Form */}
-              <div className="pt-4 border-t border-slate-200">
-                <h4 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
+              <div className="pt-6 border-t border-slate-100">
+                <h4 className="text-sm font-extrabold text-slate-800 mb-4 flex items-center gap-2">
                   <Edit className="w-4 h-4 text-blue-500" /> Update Pemrosesan
                 </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Ubah Status</label>
+                    <label className="block text-sm font-bold text-slate-700 mb-1.5">Ubah Status</label>
                     <select 
                       value={editStatus}
                       onChange={(e) => setEditStatus(e.target.value)}
-                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white"
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none text-sm font-medium transition-all"
                     >
                       <option value="pending_payment">Belum Bayar (Menunggu Transfer)</option>
                       <option value="dp_paid">Uang Muka / DP Terbayar</option>
@@ -315,23 +326,23 @@ export default function OrdersPage() {
                     )}
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Kurir Pengiriman</label>
+                    <label className="block text-sm font-bold text-slate-700 mb-1.5">Kurir Pengiriman</label>
                     <input 
                       type="text" 
                       placeholder="Contoh: JNE, J&T, Sicepat..." 
                       value={editCourier}
                       onChange={(e) => setEditCourier(e.target.value)}
-                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white"
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none text-sm font-medium transition-all"
                     />
                   </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Nomor Resi Pelacakan</label>
+                  <div className="md:col-span-2 mt-2">
+                    <label className="block text-sm font-bold text-slate-700 mb-1.5">Nomor Resi Pelacakan</label>
                     <input 
                       type="text" 
                       placeholder="Masukkan kode resi pengiriman..." 
                       value={editResi}
                       onChange={(e) => setEditResi(e.target.value)}
-                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white font-mono"
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none text-sm font-mono font-bold transition-all"
                     />
                     <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
                       <Truck className="w-3 h-3" /> Pelanggan akan dapat melihat resi ini di halaman Invoice mereka.
@@ -341,11 +352,10 @@ export default function OrdersPage() {
               </div>
 
             </div>
-            
-            <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
+            <div className="p-6 md:p-8 border-t border-slate-100 bg-slate-50/80 flex justify-end gap-3 rounded-b-3xl">
               <button 
                 onClick={() => setSelectedOrder(null)}
-                className="px-5 py-2.5 text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+                className="px-6 py-3 text-sm font-bold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors shadow-sm"
                 disabled={isSaving}
               >
                 Batal
@@ -353,7 +363,7 @@ export default function OrdersPage() {
               <button 
                 onClick={handleUpdateOrder}
                 disabled={isSaving}
-                className="px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                className="px-6 py-3 text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:-translate-y-0.5 flex items-center gap-2"
               >
                 {isSaving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
                 Simpan Perubahan

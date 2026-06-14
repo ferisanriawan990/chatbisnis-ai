@@ -56,7 +56,7 @@ export async function POST() {
       const credentials = await getAICredentialCandidates(chatbot);
       if (credentials.length === 0) {
         missing.push(
-          'Global AI Key belum aktif dan Anda tidak memiliki AI Key custom yang valid',
+          'Global AI Key belum aktif di sistem. Harap hubungi Admin.',
         );
       } else {
         let aiReady = false;

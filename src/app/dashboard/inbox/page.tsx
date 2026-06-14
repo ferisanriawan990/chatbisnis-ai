@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { Bot, User, Send, CheckCircle, AlertTriangle, UserPlus, ArrowLeft, Sparkles, UserCheck } from 'lucide-react';
+import { Bot, User, Send, CheckCircle, AlertTriangle, UserPlus, ArrowLeft, Sparkles, UserCheck, MessageSquare } from 'lucide-react';
 
 export default function InboxPage() {
   const { data: session } = useSession();
@@ -157,23 +157,27 @@ export default function InboxPage() {
   };
 
   return (
-    <div className="flex h-[calc(100vh-64px)] w-full overflow-hidden bg-gray-50 border-t border-gray-200">
+    <div className="flex h-[calc(100vh-64px)] w-full overflow-hidden bg-slate-50/50 p-4 md:p-6 gap-6 animate-in fade-in duration-700">
       {/* Sidebar: Conversation List */}
-      <div className={`w-full md:w-1/3 lg:w-1/4 bg-white border-r flex flex-col ${activeChat ? 'hidden md:flex' : 'flex'}`}>
-        <div className="p-4 border-b bg-gray-50">
-          <h2 className="text-lg font-bold text-gray-800">Inbox</h2>
-          <p className="text-xs text-gray-500">Live Chat & AI Oversight</p>
+      <div className={`w-full md:w-1/3 lg:w-1/4 bg-white/80 backdrop-blur-xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-[2rem] flex flex-col overflow-hidden relative ${activeChat ? 'hidden md:flex' : 'flex'}`}>
+        <div className="absolute -top-20 -left-20 w-64 h-64 bg-blue-400/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="p-6 border-b border-slate-100/60 bg-white/50 relative z-10">
+          <h2 className="text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-slate-900 to-blue-900 flex items-center gap-2">
+            <MessageSquare className="w-5 h-5 text-blue-600" />
+            Live Inbox
+          </h2>
+          <p className="text-xs font-bold text-slate-500 mt-1">Live Chat & AI Oversight</p>
           
-          <div className="flex gap-2 mt-4">
+          <div className="flex gap-2 mt-5">
             <button 
               onClick={() => setFilterMode('all')}
-              className={`flex-1 text-xs py-1.5 rounded-md font-medium transition ${filterMode === 'all' ? 'bg-blue-100 text-blue-700' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}
+              className={`flex-1 text-xs py-2 rounded-xl font-bold transition-all shadow-sm ${filterMode === 'all' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-blue-500/20' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
             >
               Semua Chat
             </button>
             <button 
               onClick={() => setFilterMode('waiting')}
-              className={`flex-1 text-xs py-1.5 rounded-md font-medium transition ${filterMode === 'waiting' ? 'bg-orange-100 text-orange-700' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}
+              className={`flex-1 text-xs py-2 rounded-xl font-bold transition-all shadow-sm ${filterMode === 'waiting' ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-orange-500/20' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
             >
               Perlu Admin
             </button>
@@ -181,16 +185,16 @@ export default function InboxPage() {
         </div>
         <div className="flex-1 overflow-y-auto">
           {filteredConversations.length === 0 ? (
-            <div className="p-4 text-center text-gray-500 text-sm">Belum ada percakapan.</div>
+            <div className="p-10 text-center text-slate-400 font-bold text-sm">Belum ada percakapan.</div>
           ) : (
             filteredConversations.map((c) => (
               <div
                 key={c.id}
                 onClick={() => setActiveChat(c)}
-                className={`p-4 border-b cursor-pointer hover:bg-gray-50 transition ${activeChat?.id === c.id ? 'bg-blue-50 border-l-4 border-l-blue-500' : 'border-l-4 border-l-transparent'}`}
+                className={`p-5 border-b border-slate-100/60 cursor-pointer hover:bg-blue-50/50 transition-all ${activeChat?.id === c.id ? 'bg-blue-50/80 border-l-4 border-l-blue-500' : 'border-l-4 border-l-transparent'}`}
               >
-                <div className="flex justify-between items-start mb-1">
-                  <span className="font-semibold text-sm text-gray-800">
+                <div className="flex justify-between items-start mb-2">
+                  <span className="font-extrabold text-sm text-slate-800">
                     {c.customerName || c.customerPhone}
                   </span>
                   <span className="text-xs text-gray-400">
@@ -220,15 +224,21 @@ export default function InboxPage() {
 
       {/* Main Chat Area */}
       {activeChat ? (
-        <div className="flex-1 flex flex-col bg-gray-100">
-          <div className="p-4 bg-white border-b flex justify-between items-center shadow-sm">
-            <div className="flex items-center gap-3">
-              <button className="md:hidden p-2 text-gray-500 hover:bg-gray-100 rounded-lg" onClick={() => setActiveChat(null)}>
+        <div className="flex-1 flex flex-col bg-white/80 backdrop-blur-xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-[2rem] overflow-hidden relative">
+          <div className="absolute -top-40 -right-40 w-96 h-96 bg-indigo-400/10 rounded-full blur-3xl pointer-events-none"></div>
+          <div className="p-5 md:p-6 bg-white/60 border-b border-slate-100/60 flex justify-between items-center relative z-10 backdrop-blur-md">
+            <div className="flex items-center gap-4">
+              <button className="md:hidden p-2 text-slate-500 hover:bg-slate-100 rounded-xl transition-colors" onClick={() => setActiveChat(null)}>
                 <ArrowLeft size={20} />
               </button>
-              <div>
-                <h3 className="font-bold text-gray-800">{activeChat.customerName || activeChat.customerPhone}</h3>
-                <p className="text-xs text-gray-500">{activeChat.customerPhone}</p>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-slate-100 to-slate-200 rounded-full flex items-center justify-center font-bold text-slate-500">
+                  {(activeChat.customerName || 'U')[0].toUpperCase()}
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-slate-800 text-lg">{activeChat.customerName || activeChat.customerPhone}</h3>
+                  <p className="text-[11px] font-bold text-slate-500">{activeChat.customerPhone}</p>
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-2">

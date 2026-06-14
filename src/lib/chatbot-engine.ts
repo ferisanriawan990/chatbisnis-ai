@@ -204,7 +204,7 @@ export class ChatbotEngine {
     }
 
     // 7. Build Prompt & Call AI
-    const systemPrompt = this.buildPrompt(chatbotSetting, botConfig, profile, matchedItems, products, existingLead, activeCart, lastCompletedOrder);
+    const systemPrompt = this.buildPrompt(chatbotSetting, botConfig, profile, matchedItems, products, existingLead, activeCart, lastCompletedOrder, access.isOutOfHours);
     const { replyMessage, tokenUsage, usedCatalogUrl, promptSource, aiModelUsed } = await this.callAI(
       chatbotSetting,
       activePlan,
@@ -448,11 +448,11 @@ export class ChatbotEngine {
           if (endMinutes <= startMinutes) {
             // Overnight hours, e.g. 09:00-02:00
             const isAllowed = currentMinutes >= startMinutes || currentMinutes < endMinutes;
-            if (!isAllowed) return { allowed: false, replyMessage: chatbotSetting.outOfHoursMessage };
+            if (!isAllowed) return { allowed: true, isOutOfHours: true };
           } else {
             // Normal hours, e.g. 08:00-17:00
             if (currentMinutes < startMinutes || currentMinutes >= endMinutes) {
-              return { allowed: false, replyMessage: chatbotSetting.outOfHoursMessage };
+              return { allowed: true, isOutOfHours: true };
             }
           }
         }
@@ -617,7 +617,8 @@ export class ChatbotEngine {
     products: any[],
     existingLead?: any,
     activeCart?: any,
-    lastOrder?: any
+    lastOrder?: any,
+    isOutOfHours?: boolean
   ): string {
     let relevantKnowledge = '';
     let charCount = 0;
@@ -681,6 +682,8 @@ export class ChatbotEngine {
       allowPromoOffer: chatbotSetting.allowPromoOffer ?? true,
       loyaltyPoints: existingLead?.loyaltyPoints || 0,
       lastOrder,
+      isOutOfHours,
+      outOfHoursMessage: chatbotSetting.outOfHoursMessage || "Maaf, saat ini di luar jam operasional kami."
     });
   }
 

@@ -85,7 +85,10 @@ export async function POST(req: Request) {
         orderIdStr = orderIdStr.substring(0, 36);
       }
       await prisma.$transaction(async (tx) => {
-        const order = await tx.order.findUnique({ where: { id: orderIdStr } });
+        const order = await tx.order.findUnique({ 
+          where: { id: orderIdStr },
+          include: { items: true } 
+        });
         if (!order) throw new Error('Order not found');
 
         // Prevent backward status changes
@@ -96,6 +99,16 @@ export async function POST(req: Request) {
             where: { id: order.id },
             data: { status: 'paid' }
           });
+          
+          // Kurangi stok produk setelah pembayaran berhasil
+          for (const item of order.items) {
+            if (item.productId) {
+              await tx.product.update({
+                where: { id: item.productId },
+                data: { stock: { decrement: item.quantity } }
+              }).catch(() => { /* Abaikan jika produk sudah dihapus */ });
+            }
+          }
         } else if (isFailure) {
           await tx.order.update({
             where: { id: order.id },

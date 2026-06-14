@@ -9,6 +9,8 @@ export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => ({}));
     const phoneNumber = body.phoneNumber?.trim() || undefined;
+    const requestedSessionName = body.sessionName?.trim() || undefined; // If starting an existing session
+    const isNew = body.isNew === true; // If specifically asking to create a new one
 
     const authSession = await getServerSession(authOptions);
     if (!authSession?.user) {
@@ -32,44 +34,64 @@ export async function POST(request: Request) {
     });
 
     if (!chatbot) {
-      console.error("DEBUG: chatbot not found for userId", userId); return NextResponse.json({ error: `Chatbot setting tidak ditemukan untuk userId: ${userId}` }, { status: 404 });
+      return NextResponse.json({ error: `Chatbot setting tidak ditemukan untuk userId: ${userId}` }, { status: 404 });
     }
 
-    const sessionName = getActiveWhatsappSessionName(userId, chatbot.businessProfileId);
-    const existingSession = await prisma.whatsAppSession.findFirst({
-      where: { userId, chatbotSettingId: chatbot.id },
+    const maxSessions = chatbot.user.subscriptions[0]?.plan.maxWhatsappSessions ?? 1;
+    
+    // Count active and starting sessions
+    const currentSessionsCount = await prisma.whatsAppSession.count({
+      where: {
+        userId,
+        status: { notIn: ['disconnected', 'failed'] },
+      },
     });
-    const hasActiveCurrentSession = existingSession
-      && ['starting', 'qr', 'connected'].includes(existingSession.status);
 
-    if (!hasActiveCurrentSession) {
-      const maxSessions = chatbot.user.subscriptions[0]?.plan.maxWhatsappSessions ?? 1;
-      const currentSessions = await prisma.whatsAppSession.count({
-        where: {
-          userId,
-          status: { in: ['starting', 'qr', 'connected'] },
-          ...(existingSession ? { id: { not: existingSession.id } } : {}),
-        },
+    let targetSessionName = requestedSessionName;
+    let existingSession = null;
+
+    if (targetSessionName) {
+      existingSession = await prisma.whatsAppSession.findFirst({
+        where: { userId, sessionName: targetSessionName }
       });
-      if (currentSessions >= maxSessions) {
-        return NextResponse.json(
-          { error: `Batas maksimal WhatsApp session tercapai (${maxSessions}).` },
-          { status: 403 },
-        );
+      if (!existingSession) {
+        return NextResponse.json({ error: 'Sesi tidak ditemukan' }, { status: 404 });
       }
-    }
+      // If we are starting an existing disconnected session, check if it pushes us over quota
+      if (['disconnected', 'failed'].includes(existingSession.status) && currentSessionsCount >= maxSessions) {
+        return NextResponse.json({ error: `Batas maksimal WhatsApp session aktif tercapai (${maxSessions}). Hentikan sesi lain terlebih dahulu.` }, { status: 403 });
+      }
+    } else {
+      // Trying to create a new session or start the default one
+      if (currentSessionsCount >= maxSessions) {
+        return NextResponse.json({ error: `Batas maksimal WhatsApp session aktif tercapai (${maxSessions}).` }, { status: 403 });
+      }
 
-    if (chatbot.whatsappSessionName !== sessionName) {
-      await prisma.chatbotSetting.update({
-        where: { id: chatbot.id },
-        data: { whatsappSessionName: sessionName },
-      });
+      // Generate a new session name based on count
+      const totalStoredCount = await prisma.whatsAppSession.count({ where: { userId } });
+      const baseName = getActiveWhatsappSessionName(userId, chatbot.businessProfileId);
+      
+      // If it's the very first session, use baseName. Otherwise append a number.
+      if (totalStoredCount === 0) {
+        targetSessionName = baseName;
+      } else {
+        // Find a unique name
+        let index = totalStoredCount + 1;
+        while (true) {
+          targetSessionName = `${baseName}-${index}`;
+          const check = await prisma.whatsAppSession.findFirst({ where: { sessionName: targetSessionName } });
+          if (!check) break;
+          index++;
+        }
+      }
     }
 
     const resolved = await BaileysService.resolveInstance(chatbot.id);
     const gateway = resolved.gateway;
     const serverId = resolved.serverId;
-    const info = await gateway.startSession(sessionName, phoneNumber);
+    
+    // START the session via Gateway
+    const info = await gateway.startSession(targetSessionName, phoneNumber);
     const status = info.status === 'connected' ? 'connected' : info.status === 'qr' ? 'qr' : 'starting';
     const pairingCode = info.pairingCode;
 
@@ -77,7 +99,6 @@ export async function POST(request: Request) {
       await prisma.whatsAppSession.update({
         where: { id: existingSession.id },
         data: {
-          sessionName,
           whatsappServerId: serverId,
           status,
           lastError: null,
@@ -91,17 +112,18 @@ export async function POST(request: Request) {
           businessProfileId: chatbot.businessProfileId,
           chatbotSettingId: chatbot.id,
           whatsappServerId: serverId,
-          sessionName,
+          sessionName: targetSessionName,
           status,
           lastConnectedAt: status === 'connected' ? new Date() : null,
         },
       });
     }
 
-    return NextResponse.json({ success: true, sessionName, status, pairingCode });
+    return NextResponse.json({ success: true, sessionName: targetSessionName, status, pairingCode });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     console.error('Baileys Start Error:', message);
     return NextResponse.json({ error: `Gagal memulai sesi WhatsApp: ${message}` }, { status: 502 });
   }
 }
+

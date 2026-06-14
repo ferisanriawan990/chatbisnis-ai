@@ -98,18 +98,24 @@ export default function AdminPlansPage() {
 
   return (
     <div className="space-y-8 font-sans pb-12">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-[0_2px_20px_-10px_rgba(0,0,0,0.05)]">
-        <div>
-          <h1 className="text-3xl font-extrabold text-slate-900 flex items-center gap-3 tracking-tight">
-            <div className="bg-indigo-100 p-2.5 rounded-2xl"><CreditCard className="w-7 h-7 text-indigo-600" /></div>
+      {/* Header Premium */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/60 backdrop-blur-lg p-8 rounded-3xl border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden animate-in fade-in duration-700">
+        <div className="absolute -right-20 -top-20 w-64 h-64 bg-indigo-400/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="absolute -left-20 -bottom-20 w-64 h-64 bg-purple-400/10 rounded-full blur-3xl pointer-events-none"></div>
+        
+        <div className="relative z-10">
+          <h1 className="text-3xl font-extrabold bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 bg-clip-text text-transparent flex items-center gap-3">
+            <div className="p-3 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl shadow-lg shadow-indigo-500/20">
+              <CreditCard className="w-8 h-8 text-white" />
+            </div>
             Subscription Engine
           </h1>
-          <p className="text-slate-500 mt-2 text-lg">Konfigurasi paket berlangganan & limitasi fitur SaaS Anda.</p>
+          <p className="text-slate-500 mt-2 font-medium text-lg ml-14">Konfigurasi paket berlangganan & limitasi fitur SaaS Anda.</p>
         </div>
+
         <button 
           onClick={() => handleOpenModal()}
-          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-lg shadow-indigo-600/30 hover:-translate-y-0.5"
+          className="relative z-10 flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white px-6 py-3.5 rounded-2xl font-bold transition-all shadow-xl shadow-indigo-500/30 hover:scale-105"
         >
           <Plus className="w-5 h-5" /> Buat Plan Baru
         </button>
@@ -124,23 +130,25 @@ export default function AdminPlansPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {plans.map(p => (
-            <div key={p.id} className={`group relative bg-white rounded-3xl p-6 md:p-8 border-2 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 flex flex-col ${p.isActive ? 'border-slate-100 hover:border-indigo-200' : 'border-dashed border-slate-200 opacity-75 grayscale-[50%]'}`}>
+            <div key={p.id} className={`group relative bg-white/80 backdrop-blur-xl rounded-[2rem] p-6 md:p-8 border transition-all duration-300 hover:shadow-2xl hover:shadow-indigo-500/10 hover:-translate-y-2 flex flex-col overflow-hidden ${p.isActive ? 'border-white/60 hover:border-indigo-200' : 'border-dashed border-white/40 opacity-75 grayscale-[50%]'}`}>
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-indigo-100/50 to-transparent rounded-bl-full pointer-events-none transition-transform duration-500 group-hover:scale-110"></div>
+              
               {/* Top Section */}
-              <div className="flex justify-between items-start mb-6">
+              <div className="flex justify-between items-start mb-6 relative z-10">
                 <div>
                   <h3 className="text-2xl font-black text-slate-900 tracking-tight">{p.name}</h3>
                   <div className="flex gap-2 mt-2">
-                    <span className="bg-slate-100 text-slate-500 text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded-md">
+                    <span className="bg-indigo-50 text-indigo-600 text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded-md shadow-sm border border-indigo-100/50">
                       {p.slug}
                     </span>
                     {!p.isActive && (
-                      <span className="bg-red-50 text-red-600 text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded-md flex items-center gap-1">
+                      <span className="bg-rose-50 text-rose-600 text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded-md flex items-center gap-1 shadow-sm border border-rose-100/50">
                         <EyeOff className="w-3 h-3" /> HIDDEN
                       </span>
                     )}
                   </div>
                 </div>
-                <button onClick={() => handleOpenModal(p)} className="bg-slate-50 p-2.5 rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors shadow-sm">
+                <button onClick={() => handleOpenModal(p)} className="bg-white/80 p-2.5 rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors shadow-sm border border-slate-100">
                   <Edit2 className="w-4 h-4" />
                 </button>
               </div>
@@ -155,37 +163,37 @@ export default function AdminPlansPage() {
               </div>
 
               {/* Core Limits */}
-              <div className="space-y-4 mb-6 flex-1">
-                <div className="flex items-center gap-3">
-                  <div className="bg-emerald-50 p-1.5 rounded-lg text-emerald-600"><MessageSquare className="w-4 h-4" /></div>
+              <div className="space-y-4 mb-6 flex-1 relative z-10">
+                <div className="flex items-center gap-4">
+                  <div className="bg-gradient-to-br from-emerald-100 to-emerald-50 p-2 rounded-xl text-emerald-600 shadow-sm border border-emerald-100/50"><MessageSquare className="w-4 h-4" /></div>
                   <div className="flex-1">
-                    <p className="text-xs text-slate-500 font-medium">Monthly Chats</p>
-                    <p className="text-sm font-bold text-slate-800">{p.monthlyChatLimit.toLocaleString('id-ID')} <span className="text-xs font-normal text-slate-400">({p.dailyChatLimit}/hari)</span></p>
+                    <p className="text-[11px] text-slate-500 font-bold uppercase tracking-wider">Monthly Chats</p>
+                    <p className="text-sm font-extrabold text-slate-800">{p.monthlyChatLimit.toLocaleString('id-ID')} <span className="text-[10px] font-bold text-slate-400">({p.dailyChatLimit}/hari)</span></p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="bg-blue-50 p-1.5 rounded-lg text-blue-600"><Server className="w-4 h-4" /></div>
+                <div className="flex items-center gap-4">
+                  <div className="bg-gradient-to-br from-blue-100 to-blue-50 p-2 rounded-xl text-blue-600 shadow-sm border border-blue-100/50"><Server className="w-4 h-4" /></div>
                   <div className="flex-1">
-                    <p className="text-xs text-slate-500 font-medium">Knowledge Items</p>
-                    <p className="text-sm font-bold text-slate-800">{p.maxKnowledgeItems} Items</p>
+                    <p className="text-[11px] text-slate-500 font-bold uppercase tracking-wider">Knowledge Items</p>
+                    <p className="text-sm font-extrabold text-slate-800">{p.maxKnowledgeItems} Items</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="bg-purple-50 p-1.5 rounded-lg text-purple-600"><Briefcase className="w-4 h-4" /></div>
+                <div className="flex items-center gap-4">
+                  <div className="bg-gradient-to-br from-purple-100 to-purple-50 p-2 rounded-xl text-purple-600 shadow-sm border border-purple-100/50"><Briefcase className="w-4 h-4" /></div>
                   <div className="flex-1">
-                    <p className="text-xs text-slate-500 font-medium">WhatsApp Sesi</p>
-                    <p className="text-sm font-bold text-slate-800">{p.maxWhatsappSessions} Device</p>
+                    <p className="text-[11px] text-slate-500 font-bold uppercase tracking-wider">WhatsApp Sesi</p>
+                    <p className="text-sm font-extrabold text-slate-800">{p.maxWhatsappSessions} Device</p>
                   </div>
                 </div>
               </div>
               
               {/* Feature Toggles */}
-              <div className="bg-slate-50 rounded-2xl p-4 flex flex-col gap-2.5">
-                <div className={`flex items-center gap-2 text-xs font-semibold ${p.allowLeadCapture ? 'text-indigo-700' : 'text-slate-400'}`}>
-                  {p.allowLeadCapture ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />} Auto Lead Capture
+              <div className="bg-slate-50/80 backdrop-blur-sm rounded-2xl p-5 flex flex-col gap-3 border border-slate-100/50 relative z-10">
+                <div className={`flex items-center gap-3 text-xs font-bold ${p.allowLeadCapture ? 'text-indigo-700' : 'text-slate-400'}`}>
+                  {p.allowLeadCapture ? <div className="bg-indigo-100 p-1 rounded-md"><Check className="w-3.5 h-3.5" /></div> : <div className="bg-slate-100 p-1 rounded-md"><X className="w-3.5 h-3.5" /></div>} Auto Lead Capture
                 </div>
-                <div className={`flex items-center gap-2 text-xs font-semibold ${p.allowHumanHandover ? 'text-indigo-700' : 'text-slate-400'}`}>
-                  {p.allowHumanHandover ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />} Live Human Handover
+                <div className={`flex items-center gap-3 text-xs font-bold ${p.allowHumanHandover ? 'text-indigo-700' : 'text-slate-400'}`}>
+                  {p.allowHumanHandover ? <div className="bg-indigo-100 p-1 rounded-md"><Check className="w-3.5 h-3.5" /></div> : <div className="bg-slate-100 p-1 rounded-md"><X className="w-3.5 h-3.5" /></div>} Live Human Handover
                 </div>
               </div>
             </div>

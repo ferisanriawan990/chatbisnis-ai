@@ -104,77 +104,86 @@ export default function AdminWhatsappServersPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <Server className="w-6 h-6 text-indigo-600" />
+    <div className="space-y-8 animate-in fade-in duration-700">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/60 backdrop-blur-lg p-8 rounded-3xl border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
+        <div className="absolute -right-20 -top-20 w-64 h-64 bg-emerald-400/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="absolute -left-20 -bottom-20 w-64 h-64 bg-teal-400/10 rounded-full blur-3xl pointer-events-none"></div>
+        
+        <div className="relative z-10">
+          <h1 className="text-3xl font-extrabold bg-gradient-to-r from-slate-900 via-emerald-900 to-slate-900 bg-clip-text text-transparent flex items-center gap-3">
+            <div className="p-3 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl shadow-lg shadow-emerald-500/20">
+              <Server className="w-8 h-8 text-white" />
+            </div>
             WhatsApp Servers
           </h1>
-          <p className="text-slate-500 mt-1">Kelola instance WhatsApp Gateway yang melayani traffic chatbot.</p>
+          <p className="text-slate-500 mt-2 font-medium text-lg ml-14">Kelola instance WhatsApp Gateway yang melayani traffic chatbot.</p>
         </div>
         <button 
           onClick={() => handleOpenModal()}
-          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+          className="relative z-10 flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white px-6 py-3.5 rounded-2xl font-bold transition-all shadow-xl shadow-emerald-500/30 hover:scale-105"
         >
-          <Plus className="w-4 h-4" /> Tambah Server
+          <Plus className="w-5 h-5" /> Tambah Server
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {loading ? <p>Memuat...</p> : servers.map(s => (
-          <div key={s.id} className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex flex-col">
-            <div className="flex justify-between items-start mb-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
+        {loading ? (
+          <div className="col-span-2 flex justify-center py-12 text-slate-500 animate-pulse font-medium">Memuat data server...</div>
+        ) : servers.map(s => (
+          <div key={s.id} className="bg-white/80 backdrop-blur-xl p-6 md:p-8 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60 flex flex-col group hover:shadow-2xl hover:-translate-y-1 hover:shadow-emerald-500/10 transition-all duration-300 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-emerald-100/50 to-transparent rounded-bl-full pointer-events-none transition-transform duration-500 group-hover:scale-110"></div>
+            
+            <div className="flex justify-between items-start mb-6 relative z-10">
               <div>
-                <h3 className="text-xl font-bold text-slate-900">{s.name}</h3>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className={`px-2 py-0.5 rounded text-xs font-medium ${s.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+                <h3 className="text-2xl font-extrabold text-slate-800 tracking-tight">{s.name}</h3>
+                <div className="flex items-center gap-2 mt-2">
+                  <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-sm border ${s.isActive ? 'bg-emerald-50 text-emerald-600 border-emerald-100/50' : 'bg-slate-50 text-slate-500 border-slate-200/50'}`}>
                     {s.isActive ? 'Active' : 'Inactive'}
                   </span>
-                  <span className="text-xs text-slate-500 font-mono bg-slate-100 px-2 py-0.5 rounded">
+                  <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold bg-white/60 backdrop-blur-sm border border-slate-200/50 shadow-sm px-2.5 py-1 rounded-full">
                     {s.currentSessions} / {s.maxSessions} Sessions
                   </span>
                 </div>
               </div>
-              <div className="flex gap-2">
-                <button onClick={() => handleTest(s.id)} disabled={testingId === s.id} className="text-slate-400 hover:text-emerald-600 transition-colors" title="Test Connection">
+              <div className="flex gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                <button onClick={() => handleTest(s.id)} disabled={testingId === s.id} className="bg-white/80 p-2 rounded-xl text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors shadow-sm border border-slate-100" title="Test Connection">
                   <PlayCircle className={`w-5 h-5 ${testingId === s.id ? 'animate-pulse text-emerald-600' : ''}`} />
                 </button>
-                <button onClick={() => handleOpenModal(s)} className="text-slate-400 hover:text-indigo-600 transition-colors" title="Edit Server">
+                <button onClick={() => handleOpenModal(s)} className="bg-white/80 p-2 rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors shadow-sm border border-slate-100" title="Edit Server">
                   <Edit2 className="w-5 h-5" />
                 </button>
-                <button onClick={() => setDeleteModal({ isOpen: true, serverId: s.id, name: s.name })} className="text-slate-400 hover:text-red-600 transition-colors" title="Delete Server">
+                <button onClick={() => setDeleteModal({ isOpen: true, serverId: s.id, name: s.name })} className="bg-white/80 p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors shadow-sm border border-slate-100" title="Delete Server">
                   <Trash2 className="w-5 h-5" />
                 </button>
               </div>
             </div>
             
-            <div className="text-sm text-slate-600 space-y-2 flex-1">
-              <div className="flex items-center gap-2">
-                <span className="font-medium min-w-[80px]">Status:</span> 
-                <span className={`text-xs font-semibold uppercase ${s.status === 'online' ? 'text-emerald-600' : 'text-amber-600'}`}>{s.status}</span>
+            <div className="text-sm font-medium text-slate-600 flex-1 space-y-3 relative z-10 bg-slate-50/50 rounded-2xl p-5 border border-slate-100/50">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400 text-xs font-bold uppercase tracking-wider">Status</span> 
+                <span className={`text-[11px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider ${s.status === 'online' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>{s.status}</span>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="font-medium min-w-[80px]">Base URL:</span> 
-                <span className="truncate font-mono text-xs">{s.baseUrl}</span>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400 text-xs font-bold uppercase tracking-wider">Base URL</span> 
+                <span className="truncate font-mono text-[11px] bg-white px-2 py-1 rounded shadow-sm border border-slate-200">{s.baseUrl}</span>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="font-medium min-w-[80px]">API Key:</span> 
-                <span className="font-mono text-xs text-slate-400">{s.hasApiKey ? '•••••••• (Configured)' : 'Not Configured'}</span>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400 text-xs font-bold uppercase tracking-wider">API Key</span> 
+                <span className="font-mono text-[11px] text-slate-500 bg-white px-2 py-1 rounded shadow-sm border border-slate-200">{s.hasApiKey ? '•••••••• (Configured)' : 'Not Configured'}</span>
               </div>
               {s.lastHealthCheckAt && (
-                <div className="flex items-center gap-2">
-                  <span className="font-medium min-w-[80px]">Last Check:</span> 
-                  <span className="text-xs text-slate-500">{new Date(s.lastHealthCheckAt).toLocaleString()}</span>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-400 text-xs font-bold uppercase tracking-wider">Last Check</span> 
+                  <span className="text-xs text-slate-600 font-semibold">{new Date(s.lastHealthCheckAt).toLocaleString('id-ID')}</span>
                 </div>
               )}
               {s.lastError && (
-                <div className="mt-2 p-2 bg-red-50 text-red-700 rounded text-xs">
-                  <strong>Error:</strong> {s.lastError}
+                <div className="mt-4 p-3 bg-rose-50/80 border border-rose-100 text-rose-700 rounded-xl text-xs font-semibold">
+                  <span className="block text-rose-900 mb-1 font-bold">Error:</span> {s.lastError}
                 </div>
               )}
               {s.notes && (
-                <div className="mt-4 p-3 bg-slate-50 rounded-lg text-xs italic text-slate-500">
+                <div className="mt-4 p-4 bg-white/60 border border-slate-200/60 rounded-xl text-xs italic text-slate-500 shadow-sm">
                   {s.notes}
                 </div>
               )}

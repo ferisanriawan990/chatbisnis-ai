@@ -3,10 +3,16 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { BaileysApiError, BaileysService } from '@/lib/baileys';
-import { getActiveWhatsappSessionName } from '@/lib/whatsapp-helpers';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const sessionName = searchParams.get('sessionName');
+
+    if (!sessionName) {
+      return NextResponse.json({ error: 'Parameter sessionName diperlukan' }, { status: 400 });
+    }
+
     const authSession = await getServerSession(authOptions);
     if (!authSession?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -15,10 +21,18 @@ export async function GET() {
     const userId = (authSession.user as { id: string }).id;
     const chatbot = await prisma.chatbotSetting.findFirst({ where: { userId } });
     if (!chatbot) {
-      console.error("DEBUG: chatbot not found for userId", userId); return NextResponse.json({ error: `Chatbot setting tidak ditemukan untuk userId: ${userId}` }, { status: 404 });
+      return NextResponse.json({ error: `Chatbot setting tidak ditemukan untuk userId: ${userId}` }, { status: 404 });
     }
 
-    const sessionName = getActiveWhatsappSessionName(userId, chatbot.businessProfileId);
+    // Verify ownership
+    const sessionRecord = await prisma.whatsAppSession.findFirst({
+      where: { userId, sessionName }
+    });
+    
+    if (!sessionRecord) {
+      return NextResponse.json({ error: 'Sesi tidak ditemukan atau bukan milik Anda' }, { status: 403 });
+    }
+
     const resolved = await BaileysService.resolveInstance(chatbot.id);
     const gateway = resolved.gateway;
     const info = await gateway.getQR(sessionName);
@@ -31,3 +45,4 @@ export async function GET() {
     return NextResponse.json({ error: 'Gagal mengambil QR WhatsApp' }, { status: 502 });
   }
 }
+

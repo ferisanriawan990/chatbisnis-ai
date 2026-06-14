@@ -44,16 +44,26 @@ export async function POST(req: Request) {
     const passwordHash = await bcrypt.hash(password, 12);
 
     // Get Free Plan
-    const freePlan = await prisma.plan.findUnique({
+    let freePlan = await prisma.plan.findUnique({
       where: { slug: 'free' }
     });
 
     if (!freePlan) {
-      console.error('Free plan not found in database. Did you run the seed?');
-      return NextResponse.json(
-        { error: 'Sistem sedang dikonfigurasi, coba lagi nanti.' },
-        { status: 500 }
-      );
+      console.log('Free plan not found, creating it automatically...');
+      freePlan = await prisma.plan.create({
+        data: {
+          name: 'Free',
+          slug: 'free',
+          priceMonthly: 0,
+          maxWhatsappSessions: 1,
+          maxKnowledgeItems: 10,
+          dailyChatLimit: 50,
+          monthlyChatLimit: 1500,
+          allowLeadCapture: false,
+          allowHumanHandover: false,
+          isActive: true
+        }
+      });
     }
 
     const user = await prisma.user.create({
@@ -89,10 +99,10 @@ export async function POST(req: Request) {
       message: 'Akun berhasil dibuat. Silakan periksa email Anda untuk verifikasi.',
       user: { id: user.id, name: user.name, email: user.email },
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('POST /api/auth/register Error:', error);
     return NextResponse.json(
-      { error: 'Terjadi kesalahan server. Coba lagi nanti.' },
+      { error: process.env.NODE_ENV !== 'production' ? `Error: ${error.message}` : 'Terjadi kesalahan server. Coba lagi nanti.' },
       { status: 500 }
     );
   }

@@ -61,13 +61,14 @@ export default function BookingsPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden relative z-10">
+      <div className="bg-white/80 backdrop-blur-xl rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60 relative overflow-hidden group">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-indigo-100/50 to-transparent rounded-bl-full pointer-events-none transition-transform duration-500 group-hover:scale-110"></div>
         {loading ? (
           <div className="p-10 text-center text-slate-500 font-medium animate-pulse">Memuat Jadwal...</div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto relative z-10 custom-scrollbar p-2">
             <table className="w-full text-sm text-left text-slate-600">
-              <thead className="text-[11px] font-extrabold text-slate-500 uppercase bg-slate-50/80 border-b border-slate-200 tracking-wider">
+              <thead className="text-[11px] font-extrabold text-slate-500 uppercase border-b border-slate-100 tracking-wider">
                 <tr>
                   <th className="px-6 py-5">Tanggal & Jam</th>
                   <th className="px-6 py-5">Pelanggan</th>
@@ -85,7 +86,7 @@ export default function BookingsPage() {
                   </tr>
                 ) : (
                   bookings.map((booking) => (
-                    <tr key={booking.id} className="hover:bg-slate-50/50 transition-colors">
+                    <tr key={booking.id} className="hover:bg-indigo-50/40 transition-colors group/row">
                       <td className="px-6 py-5 font-bold text-slate-800 whitespace-nowrap">
                         <div className="flex items-center gap-2">
                           <Calendar className="w-4 h-4 text-indigo-500" />
@@ -110,14 +111,14 @@ export default function BookingsPage() {
                       <td className="px-6 py-5 text-right whitespace-nowrap">
                         {booking.status === 'pending' && (
                           <div className="flex justify-end gap-2">
-                            <button onClick={() => updateStatus(booking.id, 'confirmed')} className="text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors">Setujui</button>
-                            <button onClick={() => updateStatus(booking.id, 'cancelled')} className="text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors">Tolak</button>
+                            <button onClick={() => updateStatus(booking.id, 'confirmed')} className="text-white bg-gradient-to-r from-emerald-500 to-teal-500 shadow-md shadow-emerald-500/20 hover:shadow-emerald-500/40 hover:-translate-y-0.5 px-4 py-2 rounded-xl text-xs font-bold transition-all">Setujui</button>
+                            <button onClick={() => updateStatus(booking.id, 'cancelled')} className="text-red-600 bg-red-50 hover:bg-red-100 border border-red-100 px-4 py-2 rounded-xl text-xs font-bold transition-all">Tolak</button>
                           </div>
                         )}
                         {booking.status === 'confirmed' && (
                           <div className="flex justify-end gap-2">
-                            <button onClick={() => updateStatus(booking.id, 'completed')} className="text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors">Selesaikan</button>
-                            <button onClick={() => updateStatus(booking.id, 'cancelled')} className="text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors">Batal</button>
+                            <button onClick={() => updateStatus(booking.id, 'completed')} className="text-white bg-gradient-to-r from-blue-600 to-indigo-600 shadow-md shadow-blue-500/20 hover:shadow-blue-500/40 hover:-translate-y-0.5 px-4 py-2 rounded-xl text-xs font-bold transition-all">Selesaikan</button>
+                            <button onClick={() => updateStatus(booking.id, 'cancelled')} className="text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-200 px-4 py-2 rounded-xl text-xs font-bold transition-all">Batal</button>
                           </div>
                         )}
                       </td>

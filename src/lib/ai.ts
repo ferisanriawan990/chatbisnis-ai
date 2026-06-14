@@ -67,13 +67,20 @@ export class AIService {
         body: formData,
       });
 
-      if (!res.ok) throw new AIServiceError(`Gagal mentranskripsi suara (HTTP ${res.status})`, res.status);
+      if (!res.ok) {
+        const errText = await res.text();
+        console.error('API Error Response:', errText);
+        throw new AIServiceError(`Gagal mentranskripsi suara (HTTP ${res.status}) - ${errText}`, res.status);
+      }
 
       const data = await res.json();
       return data.text || '';
     } catch (error: any) {
       console.error('Transcription Error:', error);
-      throw new AIServiceError('Gagal memproses pesan suara.');
+      if (error instanceof AIServiceError) {
+        throw error;
+      }
+      throw new AIServiceError('Gagal memproses pesan suara: ' + (error?.message || 'Unknown Error'));
     }
   }
 

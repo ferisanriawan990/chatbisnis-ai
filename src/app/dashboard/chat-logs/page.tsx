@@ -134,35 +134,41 @@ export default function ChatLogsPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6 pb-20">
+    <div className="max-w-7xl mx-auto space-y-8 pb-20 p-4 md:p-8 animate-in fade-in duration-700">
       <Toaster position="top-right" />
 
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-            <MessageSquare className="w-8 h-8 text-blue-600" />
-            Chat Logs
+      {/* Header Premium */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/60 backdrop-blur-lg p-8 rounded-3xl border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
+        <div className="absolute -right-20 -top-20 w-64 h-64 bg-blue-400/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="absolute -left-20 -bottom-20 w-64 h-64 bg-indigo-400/10 rounded-full blur-3xl pointer-events-none"></div>
+        
+        <div className="relative z-10">
+          <h1 className="text-3xl font-extrabold bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 bg-clip-text text-transparent flex items-center gap-3">
+            <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-lg shadow-blue-500/20">
+              <MessageSquare className="w-8 h-8 text-white" />
+            </div>
+            History Chat (Logs)
           </h1>
-          <p className="text-slate-500 mt-1">Pantau seluruh percakapan bot dengan pelanggan.</p>
+          <p className="text-slate-500 mt-2 font-medium text-lg ml-14">Pantau seluruh percakapan bot dengan pelanggan.</p>
         </div>
       </div>
 
-      <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="bg-white/80 backdrop-blur-xl p-6 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60 grid grid-cols-1 md:grid-cols-4 gap-5 relative z-10">
         <div className="relative md:col-span-2">
-          <Search className="absolute left-3 top-2.5 text-slate-400 w-5 h-5" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
           <input
             type="text"
             placeholder="Cari pesan atau nomor..."
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+            className="w-full pl-12 pr-4 py-3.5 bg-slate-50/80 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none text-sm font-semibold text-slate-700 transition-all shadow-sm focus:bg-white"
           />
         </div>
         <div>
           <select
             value={status}
             onChange={(e) => { setStatus(e.target.value); setPage(1); }}
-            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+            className="w-full px-4 py-3.5 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none text-sm font-semibold text-slate-700 bg-slate-50/80 hover:bg-white transition-all shadow-sm appearance-none cursor-pointer"
           >
             <option value="all">Semua Status</option>
             <option value="success">Success</option>
@@ -173,7 +179,7 @@ export default function ChatLogsPage() {
           <select
             value={needsHuman}
             onChange={(e) => { setNeedsHuman(e.target.value); setPage(1); }}
-            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+            className="w-full px-4 py-3.5 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none text-sm font-semibold text-slate-700 bg-slate-50/80 hover:bg-white transition-all shadow-sm appearance-none cursor-pointer"
           >
             <option value="all">Semua Percakapan</option>
             <option value="true">Butuh Admin (Handover)</option>
@@ -183,17 +189,17 @@ export default function ChatLogsPage() {
       </div>
 
       {loading ? (
-        <div className="text-center py-20 text-slate-500 animate-pulse font-medium">Memuat Logs...</div>
+        <div className="text-center py-20 text-slate-500 animate-pulse font-bold text-lg">Memuat Logs...</div>
       ) : logs.length === 0 ? (
-        <div className="text-center py-20 bg-white rounded-xl border border-slate-100 text-slate-500">Tidak ada percakapan ditemukan.</div>
+        <div className="text-center py-20 bg-white/50 backdrop-blur-sm rounded-[2rem] border border-white text-slate-500 shadow-sm font-medium">Tidak ada percakapan ditemukan.</div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {logs.map((log) => {
             const isHandover = states[log.customerPhone] === 'human_handover' || log.needsHuman;
 
             return (
-              <div key={log.id} className="bg-white p-5 rounded-xl shadow-sm border border-slate-100">
-                <div className="flex flex-col md:flex-row md:items-center justify-between border-b pb-3 mb-3 gap-2">
+              <div key={log.id} className="bg-white/80 backdrop-blur-xl p-6 md:p-8 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60 hover:shadow-xl hover:shadow-blue-50/50 transition-all">
+                <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-slate-100/60 pb-4 mb-5 gap-4">
                   <div className="flex items-center gap-3">
                     <span className="font-semibold text-slate-800">{log.customerPhone}</span>
                     <span className="text-xs text-slate-500">{new Date(log.createdAt).toLocaleString()}</span>

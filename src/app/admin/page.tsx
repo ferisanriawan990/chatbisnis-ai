@@ -42,19 +42,24 @@ export default function AdminOverview() {
   ];
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-slate-900 mb-6">Overview</h1>
+    <div className="space-y-8 animate-in fade-in duration-700">
+      <div className="flex flex-col gap-2">
+        <h1 className="text-3xl font-extrabold bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 bg-clip-text text-transparent flex items-center gap-3">
+          Overview
+        </h1>
+        <p className="text-slate-500 font-medium text-lg">Metrik dan performa global ChatBisnis AI Suite.</p>
+      </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
         {cards.map((card) => (
-          <div key={card.label} className="bg-white p-5 rounded-xl shadow-sm border border-slate-100 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
-            <div className="flex items-center gap-4">
-              <div className={`${card.bg} p-3 rounded-xl ${card.text}`}>
-                <card.icon className="w-6 h-6" />
+          <div key={card.label} className="bg-white/80 backdrop-blur-xl p-6 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60 hover:shadow-xl hover:-translate-y-1 hover:shadow-indigo-100/50 transition-all duration-300 group">
+            <div className="flex items-center gap-5">
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center bg-gradient-to-br from-${card.color}-100 to-${card.color}-50 group-hover:scale-110 transition-transform`}>
+                <card.icon className={`w-7 h-7 ${card.text}`} />
               </div>
               <div>
-                <p className="text-sm text-slate-500 font-medium">{card.label}</p>
-                <h3 className="text-2xl font-bold text-slate-900">{card.value}</h3>
+                <p className="text-sm font-bold text-slate-500">{card.label}</p>
+                <h3 className={`text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-${card.color}-600 to-${card.color}-800 tracking-tight`}>{card.value}</h3>
               </div>
             </div>
           </div>

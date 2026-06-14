@@ -149,21 +149,26 @@ export default function AdminTemplatesPage() {
   const filteredTemplates = templates.filter(t => t.name.toLowerCase().includes(searchTerm.toLowerCase()) || t.category.toLowerCase().includes(searchTerm.toLowerCase()));
 
   return (
-    <div className="space-y-8 font-sans">
+    <div className="space-y-8 font-sans animate-in fade-in duration-700">
       <Toaster position="top-right" />
 
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
-            <div className="bg-indigo-100 p-2 rounded-xl"><Layers className="w-6 h-6 text-indigo-600" /></div>
+      {/* Header Premium Section */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/60 backdrop-blur-lg p-8 rounded-3xl border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
+        <div className="absolute -right-20 -top-20 w-64 h-64 bg-indigo-400/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="absolute -left-20 -bottom-20 w-64 h-64 bg-pink-400/10 rounded-full blur-3xl pointer-events-none"></div>
+        
+        <div className="relative z-10">
+          <h1 className="text-3xl font-extrabold bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 bg-clip-text text-transparent flex items-center gap-3">
+            <div className="p-3 bg-gradient-to-br from-indigo-500 to-pink-500 rounded-2xl shadow-lg shadow-indigo-500/20">
+              <Layers className="w-8 h-8 text-white" />
+            </div>
             AI Templates Master
           </h1>
-          <p className="text-slate-500 mt-2 pl-1">Kelola direktori template prompt AI untuk berbagai industri klien.</p>
+          <p className="text-slate-500 mt-2 font-medium text-lg ml-14">Kelola direktori template prompt AI untuk berbagai industri klien.</p>
         </div>
-        <div className="flex flex-col sm:flex-row items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-center gap-4 relative z-10">
           <div className="relative w-full sm:w-64">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
               <Search className="h-4 w-4 text-slate-400" />
             </div>
             <input
@@ -171,74 +176,75 @@ export default function AdminTemplatesPage() {
               placeholder="Cari template..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="block w-full pl-10 pr-3 py-2 border border-slate-200 rounded-xl leading-5 bg-slate-50 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-colors"
+              className="block w-full pl-11 pr-4 py-3.5 bg-white/60 backdrop-blur-md border border-white/50 rounded-2xl font-medium focus:outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500 sm:text-sm transition-all shadow-sm"
             />
           </div>
-          <button onClick={() => { setForm(EMPTY_TEMPLATE); setCreateModal(true); }} className="w-full sm:w-auto px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-indigo-700 shadow-md shadow-indigo-500/20 transition-all hover:-translate-y-0.5">
-            <Plus className="w-4 h-4" /> Template Baru
+          <button onClick={() => { setForm(EMPTY_TEMPLATE); setCreateModal(true); }} className="w-full sm:w-auto px-6 py-3.5 bg-gradient-to-r from-indigo-500 to-pink-500 hover:from-indigo-600 hover:to-pink-600 text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-xl shadow-indigo-500/20 transition-all hover:scale-105">
+            <Plus className="w-5 h-5" /> Template Baru
           </button>
         </div>
       </div>
 
       {/* Template Table */}
-      <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
+      <div className="bg-white/80 backdrop-blur-xl rounded-[2rem] border border-white/60 overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative z-10 group/list">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-pink-100/50 to-transparent rounded-bl-full pointer-events-none transition-transform duration-500 group-hover/list:scale-110"></div>
         {loading ? (
-          <div className="flex items-center justify-center h-64">
+          <div className="flex items-center justify-center h-64 relative z-10">
             <div className="flex flex-col items-center gap-3">
               <Sparkles className="w-8 h-8 text-indigo-400 animate-spin" />
               <span className="font-medium text-slate-500">Memuat template...</span>
             </div>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto relative z-10">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-slate-50/80 border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500 font-bold">
-                  <th className="px-6 py-4">Nama Template</th>
-                  <th className="px-6 py-4">Kategori</th>
-                  <th className="px-6 py-4 text-center">Pengguna (Bots)</th>
-                  <th className="px-6 py-4 text-center">Status</th>
-                  <th className="px-6 py-4 text-right">Aksi</th>
+                <tr className="border-b border-slate-100/50 text-xs uppercase tracking-wider text-slate-500 font-bold">
+                  <th className="px-8 py-5">Nama Template</th>
+                  <th className="px-6 py-5">Kategori</th>
+                  <th className="px-6 py-5 text-center">Pengguna (Bots)</th>
+                  <th className="px-6 py-5 text-center">Status</th>
+                  <th className="px-8 py-5 text-right">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100/50">
                 {filteredTemplates.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
+                    <td colSpan={5} className="px-6 py-16 text-center text-slate-500 font-medium">
                       Tidak ada template yang ditemukan.
                     </td>
                   </tr>
                 ) : (
                   filteredTemplates.map(tmpl => (
-                    <tr key={tmpl.id} className="hover:bg-indigo-50/30 transition-colors group">
-                      <td className="px-6 py-4">
-                        <div className="font-bold text-slate-900 group-hover:text-indigo-700 transition-colors">{tmpl.name}</div>
-                        <div className="text-xs text-slate-400 mt-0.5 bg-slate-100 px-2 py-0.5 rounded-md inline-block font-mono">{tmpl.slug}</div>
+                    <tr key={tmpl.id} className="hover:bg-indigo-50/40 transition-colors group">
+                      <td className="px-8 py-5">
+                        <div className="font-extrabold text-slate-800 text-base">{tmpl.name}</div>
+                        <div className="text-[11px] font-bold text-slate-400 mt-1 bg-white/60 px-2 py-0.5 rounded-md inline-block shadow-sm border border-slate-100 uppercase tracking-wider">{tmpl.slug}</div>
                       </td>
-                      <td className="px-6 py-4">
-                        <span className="bg-blue-50 text-blue-700 border border-blue-100 px-3 py-1 rounded-full text-xs font-semibold">
+                      <td className="px-6 py-5">
+                        <span className="bg-gradient-to-r from-blue-50 to-indigo-50 text-indigo-700 border border-indigo-100/50 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-sm">
                           {tmpl.category}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-center">
-                        <div className="inline-flex items-center justify-center gap-1.5 bg-slate-50 border border-slate-200 px-3 py-1 rounded-lg text-sm font-medium text-slate-600">
-                          <Users className="w-4 h-4 text-slate-400" /> {tmpl._count?.botConfigs || 0}
+                      <td className="px-6 py-5 text-center">
+                        <div className="inline-flex items-center justify-center gap-2 bg-white px-3.5 py-1.5 rounded-xl text-sm font-bold text-slate-600 shadow-sm border border-slate-100">
+                          <Users className="w-4 h-4 text-indigo-400" /> {tmpl._count?.botConfigs || 0}
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-center">
-                        <button onClick={() => handleToggle(tmpl)} className="focus:outline-none transform transition-transform hover:scale-110 active:scale-95">
+                      <td className="px-6 py-5 text-center">
+                        <button onClick={() => handleToggle(tmpl)} className="focus:outline-none transform transition-transform hover:scale-110 active:scale-95 shadow-sm rounded-full">
                           {tmpl.isActive
                             ? <ToggleRight className="w-8 h-8 text-emerald-500" />
                             : <ToggleLeft className="w-8 h-8 text-slate-300" />
                           }
                         </button>
                       </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2 opacity-70 group-hover:opacity-100 transition-opacity">
-                          <button onClick={() => openEdit(tmpl)} className="p-2 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors" title="Edit">
+                      <td className="px-8 py-5 text-right">
+                        <div className="flex items-center justify-end gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                          <button onClick={() => openEdit(tmpl)} className="p-2.5 text-indigo-600 bg-white hover:bg-indigo-50 border border-slate-100 shadow-sm rounded-xl transition-all hover:scale-105" title="Edit">
                             <Pencil className="w-4 h-4" />
                           </button>
-                          <button onClick={() => setDeleteModal(tmpl)} className="p-2 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors" title="Hapus">
+                          <button onClick={() => setDeleteModal(tmpl)} className="p-2.5 text-rose-600 bg-white hover:bg-rose-50 border border-slate-100 shadow-sm rounded-xl transition-all hover:scale-105" title="Hapus">
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>

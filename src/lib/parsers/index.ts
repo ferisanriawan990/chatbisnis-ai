@@ -164,8 +164,12 @@ function processRow(rawData: Record<string, unknown>): ParsedItem | null {
 export async function parseExcel(buffer: Buffer): Promise<ParsedItem[]> {
   try {
     const workbook = new ExcelJS.Workbook();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await workbook.xlsx.load(buffer as any);
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await workbook.xlsx.load(buffer as any);
+    } catch {
+      throw new Error('Gagal membaca file Excel. Jika Anda menggunakan format lama (.xls), harap Save As ke format baru (.xlsx) lalu upload ulang.');
+    }
     const items: ParsedItem[] = [];
 
     workbook.worksheets.forEach((worksheet) => {
@@ -199,8 +203,8 @@ export async function parseExcel(buffer: Buffer): Promise<ParsedItem[]> {
     });
 
     return items;
-  } catch {
-    throw new Error('Gagal membaca file Excel. Pastikan formatnya benar.');
+  } catch (error: any) {
+    throw new Error(error?.message || 'Gagal membaca file Excel. Pastikan formatnya benar.');
   }
 }
 

@@ -47,65 +47,92 @@ export default function AnalyticsPage() {
   const { summary, chartData } = data;
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-8">
-      <div className="mb-8 flex justify-between items-start">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800">Laporan Kinerja & Analytics</h1>
-          <p className="text-slate-500 mt-1">Pantau performa Chatbot AI, jumlah chat, dan konversi penjualan Anda (7 Hari Terakhir).</p>
+    <div className="max-w-7xl mx-auto space-y-8 pb-20 p-4 md:p-8 animate-in fade-in duration-700">
+      {/* Header Premium */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/60 backdrop-blur-lg p-8 rounded-3xl border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
+        <div className="absolute -right-20 -top-20 w-64 h-64 bg-cyan-400/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="absolute -left-20 -bottom-20 w-64 h-64 bg-blue-400/10 rounded-full blur-3xl pointer-events-none"></div>
+        
+        <div className="relative z-10">
+          <h1 className="text-3xl font-extrabold bg-gradient-to-r from-slate-900 via-cyan-900 to-slate-900 bg-clip-text text-transparent flex items-center gap-3">
+            <div className="p-3 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-2xl shadow-lg shadow-cyan-500/20">
+              <BarChart className="w-8 h-8 text-white" />
+            </div>
+            Laporan Kinerja & Analytics
+          </h1>
+          <p className="text-slate-500 mt-2 font-medium text-lg ml-14">Pantau performa Chatbot AI, jumlah chat, dan konversi penjualan Anda (7 Hari Terakhir).</p>
         </div>
         <button 
           onClick={handleExportCSV}
-          className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-sm font-medium transition"
+          className="relative z-10 bg-gradient-to-r from-slate-800 to-slate-900 text-white px-6 py-3.5 rounded-2xl font-bold shadow-md shadow-slate-900/20 hover:shadow-slate-900/40 hover:-translate-y-0.5 transition-all flex items-center gap-2"
         >
-          <Download size={16} />
+          <Download size={20} />
           Export CSV
         </button>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
-          <div className="bg-blue-50 p-4 rounded-xl text-blue-600"><MessageSquare className="w-6 h-6" /></div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-5 relative z-10">
+        <div className="bg-white/80 backdrop-blur-xl p-6 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60 flex flex-col justify-between hover:shadow-xl hover:shadow-blue-100/50 transition-all group">
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-blue-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+              <MessageSquare className="w-6 h-6 text-blue-600" />
+            </div>
+          </div>
           <div>
-            <p className="text-sm text-slate-500 font-medium">Total Chat Masuk</p>
-            <p className="text-2xl font-bold text-slate-800">{summary.totalChats}</p>
+            <p className="text-sm font-bold text-slate-500">Total Chat Masuk</p>
+            <p className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">{summary.totalChats}</p>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
-          <div className="bg-purple-50 p-4 rounded-xl text-purple-600"><Bot className="w-6 h-6" /></div>
+        <div className="bg-white/80 backdrop-blur-xl p-6 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60 flex flex-col justify-between hover:shadow-xl hover:shadow-purple-100/50 transition-all group">
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-purple-100 to-purple-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Bot className="w-6 h-6 text-purple-600" />
+            </div>
+          </div>
           <div>
-            <p className="text-sm text-slate-500 font-medium">Dijawab AI</p>
-            <p className="text-2xl font-bold text-slate-800">{summary.aiAnswered}</p>
+            <p className="text-sm font-bold text-slate-500">Dijawab AI</p>
+            <p className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">{summary.aiAnswered}</p>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
-          <div className="bg-emerald-50 p-4 rounded-xl text-emerald-600"><Banknote className="w-6 h-6" /></div>
+        <div className="bg-white/80 backdrop-blur-xl p-6 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60 flex flex-col justify-between hover:shadow-xl hover:shadow-emerald-100/50 transition-all group">
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-emerald-100 to-emerald-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Banknote className="w-6 h-6 text-emerald-600" />
+            </div>
+          </div>
           <div>
-            <p className="text-sm text-slate-500 font-medium">Omset Penjualan</p>
-            <p className="text-2xl font-bold text-slate-800">Rp {summary.revenue.toLocaleString('id-ID')}</p>
+            <p className="text-sm font-bold text-slate-500">Omset Penjualan</p>
+            <p className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-500">Rp {summary.revenue.toLocaleString('id-ID')}</p>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
-          <div className="bg-amber-50 p-4 rounded-xl text-amber-600"><Percent className="w-6 h-6" /></div>
+        <div className="bg-white/80 backdrop-blur-xl p-6 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60 flex flex-col justify-between hover:shadow-xl hover:shadow-amber-100/50 transition-all group">
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-amber-100 to-amber-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Percent className="w-6 h-6 text-amber-600" />
+            </div>
+          </div>
           <div>
-            <p className="text-sm text-slate-500 font-medium">Conversion Rate</p>
-            <p className="text-2xl font-bold text-slate-800">{summary.conversionRate}%</p>
+            <p className="text-sm font-bold text-slate-500">Conversion Rate</p>
+            <p className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-orange-500">{summary.conversionRate}%</p>
           </div>
         </div>
 
         {advancedData && (
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
-            <div className="bg-indigo-50 p-4 rounded-xl text-indigo-600">
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+          <div className="bg-white/80 backdrop-blur-xl p-6 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60 flex flex-col justify-between hover:shadow-xl hover:shadow-indigo-100/50 transition-all group">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-indigo-100 to-indigo-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                <svg className="w-6 h-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
             </div>
             <div>
-              <p className="text-sm text-slate-500 font-medium">Waktu Balas Admin</p>
-              <p className="text-2xl font-bold text-slate-800">
+              <p className="text-sm font-bold text-slate-500">Waktu Balas Admin</p>
+              <p className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-purple-500">
                 {advancedData.averageResponseTimeMinutes > 0 
                   ? `${advancedData.averageResponseTimeMinutes} mnt` 
                   : `${Math.floor(advancedData.averageResponseTimeMs / 1000)} dtk`}

@@ -3,10 +3,16 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { BaileysApiError, BaileysService } from '@/lib/baileys';
-import { getActiveWhatsappSessionName } from '@/lib/whatsapp-helpers';
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
+    const body = await request.json().catch(() => ({}));
+    const sessionName = body.sessionName?.trim();
+
+    if (!sessionName) {
+      return NextResponse.json({ error: 'Parameter sessionName diperlukan' }, { status: 400 });
+    }
+
     const authSession = await getServerSession(authOptions);
     if (!authSession?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -18,7 +24,14 @@ export async function POST() {
       return NextResponse.json({ error: 'Chatbot setting tidak ditemukan' }, { status: 404 });
     }
 
-    const sessionName = getActiveWhatsappSessionName(userId, chatbot.businessProfileId);
+    const sessionRecord = await prisma.whatsAppSession.findFirst({
+      where: { userId, sessionName }
+    });
+
+    if (!sessionRecord) {
+      return NextResponse.json({ error: 'Sesi tidak ditemukan atau bukan milik Anda' }, { status: 403 });
+    }
+
     try {
       const resolved = await BaileysService.resolveInstance(chatbot.id);
       const gateway = resolved.gateway;
@@ -27,8 +40,8 @@ export async function POST() {
       if (!(error instanceof BaileysApiError && error.status === 404)) throw error;
     }
 
-    await prisma.whatsAppSession.updateMany({
-      where: { userId, chatbotSettingId: chatbot.id },
+    await prisma.whatsAppSession.update({
+      where: { id: sessionRecord.id },
       data: { status: 'disconnected', lastError: null },
     });
     return NextResponse.json({ success: true });
@@ -37,3 +50,4 @@ export async function POST() {
     return NextResponse.json({ error: 'Gagal menghentikan sesi WhatsApp' }, { status: 502 });
   }
 }
+

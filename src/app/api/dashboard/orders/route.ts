@@ -88,11 +88,40 @@ export async function PATCH(req: Request) {
 
     // Verify ownership
     const existingOrder = await prisma.order.findFirst({
-      where: { id: data.id, businessProfileId: profile.id }
+      where: { id: data.id, businessProfileId: profile.id },
+      include: { items: true }
     });
 
     if (!existingOrder) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+    }
+
+    // Logic Pemotongan / Pengembalian Stok
+    const unpaidStatuses = ['draft', 'pending_payment'];
+    const paidStatuses = ['dp_paid', 'paid', 'processing', 'shipped', 'completed'];
+    
+    // Jika berubah dari belum lunas ke lunas/diproses -> Potong Stok
+    if (unpaidStatuses.includes(existingOrder.status) && paidStatuses.includes(data.status)) {
+      for (const item of existingOrder.items) {
+        if (item.productId) {
+          await prisma.product.update({
+            where: { id: item.productId },
+            data: { stock: { decrement: item.quantity } }
+          }).catch(() => {});
+        }
+      }
+    }
+    
+    // Jika pesanan dibatalkan (tapi sebelumnya sudah potong stok) -> Kembalikan Stok
+    if (paidStatuses.includes(existingOrder.status) && data.status === 'cancelled') {
+      for (const item of existingOrder.items) {
+        if (item.productId) {
+          await prisma.product.update({
+            where: { id: item.productId },
+            data: { stock: { increment: item.quantity } }
+          }).catch(() => {});
+        }
+      }
     }
 
     // Update Order

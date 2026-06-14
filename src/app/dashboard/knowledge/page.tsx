@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { Upload, Plus, Globe, Trash2, Database, FileText, CheckCircle, RefreshCw } from 'lucide-react';
+import { Upload, Plus, Globe, Trash2, Database, FileText, CheckCircle, RefreshCw, Activity } from 'lucide-react';
 
 export default function KnowledgePage() {
   const { data: session } = useSession();
@@ -182,8 +182,9 @@ export default function KnowledgePage() {
                     <td className="px-6 py-4 font-medium text-gray-800 flex items-center gap-3">
                       {s.type === 'web_scraping' && <Globe size={16} className="text-indigo-500" />}
                       {s.type === 'manual' && <Plus size={16} className="text-green-500" />}
-                      {['excel', 'csv', 'pdf'].includes(s.type) && <FileText size={16} className="text-blue-500" />}
-                      {s.title}
+                      {['excel', 'csv', 'pdf', 'docx'].includes(s.type) && <FileText size={16} className="text-blue-500" />}
+                      {s.type === 'google_sheet' && <Activity size={16} className="text-emerald-500" />}
+                      <span className="truncate max-w-[200px] font-bold text-slate-800">{s.title}</span>
                     </td>
                     <td className="px-6 py-4">
                       <span className="px-2.5 py-1 bg-gray-100 text-gray-600 rounded text-xs uppercase font-medium">

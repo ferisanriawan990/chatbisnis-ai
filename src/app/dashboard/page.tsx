@@ -66,9 +66,8 @@ export default async function DashboardIndex() {
   }
 
   // 6. Compute Ready Status
-  const isAiKeyReady = hasGlobalKey;
   const isWhatsappReady = whatsappStatus === 'connected';
-  const allSetupReady = hasProf && isWhatsappReady && isAiKeyReady;
+  const allSetupReady = hasProf && isWhatsappReady;
 
   return (
     <div className="space-y-8 font-sans pb-12">
@@ -98,6 +97,54 @@ export default async function DashboardIndex() {
               )}
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Floating Statistics Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-[0_4px_24px_rgba(0,0,0,0.02)] hover:-translate-y-1 transition-transform duration-300">
+           <div className="flex justify-between items-start mb-4">
+             <div className="bg-blue-50 p-3 rounded-2xl"><MessageSquare className="w-6 h-6 text-blue-600" /></div>
+           </div>
+           <div>
+             <p className="text-4xl font-black text-slate-800 tracking-tight">{todayChats}</p>
+             <p className="text-sm font-medium text-slate-500 mt-1">Interaksi Chat Hari Ini</p>
+           </div>
+        </div>
+        
+        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-[0_4px_24px_rgba(0,0,0,0.02)] hover:-translate-y-1 transition-transform duration-300">
+           <div className="flex justify-between items-start mb-4">
+             <div className="bg-emerald-50 p-3 rounded-2xl"><Users className="w-6 h-6 text-emerald-600" /></div>
+           </div>
+           <div>
+             <p className="text-4xl font-black text-slate-800 tracking-tight">{newLeads}</p>
+             <p className="text-sm font-medium text-slate-500 mt-1">Lead Baru (7 Hari Terakhir)</p>
+           </div>
+        </div>
+        
+        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-[0_4px_24px_rgba(0,0,0,0.02)] hover:-translate-y-1 transition-transform duration-300 relative overflow-hidden group">
+           <div className={`absolute inset-0 opacity-0 transition-opacity duration-300 ${needsHuman > 0 ? 'bg-amber-50 group-hover:opacity-100' : ''} pointer-events-none`}></div>
+           <div className="relative z-10">
+             <div className="flex justify-between items-start mb-4">
+               <div className="bg-amber-50 p-3 rounded-2xl group-hover:bg-amber-100 transition-colors"><ShieldAlert className="w-6 h-6 text-amber-600" /></div>
+             </div>
+             <div>
+               <p className={`text-4xl font-black tracking-tight ${needsHuman > 0 ? 'text-amber-600' : 'text-slate-800'}`}>{needsHuman}</p>
+               <p className="text-sm font-medium text-slate-500 mt-1">Chat Butuh Bantuan Admin</p>
+             </div>
+           </div>
+        </div>
+        
+        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-[0_4px_24px_rgba(0,0,0,0.02)] hover:-translate-y-1 transition-transform duration-300">
+           <div className="flex justify-between items-start mb-4">
+             <div className={`p-3 rounded-2xl ${isWhatsappReady ? 'bg-teal-50' : 'bg-slate-100'}`}>
+               <Bot className={`w-6 h-6 ${isWhatsappReady ? 'text-teal-600' : 'text-slate-500'}`} />
+             </div>
+           </div>
+           <div>
+             <p className={`text-2xl font-black tracking-tight capitalize truncate ${isWhatsappReady ? 'text-teal-600' : 'text-slate-600'}`}>{whatsappStatus}</p>
+             <p className="text-sm font-medium text-slate-500 mt-1">Status Koneksi WhatsApp</p>
+           </div>
         </div>
       </div>
 
@@ -163,11 +210,11 @@ export default async function DashboardIndex() {
                   Langkah 3
                 </span>
               </div>
-              <h3 className="font-extrabold text-lg text-slate-800 mb-2">Hubungkan WhatsApp</h3>
-              <p className="text-xs font-medium text-slate-500 flex-1 mb-6 leading-relaxed">Scan QR Code atau gunakan Nomor HP untuk menghubungkan bot ke WA.</p>
+              <h3 className="font-extrabold text-lg text-slate-800 mb-2">Koneksi WhatsApp</h3>
+              <p className="text-xs font-medium text-slate-500 flex-1 mb-6 leading-relaxed">Tautkan nomor WhatsApp bisnis Anda lewat QR Code.</p>
               {!isWhatsappReady ? (
                 <Link href="/dashboard/whatsapp" className="w-full py-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-sm font-bold rounded-xl flex items-center justify-center gap-2 transition-colors">
-                  Koneksikan WA <ChevronRight className="w-4 h-4" />
+                  Scan QR <ChevronRight className="w-4 h-4" />
                 </Link>
               ) : (
                 <span className="w-full py-3 bg-emerald-100 text-emerald-700 text-sm font-bold rounded-xl flex items-center justify-center gap-2">Selesai ✓</span>
