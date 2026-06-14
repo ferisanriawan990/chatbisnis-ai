@@ -72,6 +72,7 @@ export async function POST(req: Request) {
         email: normalizedEmail,
         passwordHash,
         role: 'USER',
+        emailVerified: new Date(), // Auto-verify untuk mempermudah login selama masa pengujian
         subscriptions: {
           create: {
             planId: freePlan.id,

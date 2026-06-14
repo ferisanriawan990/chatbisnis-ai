@@ -76,11 +76,18 @@ export async function POST(req: NextRequest) {
           console.log(`Duplicate webhook rejected for completed messageId: ${event.messageId}`);
           return NextResponse.json({ received: true, ignored: 'duplicate_message_id_completed' });
         }
-        // If it's failed or processing (stale), we can retry
+        if (existingKey?.status === 'processing') {
+          const ageMs = Date.now() - existingKey.createdAt.getTime();
+          if (ageMs < 60000) { // If it's less than 60s old, it's still actively processing
+            console.log(`Duplicate webhook rejected because it is currently processing: ${event.messageId}`);
+            return NextResponse.json({ received: true, ignored: 'duplicate_message_id_processing' });
+          }
+        }
+        // If it's failed or processing (stale > 60s), we can retry
         isRetry = true;
         await prisma.idempotencyKey.update({
           where: { key: idempotencyKeyStr },
-          data: { status: 'processing' }
+          data: { status: 'processing', createdAt: new Date() }
         });
       }
     }
