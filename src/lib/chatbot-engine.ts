@@ -712,25 +712,169 @@ export class ChatbotEngine {
 Jika pelanggan menunjukkan ketertarikan tinggi tetapi mengeluhkan "Harga terlalu mahal", "Ongkirnya mahal", atau membandingkan dengan toko lain, KAMU DIIZINKAN untuk memberikan penawaran khusus (Diskon Darurat) untuk menutup penjualan:
 - Tawarkan "Diskon Spesial 10%" atau "Potongan Ongkir Rp 10.000" sebagai tawaran eksklusif.
 - Katakan bahwa penawaran ini hanya berlaku hari ini.
-Jangan tawarkan diskon jika pelanggan tidak mengeluh tentang harga!
+Jangan tawarkan diskon jika pelanggan tidak mengeluh tentang harga!`;
 
-Kamu MEMILIKI native tool_call berikut:
-- {"tool_call": true, "action": "add_to_cart", "params": {"productId": "<ID>", "quantity": 1}} : Untuk memasukkan barang ke keranjang pembeli.
-- {"tool_call": true, "action": "calculate_shipping", "params": {"address": "alamat lengkap", "deliveryMethod": "shipping atau pickup"}} : PANGGIL INI sebelum melakukan checkout untuk menghitung total dengan ongkir. Tanyakan dulu apakah mereka ingin pesanan Dikirim (shipping) atau Diambil di Toko (pickup) beserta alamat jika belum ada.
-- {"tool_call": true, "action": "checkout"} : Untuk memproses keranjang menjadi pesanan Pending. PASTIKAN sudah menghitung ongkir dulu menggunakan calculate_shipping.
-- {"tool_call": true, "action": "verify_payment"} : PANGGIL INI JIKA pelanggan baru saja mengirimkan FOTO BUKTI TRANSFER dan kamu bisa memvalidasi bahwa foto tersebut memang bukti transfer.
-- {"tool_call": true, "action": "check_availability", "params": {"date": "YYYY-MM-DD", "hour": "HH:00"}} : Cek apakah slot jam tersebut kosong untuk layanan.
-- {"tool_call": true, "action": "create_booking", "params": {"date": "YYYY-MM-DD", "hour": "HH:00", "serviceName": "Nama Layanan"}} : Buat reservasi / booking ke dalam sistem jika slot kosong.
-- {"tool_call": true, "action": "reschedule_booking", "params": {"newDate": "YYYY-MM-DD", "newHour": "HH:00", "reason": "Alasan pindah"}} : PANGGIL INI jika pelanggan ingin mengubah jadwal bookingnya yang sudah ada. Tanyakan dulu tanggal/jam penggantinya.
-- {"tool_call": true, "action": "cancel_booking", "params": {"reason": "Alasan batal"}} : PANGGIL INI HANYA JIKA pelanggan mengkonfirmasi ingin membatalkan bookingnya secara permanen. Pastikan bertanya "Apakah Kakak yakin ingin membatalkan jadwal ini?" sebelum mengeksekusi ini.
-- {"tool_call": true, "action": "apply_voucher", "params": {"code": "KODE_VOUCHER"}} : PANGGIL INI JIKA pelanggan menyebutkan kode promo atau ingin menukarkan poin dengan voucher diskon pada saat checkout.
-- {"tool_call": true, "action": "record_testimonial", "params": {"rating": 5, "review": "Teks ulasan..."}} : PANGGIL INI otomatis jika pelanggan memberikan balasan rating angka (1-5) beserta komentarnya, sebagai umpan balik pasca-pembelian.
-- {"tool_call": true, "action": "request_human"} : PANGGIL INI JIKA pelanggan benar-benar kebingungan, marah, atau meminta eksplisit berbicara dengan admin/manusia/agen, dan kamu tidak bisa menyelesaikannya.
-
-Sistem akan langsung memproses JSON tersebut dan memberimu hasil.`;
+    const tools: any[] = [
+      {
+        type: "function",
+        function: {
+          name: "add_to_cart",
+          description: "Untuk memasukkan barang ke keranjang pembeli.",
+          parameters: {
+            type: "object",
+            properties: {
+              productId: { type: "string", description: "ID produk" },
+              quantity: { type: "number", description: "Jumlah produk yang dibeli" }
+            },
+            required: ["productId", "quantity"]
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "calculate_shipping",
+          description: "PANGGIL INI sebelum melakukan checkout untuk menghitung total dengan ongkir. Tanyakan dulu apakah mereka ingin pesanan Dikirim (shipping) atau Diambil di Toko (pickup) beserta alamat jika belum ada.",
+          parameters: {
+            type: "object",
+            properties: {
+              address: { type: "string", description: "Alamat lengkap pengiriman" },
+              deliveryMethod: { type: "string", enum: ["shipping", "pickup"], description: "Metode pengiriman" }
+            },
+            required: ["address", "deliveryMethod"]
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "checkout",
+          description: "Untuk memproses keranjang menjadi pesanan Pending. PASTIKAN sudah menghitung ongkir dulu menggunakan calculate_shipping.",
+          parameters: { type: "object", properties: {} }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "verify_payment",
+          description: "PANGGIL INI JIKA pelanggan baru saja mengirimkan FOTO BUKTI TRANSFER dan kamu bisa memvalidasi bahwa foto tersebut memang bukti transfer.",
+          parameters: { type: "object", properties: {} }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "check_availability",
+          description: "Cek apakah slot jam tersebut kosong untuk layanan.",
+          parameters: {
+            type: "object",
+            properties: {
+              date: { type: "string", description: "Tanggal dalam format YYYY-MM-DD" },
+              hour: { type: "string", description: "Jam dalam format HH:00" }
+            },
+            required: ["date", "hour"]
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "create_booking",
+          description: "Buat reservasi / booking ke dalam sistem jika slot kosong.",
+          parameters: {
+            type: "object",
+            properties: {
+              date: { type: "string", description: "Tanggal format YYYY-MM-DD" },
+              hour: { type: "string", description: "Jam format HH:00" },
+              serviceName: { type: "string", description: "Nama layanan yang ingin dipesan" }
+            },
+            required: ["date", "hour", "serviceName"]
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "reschedule_booking",
+          description: "PANGGIL INI jika pelanggan ingin mengubah jadwal bookingnya yang sudah ada. Tanyakan dulu tanggal/jam penggantinya.",
+          parameters: {
+            type: "object",
+            properties: {
+              newDate: { type: "string", description: "Tanggal baru format YYYY-MM-DD" },
+              newHour: { type: "string", description: "Jam baru format HH:00" },
+              reason: { type: "string", description: "Alasan pindah" }
+            },
+            required: ["newDate", "newHour", "reason"]
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "cancel_booking",
+          description: "PANGGIL INI HANYA JIKA pelanggan mengkonfirmasi ingin membatalkan bookingnya secara permanen. Pastikan bertanya sebelum mengeksekusi ini.",
+          parameters: {
+            type: "object",
+            properties: {
+              reason: { type: "string", description: "Alasan batal" }
+            },
+            required: ["reason"]
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "apply_voucher",
+          description: "PANGGIL INI JIKA pelanggan menyebutkan kode promo atau ingin menukarkan poin dengan voucher diskon pada saat checkout.",
+          parameters: {
+            type: "object",
+            properties: {
+              code: { type: "string", description: "Kode Voucher" }
+            },
+            required: ["code"]
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "record_testimonial",
+          description: "PANGGIL INI otomatis jika pelanggan memberikan balasan rating angka (1-5) beserta komentarnya, sebagai umpan balik pasca-pembelian.",
+          parameters: {
+            type: "object",
+            properties: {
+              rating: { type: "number", description: "Rating 1-5" },
+              review: { type: "string", description: "Teks ulasan" }
+            },
+            required: ["rating", "review"]
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "request_human",
+          description: "PANGGIL INI JIKA pelanggan benar-benar kebingungan, marah, atau meminta eksplisit berbicara dengan admin/manusia/agen.",
+          parameters: { type: "object", properties: {} }
+        }
+      }
+    ];
 
     if (actionWebhookUrl) {
-      finalSystemPrompt += `\nJika kamu butuh memanggil sistem luar (webhook): {"tool_call": true, "action": "webhook", "params": {"key": "value"}}.`;
+      tools.push({
+        type: "function",
+        function: {
+          name: "webhook",
+          description: "Panggil sistem luar (webhook) milik bisnis ini",
+          parameters: {
+            type: "object",
+            properties: {
+              key: { type: "string", description: "Data webhook tambahan" }
+            }
+          }
+        }
+      });
     }
     
     finalSystemPrompt += `\n\nPENGIRIMAN GAMBAR PRODUK:
@@ -754,6 +898,7 @@ CONTOH BENAR: [SEND_IMAGE: https://imgur.com/xyz.jpg | Ini adalah gambar sepatu]
         model: credential.model,
         apiKey: credential.apiKey,
         maxTokens,
+        tools,
       });
 
       let activeCredential = credentials[0];
@@ -778,13 +923,17 @@ CONTOH BENAR: [SEND_IMAGE: https://imgur.com/xyz.jpg | Ini adalah gambar sepatu]
       let totalTokens = aiResult.tokenUsage || 0;
 
       // Tool Call Execution Loop
-      if (finalReply.includes('"tool_call":')) {
+      if (aiResult.toolCalls && aiResult.toolCalls.length > 0) {
         try {
-          const jsonMatch = finalReply.match(/\{[\s\S]*"tool_call"[\s\S]*\}/);
-          if (jsonMatch) {
-            const toolData = JSON.parse(jsonMatch[0]);
-            if (toolData.tool_call === true) {
-              let toolResultString = 'Aksi tidak diketahui atau gagal.';
+          const toolCall = aiResult.toolCalls[0]; // Process the first tool call
+          const actionName = toolCall.function?.name;
+          const paramsStr = toolCall.function?.arguments || '{}';
+          let paramsObj = {};
+          try { paramsObj = JSON.parse(paramsStr); } catch { /* ignore */ }
+          
+          if (actionName) {
+            const toolData = { action: actionName, params: paramsObj as any };
+            let toolResultString = 'Aksi tidak diketahui atau gagal.';
 
               if (toolData.action === 'add_to_cart' && businessProfileId && customerPhone) {
                 const quantity = Math.max(1, Math.min(Number(toolData.params.quantity) || 1, 100)); // Limit 1-100
@@ -1061,7 +1210,6 @@ CONTOH BENAR: [SEND_IMAGE: https://imgur.com/xyz.jpg | Ini adalah gambar sepatu]
               const followUpResult = await generateWithCredential(activeCredential, followUpUserMsg, updatedHistory, undefined);
               finalReply = followUpResult.reply;
               totalTokens += followUpResult.tokenUsage || 0;
-            }
           }
         } catch (e) {
           console.error("Tool call error", e);

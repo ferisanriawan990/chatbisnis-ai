@@ -8,11 +8,13 @@ interface GenerateConfig {
   apiKey: string;
   maxTokens?: number;
   responseFormat?: { type: 'json_object' } | { type: 'text' };
+  tools?: any[];
 }
 
 interface GenerateResult {
   reply: string;
   tokenUsage: number;
+  toolCalls?: any[];
 }
 
 export class AIServiceError extends Error {
@@ -113,6 +115,7 @@ export class AIService {
           max_tokens: config.maxTokens || 1500,
           temperature: 0.2, // Lowered from 0.7 to 0.2 to prevent hallucinations and make the AI strictly follow the rules
           response_format: config.responseFormat,
+          ...(config.tools && config.tools.length > 0 ? { tools: config.tools } : {})
         }),
         // Add timeout via AbortController if supported in edge/node, or just rely on platform defaults
       });
@@ -130,13 +133,14 @@ export class AIService {
 
       const data = await res.json();
       const reply = data.choices?.[0]?.message?.content || '';
+      const toolCalls = data.choices?.[0]?.message?.tool_calls;
       const tokenUsage = data.usage?.total_tokens || 0;
 
-      if (typeof reply !== 'string' || reply.trim() === '') {
+      if ((typeof reply !== 'string' || reply.trim() === '') && (!toolCalls || toolCalls.length === 0)) {
         throw new AIServiceError('AI provider mengembalikan respons kosong.', 502);
       }
 
-      return { reply, tokenUsage };
+      return { reply, tokenUsage, toolCalls };
     } catch (error: unknown) {
       if (error instanceof AIServiceError) throw error;
 
