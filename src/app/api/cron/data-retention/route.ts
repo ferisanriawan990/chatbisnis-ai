@@ -6,7 +6,8 @@ export const maxDuration = 300; // Allow 5 minutes max duration for heavy deleti
 export async function GET(req: Request) {
   try {
     const authHeader = req.headers.get('authorization');
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    const cronSecret = process.env.CRON_SECRET;
+    if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
