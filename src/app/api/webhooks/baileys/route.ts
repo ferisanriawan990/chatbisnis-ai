@@ -63,14 +63,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ received: true, ignored: 'invalid_or_group_message' });
     }
 
+    let idempotencyKeyStr = `msg:${event.messageId}`;
+    let isRetry = false;
     try {
       await prisma.idempotencyKey.create({
-        data: { key: `msg:${event.messageId}` }
+        data: { key: idempotencyKeyStr, status: 'processing' }
       });
     } catch (e: any) {
       if (e.code === 'P2002') {
-        console.log(`Duplicate webhook rejected atomically for messageId: ${event.messageId}`);
-        return NextResponse.json({ received: true, ignored: 'duplicate_message_id_atomic' });
+        const existingKey = await prisma.idempotencyKey.findUnique({ where: { key: idempotencyKeyStr } });
+        if (existingKey?.status === 'completed') {
+          console.log(`Duplicate webhook rejected for completed messageId: ${event.messageId}`);
+          return NextResponse.json({ received: true, ignored: 'duplicate_message_id_completed' });
+        }
+        // If it's failed or processing (stale), we can retry
+        isRetry = true;
+        await prisma.idempotencyKey.update({
+          where: { key: idempotencyKeyStr },
+          data: { status: 'processing' }
+        });
       }
     }
 
@@ -217,7 +228,7 @@ export async function POST(req: NextRequest) {
 
     if (result.reply.trim()) {
       const reply = mediaDeliveryFailed
-        ? `${result.reply}\n\nMaaf, gambar belum dapat dikirim saat ini. [Debug Error: ${failedReason}]`
+        ? `${result.reply}\n\nMaaf, gambar belum dapat dikirim saat ini.`
         : result.reply;
       await gateway.sendMessage(
         event.sessionId,
@@ -245,9 +256,29 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({ received: true });
-  } catch (error) {
-    console.error('POST /api/webhooks/baileys error:', error instanceof Error ? error.message : error);
+    // Mark idempotency as completed
+    await prisma.idempotencyKey.update({
+      where: { key: idempotencyKeyStr },
+      data: { status: 'completed' }
+    });
+
+    return NextResponse.json({ success: true, replied: !!result.reply });
+
+  } catch (error: any) {
+    console.error('Webhook processing error:', error);
+    
+    // Attempt to mark idempotency as failed so we can retry later
+    try {
+      const rawBody = await req.clone().text(); // Might fail if body already read and not cloned, but we try
+      const parsed = JSON.parse(rawBody);
+      if (parsed.messageId) {
+        await prisma.idempotencyKey.update({
+          where: { key: `msg:${parsed.messageId}` },
+          data: { status: 'failed' }
+        });
+      }
+    } catch(e) {}
+    
     try {
       const errorMsg = error instanceof Error ? error.stack || error.message : String(error);
       const errorData = (error && typeof error === 'object' && 'response' in error) 

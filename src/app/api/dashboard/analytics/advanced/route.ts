@@ -2,15 +2,16 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { getActiveTenant } from '@/lib/tenant-isolation';
 
 export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const userId = (session.user as { id: string }).id;
-    const profile = await prisma.businessProfile.findFirst({ where: { userId } });
-    if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
+    const tenant = await getActiveTenant(req, session.user);
+    if (!tenant) return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
+    const profile = { id: tenant.id };
 
     const { searchParams } = new URL(req.url);
     const range = searchParams.get('range') || '7d';

@@ -80,7 +80,10 @@ export async function POST(req: Request) {
 
     } else if (order_id.startsWith('ORD-')) {
       // --- B2C UMKM Order Payment ---
-      const orderIdStr = order_id.replace('ORD-', '');
+      let orderIdStr = order_id.replace('ORD-', '');
+      if (orderIdStr.length > 36) {
+        orderIdStr = orderIdStr.substring(0, 36);
+      }
       await prisma.$transaction(async (tx) => {
         const order = await tx.order.findUnique({ where: { id: orderIdStr } });
         if (!order) throw new Error('Order not found');

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getRequiredAdminOrResponse } from '@/lib/admin-helper';
+import { getRequiredAdminOrResponse, validateAdminMutationOrigin } from '@/lib/admin-helper';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
@@ -32,6 +32,9 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const admin = await getRequiredAdminOrResponse();    if (admin instanceof NextResponse) return admin;
+
+    const originError = validateAdminMutationOrigin(req);
+    if (originError) return originError;
 
     const body = await req.json();
     const parsed = planSchema.safeParse(body);

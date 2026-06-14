@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { getActiveTenant, assertTenantAccess } from '@/lib/tenant-isolation';
 import { Prisma } from '@prisma/client';
 import { z } from 'zod/v4';
 
@@ -35,9 +36,10 @@ export async function GET(req: Request) {
 
     const { page, limit, status, search } = parsed.data;
     const skip = (page - 1) * limit;
-    const userId = (session.user as { id: string }).id;
+    const tenant = await getActiveTenant(req, session.user);
+    if (!tenant) return NextResponse.json({ leads: [], pagination: { total: 0, page, limit, totalPages: 0 } });
 
-    const where: Prisma.LeadWhereInput = { userId };
+    const where: Prisma.LeadWhereInput = { businessProfileId: tenant.id };
 
     if (status) {
       where.status = status;
@@ -98,13 +100,15 @@ export async function PATCH(req: Request) {
 
     const { id, status, notes, assignedAdminId } = parsed.data;
 
-    // Verify ownership
-    const existing = await prisma.lead.findFirst({
-      where: { id, userId }
-    });
-
+    // Verify lead belongs to user
+    const existing = await prisma.lead.findUnique({ where: { id } });
     if (!existing) {
       return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
+    }
+
+    const hasAccess = await assertTenantAccess(userId, existing.businessProfileId);
+    if (!hasAccess) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
     const updated = await prisma.lead.update({

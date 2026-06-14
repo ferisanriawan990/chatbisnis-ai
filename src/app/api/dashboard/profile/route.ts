@@ -53,7 +53,7 @@ export async function PATCH(req: Request) {
     const parsed = updateProfileSchema.safeParse(body);
 
     if (!parsed.success) {
-      return NextResponse.json({ error: parsed.error.errors[0].message }, { status: 400 });
+      return NextResponse.json({ error: parsed.error.issues[0]?.message || 'Invalid input' }, { status: 400 });
     }
 
     const { name, avatar, currentPassword, newPassword } = parsed.data;

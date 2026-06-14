@@ -21,8 +21,15 @@ export async function POST(req: Request, { params }: { params: Promise<{ orderId
       return NextResponse.json({ error: 'Pesanan sudah dibayar atau diproses.' }, { status: 400 });
     }
 
+    if (order.snapToken && order.snapRedirectUrl && order.status === 'pending_payment') {
+      return NextResponse.json({ 
+        token: order.snapToken,
+        redirect_url: order.snapRedirectUrl
+      });
+    }
+
     const grossAmount = Math.round(Number(order.totalAmount) + Number(order.shippingFee) - Number(order.discountAmount));
-    const midtransOrderId = `ORD-${order.id}`;
+    const midtransOrderId = `ORD-${order.id}-${Date.now()}`;
     
     const snap = await getMidtransSnap();
 
@@ -69,13 +76,15 @@ export async function POST(req: Request, { params }: { params: Promise<{ orderId
 
     const snapResponse = await snap.createTransaction(parameter);
 
-    // Update order status to pending_payment if it was draft
-    if (order.status === 'draft') {
-      await prisma.order.update({
-        where: { id: order.id },
-        data: { status: 'pending_payment' }
-      });
-    }
+    // Update order status to pending_payment and save snap info
+    await prisma.order.update({
+      where: { id: order.id },
+      data: { 
+        status: 'pending_payment',
+        snapToken: snapResponse.token,
+        snapRedirectUrl: snapResponse.redirect_url
+      }
+    });
 
     return NextResponse.json({ 
       token: snapResponse.token,

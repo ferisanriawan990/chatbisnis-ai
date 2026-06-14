@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
     "check": "npm run lint && npm run typecheck && npm run build",
     "postinstall": "prisma generate"
   },
@@ -49,7 +50,8 @@
     "eslint": "^9.39.4",
     "eslint-config-next": "16.2.9",
     "tailwindcss": "^4",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.8"
   },
   "overrides": {
     "postcss": "^8.5.10",

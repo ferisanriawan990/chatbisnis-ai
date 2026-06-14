@@ -1,4 +1,6 @@
 import { prisma } from './prisma';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 /**
  * Validates that the specified user has access to the specified business profile.
@@ -43,4 +45,39 @@ export function withTenant<T extends { where?: any }>(businessProfileId: string,
       businessProfileId
     }
   };
+}
+
+/**
+ * Retrieves the active tenant context for the current request.
+ * It checks explicit headers/query params, falling back to the first available tenant in the session.
+ */
+export async function getActiveTenant(req?: Request, sessionUser?: any): Promise<{ id: string, role: string } | null> {
+  const user = sessionUser || (await getServerSession(authOptions))?.user as any;
+  if (!user) return null;
+
+  // 1. Check explicit header or query param
+  let requestedTenantId = null;
+  if (req) {
+     const url = new URL(req.url);
+     requestedTenantId = url.searchParams.get('tenantId') || req.headers?.get('x-tenant-id');
+  }
+
+  if (requestedTenantId && user.tenants) {
+     const tenant = user.tenants.find((t: any) => t.id === requestedTenantId);
+     if (tenant) return { id: tenant.id, role: tenant.role };
+  }
+
+  // 2. Fallback to first available tenant in session
+  if (user.tenants && user.tenants.length > 0) {
+    return { id: user.tenants[0].id, role: user.tenants[0].role };
+  }
+
+  // 3. Absolute Fallback (if session is stale or tokens are missing)
+  const ownedProfile = await prisma.businessProfile.findFirst({ where: { userId: user.id } });
+  if (ownedProfile) return { id: ownedProfile.id, role: 'owner' };
+
+  const assigned = await prisma.userRoleAssignment.findFirst({ where: { userId: user.id }, include: { role: true } });
+  if (assigned && assigned.businessProfileId) return { id: assigned.businessProfileId, role: assigned.role.name };
+
+  return null;
 }

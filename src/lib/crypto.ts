@@ -10,7 +10,8 @@ function getEncryptionSecret(): Buffer {
     throw new Error('ENCRYPTION_KEY or ENCRYPTION_SECRET environment variable is required');
   }
   if (secret.length !== 32) {
-    throw new Error('Encryption key must be exactly 32 characters');
+    // Audit fix: hash into 32-bytes securely to support any length secret without crashing
+    return crypto.createHash('sha256').update(String(secret)).digest();
   }
   return Buffer.from(secret, 'utf8');
 }

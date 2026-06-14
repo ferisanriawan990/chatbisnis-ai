@@ -10,7 +10,7 @@ export default function ContactPage() {
             <strong>Email:</strong> support@chatbisnis.ai
           </div>
           <div className="p-4 bg-emerald-50 text-emerald-700 rounded-xl">
-            <strong>WhatsApp CS:</strong> +62 812-3456-7890
+            <strong>WhatsApp CS:</strong> +62 821-0000-0000 (Ganti dengan nomor asli)
           </div>
           <div className="p-4 bg-slate-50 text-slate-700 rounded-xl">
             <strong>Jam Operasional:</strong> Senin - Jumat (09:00 - 17:00 WIB)

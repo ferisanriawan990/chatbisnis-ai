@@ -629,6 +629,8 @@ model Order {
   voucherCode       String?
   deliveryMethod    String      @default("shipping") // shipping, pickup
   reminderSentAt    DateTime?
+  snapToken         String?
+  snapRedirectUrl   String?
   items             OrderItem[]
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt

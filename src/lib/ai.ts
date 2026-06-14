@@ -37,19 +37,24 @@ export class AIService {
       const baseUrl = process.env.AI_BASE_URL || 'https://ai.flaz.id/v1';
       const url = `${baseUrl.replace(/\/$/, '')}/audio/transcriptions`;
 
-      const buffer = Buffer.from(base64Audio, 'base64');
-      const extension = mimeType.includes('ogg') ? 'ogg' : 'mp3';
+      let cleanBase64 = base64Audio;
+      if (cleanBase64.includes('base64,')) {
+        cleanBase64 = cleanBase64.split('base64,')[1];
+      }
+
+      const buffer = Buffer.from(cleanBase64, 'base64');
+      const cleanMimeType = mimeType.split(';')[0];
+      const extension = cleanMimeType.includes('ogg') ? 'ogg' : 'mp3';
       
-      // Menggunakan File (bawaan Node 20 / browser) untuk memastikan filename terbaca oleh API Whisper
       let fileToAppend;
       if (typeof File !== 'undefined') {
-        fileToAppend = new File([buffer], `audio.${extension}`, { type: mimeType });
+        fileToAppend = new File([buffer], `audio.${extension}`, { type: cleanMimeType });
       } else {
-        fileToAppend = new Blob([buffer], { type: mimeType });
+        fileToAppend = new Blob([buffer], { type: cleanMimeType });
       }
 
       const formData = new FormData();
-      formData.append('file', fileToAppend, `audio.${extension}`);
+      formData.append('file', fileToAppend as any, `audio.${extension}`);
       formData.append('model', 'whisper-1');
 
       const signal = AbortSignal.timeout(30000);

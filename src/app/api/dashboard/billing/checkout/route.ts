@@ -23,6 +23,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'User or Plan not found' }, { status: 404 });
     }
 
+    if (!plan.isActive) {
+      return NextResponse.json({ error: 'Paket langganan ini sudah tidak aktif' }, { status: 400 });
+    }
+
     // Create a pending transaction
     const transaction = await prisma.transaction.create({
       data: {

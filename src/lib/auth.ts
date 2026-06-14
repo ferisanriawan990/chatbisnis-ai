@@ -44,6 +44,10 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Email atau password salah');
         }
 
+        if (!user.emailVerified) {
+          throw new Error('UNVERIFIED_EMAIL');
+        }
+
         const isValid = await bcrypt.compare(credentials.password, user.passwordHash);
 
         if (!isValid) {

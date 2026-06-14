@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { getActiveTenant } from '@/lib/tenant-isolation';
 import { z } from 'zod/v4';
 import { BaileysService } from '@/lib/baileys';
 
@@ -17,10 +18,10 @@ export async function GET(req: Request) {
     const search = searchParams.get('search') || '';
     const status = searchParams.get('status') || '';
 
-    const profile = await prisma.businessProfile.findFirst({
-      where: { userId },
-      select: { id: true }
-    });
+    const tenant = await getActiveTenant(req, session.user);
+    if (!tenant) return NextResponse.json({ orders: [] });
+    
+    const profile = { id: tenant.id };
 
     if (!profile) {
       return NextResponse.json({ orders: [] });
@@ -72,12 +73,9 @@ export async function PATCH(req: Request) {
     }
 
     const userId = (session.user as { id: string }).id;
-    const profile = await prisma.businessProfile.findFirst({
-      where: { userId },
-      select: { id: true }
-    });
-
-    if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
+    const tenant = await getActiveTenant(req, session.user);
+    if (!tenant) return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
+    const profile = { id: tenant.id };
 
     const body = await req.json();
     const parsed = updateOrderSchema.safeParse(body);

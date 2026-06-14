@@ -7,6 +7,7 @@ import { getAICredentialCandidates } from './ai-config';
 import { buildSystemPrompt } from './prompt-builder';
 import { searchKnowledgeItems, buildKnowledgeFallbackAnswer, detectCustomerIntent } from './knowledge-search';
 import { validatePublicHttpsUrl } from './security';
+import { secureFetch } from './security-fetch';
 import { analyzeSentiment, SentimentResult } from './sentiment-analysis';
 import { BaileysService } from './baileys';
 import { systemCache } from './cache';
@@ -964,15 +965,22 @@ CONTOH BENAR: [SEND_IMAGE: https://imgur.com/xyz.jpg | Ini adalah gambar sepatu]
                 let replyFee = "Gratis karena pesanan diambil di toko.";
                 
                 if (method === 'shipping') {
-                  const addr = (toolData.params.address || '').toLowerCase();
-                  if (addr.includes('jakarta')) fee = 15000;
-                  else if (addr.includes('jawa')) fee = 25000;
-                  else if (addr.includes('sumatera')) fee = 40000;
-                  else if (addr.includes('kalimantan')) fee = 50000;
-                  else if (addr.includes('sulawesi')) fee = 60000;
-                  else if (addr.includes('papua')) fee = 100000;
-                  else fee = 20000; // default tarif flat simulasi
-                  replyFee = `Rp ${fee}`;
+                  const addr = encodeURIComponent(toolData.params.address || '');
+                  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+                  try {
+                    const res = await fetch(`${baseUrl}/api/internal/shipping-rates?destination=${addr}`);
+                    const data = await res.json();
+                    if (data.success && data.results.length > 0) {
+                      fee = data.results[0].cost;
+                      replyFee = `Rp ${fee} via ${data.results[0].courier} (${data.results[0].etd})`;
+                    } else {
+                      fee = 20000;
+                      replyFee = `Rp ${fee}`;
+                    }
+                  } catch (err) {
+                    fee = 20000;
+                    replyFee = `Rp ${fee}`;
+                  }
                 }
 
                 const order = await prisma.order.findFirst({ where: { businessProfileId, customerPhone, status: 'draft' } });
@@ -1195,7 +1203,7 @@ CONTOH BENAR: [SEND_IMAGE: https://imgur.com/xyz.jpg | Ini adalah gambar sepatu]
                   toolResultString = 'Sudah dalam status menunggu admin.';
                 }
               } else if (toolData.action === 'webhook' && actionWebhookUrl) {
-                const webhookRes = await fetch(chatbotSetting.actionWebhookUrl, {
+                const webhookRes = await secureFetch(chatbotSetting.actionWebhookUrl, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ action: toolData.action, params: toolData.params, customerMessage: messageIn }),

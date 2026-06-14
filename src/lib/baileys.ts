@@ -81,7 +81,14 @@ export class BaileysService {
       }
     }
 
-    const activeServer = await prisma.whatsappServer.findFirst({ where: { isActive: true } });
+    const activeServers = await prisma.whatsappServer.findMany({ 
+      where: { isActive: true },
+      orderBy: { currentSessions: 'asc' }
+    });
+    
+    // Pick the first one that is not full
+    const activeServer = activeServers.find(s => s.currentSessions < s.maxSessions) || activeServers[0];
+
     if (activeServer) {
       baseUrl = activeServer.baseUrl;
       apiKey = activeServer.apiKeyEncrypted ? decrypt(activeServer.apiKeyEncrypted) : '';

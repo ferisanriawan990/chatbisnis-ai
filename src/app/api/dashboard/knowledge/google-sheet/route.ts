@@ -27,7 +27,7 @@ export async function POST(req: Request) {
           include: {
             subscriptions: {
               include: { plan: true },
-              where: { status: 'active' },
+              where: { status: 'active', OR: [{ expiredAt: null }, { expiredAt: { gt: new Date() } }] },
               take: 1
             }
           }

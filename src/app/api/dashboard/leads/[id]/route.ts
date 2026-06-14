@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { assertTenantAccess } from '@/lib/tenant-isolation';
 import { z } from 'zod/v4';
 
 const patchLeadSchema = z.object({
@@ -28,10 +29,15 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       );
     }
 
-    // Verify lead belongs to user
-    const lead = await prisma.lead.findFirst({ where: { id, userId } });
+    // Verify lead belongs to user via tenant access
+    const lead = await prisma.lead.findUnique({ where: { id } });
     if (!lead) {
       return NextResponse.json({ error: 'Lead tidak ditemukan' }, { status: 404 });
+    }
+    
+    const hasAccess = await assertTenantAccess(userId, lead.businessProfileId);
+    if (!hasAccess) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
     const { status, notes } = parsed.data;

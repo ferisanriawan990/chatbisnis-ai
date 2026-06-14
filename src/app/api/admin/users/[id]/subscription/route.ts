@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getRequiredAdminOrResponse } from '@/lib/admin-helper';
+import { getRequiredAdminOrResponse, validateAdminMutationOrigin } from '@/lib/admin-helper';
 import { prisma } from '@/lib/prisma';
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -43,6 +43,9 @@ async function handleSubscriptionUpdate(req: Request, userId: string) {
   try {
     const admin = await getRequiredAdminOrResponse();
     if (admin instanceof NextResponse) return admin;
+
+    const originError = validateAdminMutationOrigin(req);
+    if (originError) return originError;
 
     if (!userId) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });

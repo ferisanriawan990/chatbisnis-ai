@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { registerSchema } from '@/lib/validations';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { generateToken, sendVerificationEmail } from '@/lib/email';
 
 export async function POST(req: Request) {
   try {
@@ -72,9 +73,20 @@ export async function POST(req: Request) {
       },
     });
 
+    const token = generateToken();
+    await prisma.verificationToken.create({
+      data: {
+        identifier: normalizedEmail,
+        token,
+        expires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
+      }
+    });
+
+    await sendVerificationEmail(normalizedEmail, token);
+
     return NextResponse.json({
       success: true,
-      message: 'Akun berhasil dibuat. Silakan login.',
+      message: 'Akun berhasil dibuat. Silakan periksa email Anda untuk verifikasi.',
       user: { id: user.id, name: user.name, email: user.email },
     });
   } catch (error) {

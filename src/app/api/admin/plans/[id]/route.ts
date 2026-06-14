@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getRequiredAdminOrResponse } from '@/lib/admin-helper';
+import { getRequiredAdminOrResponse, validateAdminMutationOrigin } from '@/lib/admin-helper';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
@@ -19,6 +19,9 @@ const updatePlanSchema = z.object({
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const admin = await getRequiredAdminOrResponse();    if (admin instanceof NextResponse) return admin;
+
+    const originError = validateAdminMutationOrigin(req);
+    if (originError) return originError;
 
     const body = await req.json();
     const parsed = updatePlanSchema.safeParse(body);
@@ -51,6 +54,9 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
   try {
     const admin = await getRequiredAdminOrResponse();    
     if (admin instanceof NextResponse) return admin;
+
+    const originError = validateAdminMutationOrigin(req);
+    if (originError) return originError;
 
     const planId = (await params).id;
 

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { getActiveTenant } from '@/lib/tenant-isolation';
 import { z } from 'zod/v4';
 
 const createCampaignSchema = z.object({
@@ -28,14 +29,9 @@ export async function POST(req: Request) {
 
     const { name, messageTemplate, targetTags, imageUrl } = parsed.data;
 
-    const profile = await prisma.businessProfile.findFirst({
-      where: { userId },
-      select: { id: true }
-    });
-
-    if (!profile) {
-      return NextResponse.json({ error: 'Business profile not found' }, { status: 404 });
-    }
+    const tenant = await getActiveTenant(req, session.user);
+    if (!tenant) return NextResponse.json({ error: 'Business profile not found' }, { status: 404 });
+    const profile = { id: tenant.id };
 
     // Determine target leads
     const leadsWhere: any = { businessProfileId: profile.id };
@@ -74,15 +70,7 @@ export async function POST(req: Request) {
       }))
     });
 
-    // Async function to trigger the actual sending to Baileys Gateway
-    fetch(new URL('/api/dashboard/broadcast/send', req.url).toString(), {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'x-internal-trigger-secret': process.env.CRON_SECRET || ''
-      },
-      body: JSON.stringify({ campaignId: campaign.id })
-    }).catch(console.error);
+    // The actual sending is now handled in the background by broadcast-runner cron job.
 
     return NextResponse.json({ success: true, campaignId: campaign.id, targetCount: targetLeads.length });
 
@@ -101,14 +89,9 @@ export async function GET(req: Request) {
     }
 
     const userId = (session.user as { id: string }).id;
-    const profile = await prisma.businessProfile.findFirst({
-      where: { userId },
-      select: { id: true }
-    });
-
-    if (!profile) {
-      return NextResponse.json({ campaigns: [] });
-    }
+    const tenant = await getActiveTenant(req, session.user);
+    if (!tenant) return NextResponse.json({ campaigns: [] });
+    const profile = { id: tenant.id };
 
     const campaigns = await prisma.broadcastCampaign.findMany({
       where: { businessProfileId: profile.id },
